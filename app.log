@@ -837,3 +837,19 @@
 2025-09-27 22:01:28,832 - werkzeug - INFO - 192.168.1.8 - - [27/Sep/2025 22:01:28] "GET /static/script.js HTTP/1.1" 200 -
 2025-09-27 22:01:28,845 - werkzeug - INFO - 192.168.1.8 - - [27/Sep/2025 22:01:28] "GET /static/style.css HTTP/1.1" 200 -
 2025-09-27 22:01:29,331 - werkzeug - INFO - 192.168.1.8 - - [27/Sep/2025 22:01:29] "GET /static/favicon.svg HTTP/1.1" 200 -
+2025-09-27 22:19:14,741 - __main__ - INFO - Gemini API Key loaded: Yes
+2025-09-27 22:19:14,776 - __main__ - INFO - Polygon API Key loaded: Yes
+2025-09-27 22:19:15,861 - tzlocal - DEBUG - Looking up time zone info from registry
+2025-09-27 22:19:15,873 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-09-27 22:19:15,875 - apscheduler.scheduler - INFO - Added job "daily_update" to job store "default"
+2025-09-27 22:19:15,876 - apscheduler.scheduler - INFO - Scheduler started
+2025-09-27 22:19:15,877 - apscheduler.scheduler - DEBUG - Looking for jobs to run
+2025-09-27 22:19:15,877 - apscheduler.scheduler - DEBUG - Next wakeup is due at 2025-09-28 08:00:00+05:30 (in 34844.122131 seconds)
+2025-09-27 22:19:15,898 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:10000
+ * Running on http://192.168.1.8:10000
+2025-09-27 22:19:15,898 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2025-09-27 22:19:17,273 - werkzeug - INFO - 127.0.0.1 - - [27/Sep/2025 22:19:17] "GET / HTTP/1.1" 200 -
+2025-09-27 22:19:17,642 - werkzeug - INFO - 127.0.0.1 - - [27/Sep/2025 22:19:17] "[36mGET /static/style.css HTTP/1.1[0m" 304 -
+2025-09-27 22:19:17,700 - werkzeug - INFO - 127.0.0.1 - - [27/Sep/2025 22:19:17] "GET /static/script.js HTTP/1.1" 200 -
