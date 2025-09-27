@@ -36,20 +36,20 @@ class StockNewsApp {
             this.displayTickers(tickers);
         } catch (error) {
             console.error('Error loading tickers:', error);
-            document.getElementById('ticker-list').innerHTML = 
+            document.getElementById('ticker-list').innerHTML =
                 '<div class="error-message">Failed to load tickers</div>';
         }
     }
 
     displayTickers(tickers) {
         const tickerList = document.getElementById('ticker-list');
-        
+
         if (tickers.length === 0) {
             tickerList.innerHTML = '<div class="loading">No tickers added yet</div>';
             return;
         }
 
-        tickerList.innerHTML = tickers.map(ticker => 
+        tickerList.innerHTML = tickers.map(ticker =>
             `<div class="ticker-item" data-ticker="${ticker}" onclick="app.selectTicker('${ticker}')">
                 ${ticker}
                 <span class="remove-ticker" onclick="event.stopPropagation(); app.removeTicker('${ticker}')" title="Remove ticker">×</span>
@@ -107,7 +107,7 @@ class StockNewsApp {
         document.getElementById('refresh-btn').style.display = 'block';
 
         // Show loading
-        document.getElementById('summary-content').innerHTML = 
+        document.getElementById('summary-content').innerHTML =
             '<div class="loading">Loading summary...</div>';
 
         try {
@@ -116,7 +116,7 @@ class StockNewsApp {
             this.displaySummary(data);
         } catch (error) {
             console.error('Error loading summary:', error);
-            document.getElementById('summary-content').innerHTML = 
+            document.getElementById('summary-content').innerHTML =
                 '<div class="error-message">Failed to load summary</div>';
         }
     }
@@ -130,7 +130,7 @@ class StockNewsApp {
             summaryContent.innerHTML = `
                 <div class="error-message">
                     <h3>No summary available</h3>
-                    <p>Click the refresh button to generate a new summary for this ticker.</p>
+                    <p>Click the Generate button for a new summary for this ticker.</p>
                 </div>
             `;
             sourcesSection.style.display = 'none';
@@ -139,17 +139,20 @@ class StockNewsApp {
         }
 
         const summary = data.current_summary;
-        
+
         // Display main summary
         summaryContent.innerHTML = `
             <div class="summary-date">
                 <strong>Last Updated:</strong> ${new Date(summary.date).toLocaleDateString()}
             </div>
             <div class="summary-text">${this.formatSummary(summary.summary)}</div>
-            ${summary.what_changed ? `
-                <div class="what-changed">
-                    <h4>🔄 What Changed Today</h4>
-                    <p>${summary.what_changed}</p>
+            ${summary.what_changed && summary.what_changed !== 'No material developments identified.' ? `
+                <div class="what-changed-box">
+                    <div class="what-changed-header">
+                        <span class="change-icon">📊</span>
+                        <strong>What Changed Today</strong>
+                    </div>
+                    <div class="what-changed-content">${summary.what_changed}</div>
                 </div>
             ` : ''}
         `;
@@ -187,14 +190,29 @@ class StockNewsApp {
     }
 
     formatSummary(text) {
-        // Basic formatting for better readability
-        return text
+        // Enhanced formatting for professional readability
+        let formatted = text
+            // Remove "What Changed Today" section from main summary
+            .replace(/\*\*WHAT CHANGED TODAY\*\*[\s\S]*?(?=\n\n|$)/gi, '')
+            .replace(/WHAT CHANGED TODAY[\s\S]*?(?=\n\n|$)/gi, '')
+            // Format headers
+            .replace(/\*\*(.*?)\*\*/g, '<h4>$1</h4>')
+            // Format bullet points
+            .replace(/^\s*[•·-]\s+(.+)$/gm, '<li>$1</li>')
+            // Format paragraphs
             .replace(/\n\n/g, '</p><p>')
             .replace(/\n/g, '<br>')
+            // Wrap in paragraphs
             .replace(/^/, '<p>')
             .replace(/$/, '</p>')
-            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-            .replace(/\*(.*?)\*/g, '<em>$1</em>');
+            // Clean up list formatting
+            .replace(/(<li>.*?<\/li>)/gs, '<ul>$1</ul>')
+            .replace(/<\/ul>\s*<ul>/g, '')
+            // Clean up empty paragraphs
+            .replace(/<p>\s*<\/p>/g, '')
+            .replace(/<p>\s*<br>\s*<\/p>/g, '');
+        
+        return formatted;
     }
 
     truncateUrl(url) {
@@ -207,7 +225,7 @@ class StockNewsApp {
     async refreshTicker(ticker) {
         const refreshBtn = document.getElementById('refresh-btn');
         const originalText = refreshBtn.textContent;
-        
+
         refreshBtn.textContent = '⏳ Generating...';
         refreshBtn.disabled = true;
 
@@ -276,10 +294,10 @@ class StockNewsApp {
             if (response.ok) {
                 this.showMessage(`${ticker} removed successfully!`, 'success');
                 this.loadTickers();
-                
+
                 // Clear summary if this ticker was selected
                 if (this.currentTicker === ticker) {
-                    document.getElementById('summary-content').innerHTML = 
+                    document.getElementById('summary-content').innerHTML =
                         '<div class="welcome-message"><h3>Select a ticker to view summary</h3></div>';
                     document.getElementById('current-ticker').textContent = 'Select a ticker to view summary';
                     document.getElementById('refresh-btn').style.display = 'none';
@@ -310,6 +328,62 @@ style.textContent = `
         to { transform: translateX(100%); opacity: 0; }
     }
     
+    .summary-text {
+        line-height: 1.6;
+        color: #2c3e50;
+    }
+    
+    .summary-text h4 {
+        color: #27ae60;
+        margin: 20px 0 10px 0;
+        font-size: 16px;
+        font-weight: 600;
+        border-bottom: 2px solid #ecf0f1;
+        padding-bottom: 5px;
+    }
+    
+    .summary-text ul {
+        margin: 10px 0;
+        padding-left: 20px;
+    }
+    
+    .summary-text li {
+        margin: 8px 0;
+        color: #34495e;
+    }
+    
+    .summary-text p {
+        margin: 12px 0;
+        text-align: justify;
+    }
+    
+    .what-changed-box {
+        background: linear-gradient(135deg, #f39c12, #f1c40f);
+        border-radius: 8px;
+        padding: 16px;
+        margin: 20px 0;
+        box-shadow: 0 2px 8px rgba(243, 156, 18, 0.2);
+        border-left: 4px solid #e67e22;
+    }
+    
+    .what-changed-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 10px;
+        color: #2c3e50;
+    }
+    
+    .change-icon {
+        margin-right: 8px;
+        font-size: 18px;
+    }
+    
+    .what-changed-content {
+        color: #2c3e50;
+        font-weight: 500;
+        line-height: 1.5;
+    }
+    
     .remove-ticker {
         float: right;
         color: #e74c3c;
@@ -329,6 +403,15 @@ style.textContent = `
     .ticker-item {
         position: relative;
         padding-right: 30px;
+    }
+    
+    .summary-date {
+        background: #ecf0f1;
+        padding: 8px 12px;
+        border-radius: 4px;
+        margin-bottom: 16px;
+        font-size: 14px;
+        color: #7f8c8d;
     }
 `;
 document.head.appendChild(style);

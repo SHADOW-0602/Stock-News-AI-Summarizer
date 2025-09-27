@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,6 +8,7 @@
     <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
+
 <body>
     <div class="container">
         <header>
@@ -20,9 +22,9 @@
                 <div class="summary-section">
                     <div class="summary-header">
                         <h2 id="current-ticker">Select a ticker to view summary</h2>
-                        <button id="refresh-btn" class="refresh-btn" style="display: none;">🤖 Generate</button>
+                        <button id="generate-btn" class="generate-btn" style="display: none;">🤖 Generate</button>
                     </div>
-                    
+
                     <div id="summary-content" class="summary-content">
                         <div class="welcome-message">
                             <h3>Welcome to Stock News AI Summarizer</h3>
@@ -52,7 +54,7 @@
             <div class="right-sidebar">
                 <div class="ticker-section">
                     <h3>📋 Stock Tickers</h3>
-                    
+
                     <div class="add-ticker">
                         <input type="text" id="ticker-input" placeholder="Enter ticker (e.g., AAPL)" maxlength="10">
                         <button id="add-ticker-btn">+ Add</button>
@@ -78,4 +80,5 @@
 
     <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
+
 </html>

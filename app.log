@@ -794,3 +794,46 @@
 2025-09-27 20:27:17,412 - __main__ - DEBUG - Query result for TSLA: Found
 2025-09-27 20:27:17,413 - __main__ - DEBUG - Summary data found: date=2025-09-27, summary_len=3903, what_changed_len=456
 2025-09-27 20:27:17,418 - werkzeug - INFO - 127.0.0.1 - - [27/Sep/2025 20:27:17] "GET /api/summary/TSLA HTTP/1.1" 200 -
+2025-09-27 21:59:40,725 - __main__ - INFO - Gemini API Key loaded: Yes
+2025-09-27 21:59:40,875 - __main__ - INFO - Polygon API Key loaded: Yes
+2025-09-27 21:59:42,166 - tzlocal - DEBUG - Looking up time zone info from registry
+2025-09-27 21:59:42,181 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-09-27 21:59:42,184 - apscheduler.scheduler - INFO - Added job "daily_update" to job store "default"
+2025-09-27 21:59:42,185 - apscheduler.scheduler - INFO - Scheduler started
+2025-09-27 21:59:42,186 - apscheduler.scheduler - DEBUG - Looking for jobs to run
+2025-09-27 21:59:42,186 - apscheduler.scheduler - DEBUG - Next wakeup is due at 2025-09-28 08:00:00+05:30 (in 36017.813047 seconds)
+2025-09-27 21:59:42,203 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:10000
+ * Running on http://192.168.1.8:10000
+2025-09-27 21:59:42,203 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2025-09-27 21:59:45,386 - werkzeug - INFO - 127.0.0.1 - - [27/Sep/2025 21:59:45] "GET / HTTP/1.1" 200 -
+2025-09-27 21:59:46,024 - werkzeug - INFO - 127.0.0.1 - - [27/Sep/2025 21:59:46] "GET /static/script.js HTTP/1.1" 200 -
+2025-09-27 21:59:46,066 - werkzeug - INFO - 127.0.0.1 - - [27/Sep/2025 21:59:46] "[36mGET /static/style.css HTTP/1.1[0m" 304 -
+2025-09-27 21:59:57,311 - __main__ - DEBUG - Received ticker request: NVDA
+2025-09-27 21:59:57,311 - __main__ - INFO - Validating ticker: NVDA
+2025-09-27 21:59:57,312 - __main__ - DEBUG - Validating ticker: NVDA
+2025-09-27 21:59:57,316 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): finviz.com:443
+2025-09-27 21:59:58,352 - urllib3.connectionpool - DEBUG - https://finviz.com:443 "GET /quote.ashx?t=NVDA HTTP/1.1" 200 None
+2025-09-27 21:59:58,402 - __main__ - DEBUG - Ticker NVDA validated successfully
+2025-09-27 21:59:58,658 - __main__ - INFO - Successfully added ticker: NVDA
+2025-09-27 21:59:58,661 - werkzeug - INFO - 127.0.0.1 - - [27/Sep/2025 21:59:58] "POST /api/tickers HTTP/1.1" 200 -
+2025-09-27 21:59:58,894 - werkzeug - INFO - 127.0.0.1 - - [27/Sep/2025 21:59:58] "GET /api/tickers HTTP/1.1" 200 -
+2025-09-27 22:00:24,045 - werkzeug - INFO - 127.0.0.1 - - [27/Sep/2025 22:00:24] "GET / HTTP/1.1" 200 -
+2025-09-27 22:00:24,108 - werkzeug - INFO - 127.0.0.1 - - [27/Sep/2025 22:00:24] "[36mGET /static/style.css HTTP/1.1[0m" 304 -
+2025-09-27 22:00:24,113 - werkzeug - INFO - 127.0.0.1 - - [27/Sep/2025 22:00:24] "[36mGET /static/script.js HTTP/1.1[0m" 304 -
+2025-09-27 22:00:24,286 - werkzeug - INFO - 127.0.0.1 - - [27/Sep/2025 22:00:24] "[36mGET /static/favicon.svg HTTP/1.1[0m" 304 -
+2025-09-27 22:00:28,776 - __main__ - DEBUG - Received ticker request: NVDA
+2025-09-27 22:00:28,777 - __main__ - INFO - Validating ticker: NVDA
+2025-09-27 22:00:28,777 - __main__ - DEBUG - Validating ticker: NVDA
+2025-09-27 22:00:28,779 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): finviz.com:443
+2025-09-27 22:00:30,051 - urllib3.connectionpool - DEBUG - https://finviz.com:443 "GET /quote.ashx?t=NVDA HTTP/1.1" 200 None
+2025-09-27 22:00:30,078 - __main__ - DEBUG - Ticker NVDA validated successfully
+2025-09-27 22:00:30,082 - werkzeug - INFO - 127.0.0.1 - - [27/Sep/2025 22:00:30] "[31m[1mPOST /api/tickers HTTP/1.1[0m" 400 -
+2025-09-27 22:01:18,772 - werkzeug - INFO - 127.0.0.1 - - [27/Sep/2025 22:01:18] "GET / HTTP/1.1" 200 -
+2025-09-27 22:01:18,921 - werkzeug - INFO - 127.0.0.1 - - [27/Sep/2025 22:01:18] "[36mGET /static/script.js HTTP/1.1[0m" 304 -
+2025-09-27 22:01:18,925 - werkzeug - INFO - 127.0.0.1 - - [27/Sep/2025 22:01:18] "[36mGET /static/style.css HTTP/1.1[0m" 304 -
+2025-09-27 22:01:28,373 - werkzeug - INFO - 192.168.1.8 - - [27/Sep/2025 22:01:28] "GET / HTTP/1.1" 200 -
+2025-09-27 22:01:28,832 - werkzeug - INFO - 192.168.1.8 - - [27/Sep/2025 22:01:28] "GET /static/script.js HTTP/1.1" 200 -
+2025-09-27 22:01:28,845 - werkzeug - INFO - 192.168.1.8 - - [27/Sep/2025 22:01:28] "GET /static/style.css HTTP/1.1" 200 -
+2025-09-27 22:01:29,331 - werkzeug - INFO - 192.168.1.8 - - [27/Sep/2025 22:01:29] "GET /static/favicon.svg HTTP/1.1" 200 -
