@@ -1,0 +1,796 @@
+2025-09-27 16:59:04,652 - __main__ - INFO - Gemini API Key loaded: Yes
+2025-09-27 16:59:04,652 - __main__ - INFO - Polygon API Key loaded: Yes
+2025-09-27 16:59:04,657 - tzlocal - DEBUG - Looking up time zone info from registry
+2025-09-27 16:59:04,673 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-09-27 16:59:04,675 - apscheduler.scheduler - INFO - Added job "daily_update" to job store "default"
+2025-09-27 16:59:04,675 - apscheduler.scheduler - INFO - Scheduler started
+2025-09-27 16:59:04,676 - apscheduler.scheduler - DEBUG - Looking for jobs to run
+2025-09-27 16:59:04,677 - apscheduler.scheduler - DEBUG - Next wakeup is due at 2025-09-28 08:00:00+05:30 (in 54055.322540 seconds)
+2025-09-27 16:59:04,693 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.1.8:5000
+2025-09-27 16:59:04,694 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2025-09-27 16:59:11,527 - werkzeug - INFO - 127.0.0.1 - - [27/Sep/2025 16:59:11] "GET / HTTP/1.1" 200 -
+2025-09-27 16:59:11,618 - werkzeug - INFO - 127.0.0.1 - - [27/Sep/2025 16:59:11] "[36mGET /static/style.css HTTP/1.1[0m" 304 -
+2025-09-27 16:59:11,630 - werkzeug - INFO - 127.0.0.1 - - [27/Sep/2025 16:59:11] "[36mGET /static/script.js HTTP/1.1[0m" 304 -
+2025-09-27 16:59:11,759 - werkzeug - INFO - 127.0.0.1 - - [27/Sep/2025 16:59:11] "GET /api/tickers HTTP/1.1" 200 -
+2025-09-27 16:59:16,103 - werkzeug - INFO - 127.0.0.1 - - [27/Sep/2025 16:59:16] "[36mGET /static/style.css HTTP/1.1[0m" 304 -
+2025-09-27 16:59:16,133 - werkzeug - INFO - 127.0.0.1 - - [27/Sep/2025 16:59:16] "[33mGET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1[0m" 404 -
+2025-09-27 16:59:20,856 - werkzeug - INFO - 127.0.0.1 - - [27/Sep/2025 16:59:20] "GET /api/summary/TSLA HTTP/1.1" 200 -
+2025-09-27 16:59:23,198 - __main__ - INFO - === Starting news processing for TSLA ===
+2025-09-27 16:59:23,198 - __main__ - DEBUG - Collecting news from all sources
+2025-09-27 16:59:23,199 - __main__ - DEBUG - Starting TradingView scraping for TSLA
+2025-09-27 16:59:23,199 - __main__ - DEBUG - Fetching URL: https://www.tradingview.com/symbols/TSLA/news/
+2025-09-27 16:59:23,204 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): www.tradingview.com:443
+2025-09-27 16:59:24,117 - urllib3.connectionpool - DEBUG - https://www.tradingview.com:443 "GET /symbols/TSLA/news/ HTTP/1.1" 301 0
+2025-09-27 16:59:24,448 - urllib3.connectionpool - DEBUG - https://www.tradingview.com:443 "GET /symbols/NASDAQ-TSLA/news/ HTTP/1.1" 200 None
+2025-09-27 16:59:24,454 - __main__ - DEBUG - Response status: 200, Content length: 244356
+2025-09-27 16:59:24,525 - __main__ - DEBUG - Selector 'div.news-item' found 0 items
+2025-09-27 16:59:24,535 - __main__ - DEBUG - Selector '[data-role="news-item"]' found 0 items
+2025-09-27 16:59:24,541 - __main__ - DEBUG - Selector 'a[href*="news"]' found 4 items
+2025-09-27 16:59:24,542 - __main__ - INFO - TradingView: Found 1 articles for TSLA
+2025-09-27 16:59:24,543 - __main__ - DEBUG - Starting Finviz scraping for TSLA
+2025-09-27 16:59:24,543 - __main__ - DEBUG - Fetching URL: https://finviz.com/quote.ashx?t=TSLA
+2025-09-27 16:59:24,544 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): finviz.com:443
+2025-09-27 16:59:25,370 - urllib3.connectionpool - DEBUG - https://finviz.com:443 "GET /quote.ashx?t=TSLA HTTP/1.1" 200 None
+2025-09-27 16:59:25,395 - __main__ - DEBUG - Response status: 200, Content length: 277611
+2025-09-27 16:59:25,515 - __main__ - INFO - Finviz: Found 10 articles for TSLA
+2025-09-27 16:59:25,515 - __main__ - DEBUG - Starting Polygon API call for TSLA
+2025-09-27 16:59:25,516 - __main__ - DEBUG - API URL: https://api.polygon.io/v2/reference/news, Params: {'ticker': 'TSLA', 'limit': 10, 'apikey': 'BQoC8Jp25fffSdoxpLv0mI2gu2d74HT1'}
+2025-09-27 16:59:25,517 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): api.polygon.io:443
+2025-09-27 16:59:27,207 - urllib3.connectionpool - DEBUG - https://api.polygon.io:443 "GET /v2/reference/news?ticker=TSLA&limit=10&apikey=BQoC8Jp25fffSdoxpLv0mI2gu2d74HT1 HTTP/1.1" 200 None
+2025-09-27 16:59:27,210 - __main__ - INFO - Polygon: Found 10 articles for TSLA
+2025-09-27 16:59:27,210 - __main__ - INFO - Total articles collected: 21 (TV:1, FV:10, PG:10)
+2025-09-27 16:59:27,211 - __main__ - DEBUG - Selecting top articles using AI
+2025-09-27 16:59:27,211 - __main__ - DEBUG - Starting article selection with 21 articles
+2025-09-27 16:59:27,211 - __main__ - DEBUG - Sending prompt to Gemini (length: 5683 chars)
+2025-09-27 16:59:27,211 - __main__ - DEBUG - Using API key: AIzaSyDiWg...
+2025-09-27 17:00:19,762 - __main__ - DEBUG - Gemini response: Here are the top 7 most relevant and credible articles:
+
+4, 3, 5, 6, 8, 9, 11...
+2025-09-27 17:00:19,762 - __main__ - DEBUG - Selected article indices: [2, 4, 5, 7, 8, 10]
+2025-09-27 17:00:19,763 - __main__ - INFO - Selected 6 articles for summary
+2025-09-27 17:00:19,764 - __main__ - DEBUG - Generating AI summary
+2025-09-27 17:00:31,759 - __main__ - INFO - Generated summary for TSLA (length: 2363 chars)
+2025-09-27 17:00:31,819 - __main__ - INFO - === Completed processing for TSLA ===
+2025-09-27 17:00:31,820 - werkzeug - INFO - 127.0.0.1 - - [27/Sep/2025 17:00:31] "GET /api/refresh/TSLA HTTP/1.1" 200 -
+2025-09-27 17:00:32,839 - werkzeug - INFO - 127.0.0.1 - - [27/Sep/2025 17:00:32] "GET /api/summary/TSLA HTTP/1.1" 200 -
+2025-09-27 17:05:19,545 - __main__ - INFO - Gemini API Key loaded: Yes
+2025-09-27 17:05:19,546 - __main__ - INFO - Polygon API Key loaded: Yes
+2025-09-27 17:05:19,550 - tzlocal - DEBUG - Looking up time zone info from registry
+2025-09-27 17:05:19,560 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-09-27 17:05:19,563 - apscheduler.scheduler - INFO - Added job "daily_update" to job store "default"
+2025-09-27 17:05:19,563 - apscheduler.scheduler - INFO - Scheduler started
+2025-09-27 17:05:19,564 - apscheduler.scheduler - DEBUG - Looking for jobs to run
+2025-09-27 17:05:19,565 - apscheduler.scheduler - DEBUG - Next wakeup is due at 2025-09-28 08:00:00+05:30 (in 53680.434456 seconds)
+2025-09-27 17:05:19,581 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.1.8:5000
+2025-09-27 17:05:19,581 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2025-09-27 17:05:21,778 - werkzeug - INFO - 127.0.0.1 - - [27/Sep/2025 17:05:21] "GET / HTTP/1.1" 200 -
+2025-09-27 17:05:21,883 - werkzeug - INFO - 127.0.0.1 - - [27/Sep/2025 17:05:21] "[36mGET /static/style.css HTTP/1.1[0m" 304 -
+2025-09-27 17:05:21,894 - werkzeug - INFO - 127.0.0.1 - - [27/Sep/2025 17:05:21] "[36mGET /static/script.js HTTP/1.1[0m" 304 -
+2025-09-27 17:05:21,989 - werkzeug - INFO - 127.0.0.1 - - [27/Sep/2025 17:05:21] "GET /api/tickers HTTP/1.1" 200 -
+2025-09-27 17:05:25,209 - werkzeug - INFO - 127.0.0.1 - - [27/Sep/2025 17:05:25] "GET /api/summary/TSLA HTTP/1.1" 200 -
+2025-09-27 17:05:27,327 - __main__ - INFO - === Starting news processing for TSLA ===
+2025-09-27 17:05:27,328 - __main__ - DEBUG - Collecting news from all sources
+2025-09-27 17:05:27,328 - __main__ - DEBUG - Starting TradingView scraping for TSLA
+2025-09-27 17:05:27,328 - __main__ - DEBUG - Fetching URL: https://www.tradingview.com/symbols/TSLA/news/
+2025-09-27 17:05:27,334 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): www.tradingview.com:443
+2025-09-27 17:05:28,286 - urllib3.connectionpool - DEBUG - https://www.tradingview.com:443 "GET /symbols/TSLA/news/ HTTP/1.1" 301 0
+2025-09-27 17:05:28,600 - urllib3.connectionpool - DEBUG - https://www.tradingview.com:443 "GET /symbols/NASDAQ-TSLA/news/ HTTP/1.1" 200 None
+2025-09-27 17:05:28,603 - __main__ - DEBUG - Response status: 200, Content length: 244356
+2025-09-27 17:05:28,682 - __main__ - DEBUG - Selector 'div.news-item' found 0 items
+2025-09-27 17:05:28,696 - __main__ - DEBUG - Selector '[data-role="news-item"]' found 0 items
+2025-09-27 17:05:28,716 - __main__ - DEBUG - Selector 'a[href*="news"]' found 4 items
+2025-09-27 17:05:28,719 - __main__ - INFO - TradingView: Found 1 articles for TSLA
+2025-09-27 17:05:28,719 - __main__ - DEBUG - Starting Finviz scraping for TSLA
+2025-09-27 17:05:28,720 - __main__ - DEBUG - Fetching URL: https://finviz.com/quote.ashx?t=TSLA
+2025-09-27 17:05:28,724 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): finviz.com:443
+2025-09-27 17:05:29,676 - urllib3.connectionpool - DEBUG - https://finviz.com:443 "GET /quote.ashx?t=TSLA HTTP/1.1" 200 None
+2025-09-27 17:05:29,699 - __main__ - DEBUG - Response status: 200, Content length: 277611
+2025-09-27 17:05:29,824 - __main__ - INFO - Finviz: Found 10 articles for TSLA
+2025-09-27 17:05:29,825 - __main__ - DEBUG - Starting Polygon API call for TSLA
+2025-09-27 17:05:29,825 - __main__ - DEBUG - API URL: https://api.polygon.io/v2/reference/news, Params: {'ticker': 'TSLA', 'limit': 10, 'apikey': 'BQoC8Jp25fffSdoxpLv0mI2gu2d74HT1'}
+2025-09-27 17:05:29,826 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): api.polygon.io:443
+2025-09-27 17:05:31,521 - urllib3.connectionpool - DEBUG - https://api.polygon.io:443 "GET /v2/reference/news?ticker=TSLA&limit=10&apikey=BQoC8Jp25fffSdoxpLv0mI2gu2d74HT1 HTTP/1.1" 200 None
+2025-09-27 17:05:31,522 - __main__ - INFO - Polygon: Found 10 articles for TSLA
+2025-09-27 17:05:31,522 - __main__ - INFO - Total articles collected: 21 (TV:1, FV:10, PG:10)
+2025-09-27 17:05:31,523 - __main__ - DEBUG - Selecting top articles using AI
+2025-09-27 17:05:31,523 - __main__ - DEBUG - Starting article selection with 21 articles
+2025-09-27 17:05:31,523 - __main__ - DEBUG - Sending prompt to Gemini (length: 5683 chars)
+2025-09-27 17:05:31,524 - __main__ - DEBUG - Using API key: AIzaSyDiWg...
+2025-09-27 17:05:32,398 - __main__ - ERROR - Article selection error: 404 models/gemini-1.5-flash is not found for API version v1beta, or is not supported for generateContent. Call ListModels to see the list of available models and their supported methods.
+2025-09-27 17:05:32,399 - __main__ - INFO - Selected 5 articles for summary
+2025-09-27 17:05:32,403 - __main__ - DEBUG - Generating AI summary
+2025-09-27 17:05:32,404 - __main__ - DEBUG - Starting summary generation for TSLA
+2025-09-27 17:05:32,405 - __main__ - DEBUG - Sending summary prompt to Gemini (length: 2101 chars)
+2025-09-27 17:05:32,593 - __main__ - ERROR - Summary generation error for TSLA: 404 models/gemini-1.5-flash is not found for API version v1beta, or is not supported for generateContent. Call ListModels to see the list of available models and their supported methods.
+2025-09-27 17:05:32,595 - __main__ - ERROR - API Key being used: AIzaSyDiWg...elQ0M
+2025-09-27 17:05:32,596 - __main__ - INFO - Generated summary for TSLA (length: 127 chars)
+2025-09-27 17:05:32,667 - __main__ - INFO - === Completed processing for TSLA ===
+2025-09-27 17:05:32,668 - werkzeug - INFO - 127.0.0.1 - - [27/Sep/2025 17:05:32] "GET /api/refresh/TSLA HTTP/1.1" 200 -
+2025-09-27 17:05:33,687 - werkzeug - INFO - 127.0.0.1 - - [27/Sep/2025 17:05:33] "GET /api/summary/TSLA HTTP/1.1" 200 -
+2025-09-27 17:06:55,294 - __main__ - INFO - Gemini API Key loaded: Yes
+2025-09-27 17:06:55,295 - __main__ - INFO - Polygon API Key loaded: Yes
+2025-09-27 17:06:55,298 - tzlocal - DEBUG - Looking up time zone info from registry
+2025-09-27 17:06:55,309 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-09-27 17:06:55,311 - apscheduler.scheduler - INFO - Added job "daily_update" to job store "default"
+2025-09-27 17:06:55,311 - apscheduler.scheduler - INFO - Scheduler started
+2025-09-27 17:06:55,312 - apscheduler.scheduler - DEBUG - Looking for jobs to run
+2025-09-27 17:06:55,313 - apscheduler.scheduler - DEBUG - Next wakeup is due at 2025-09-28 08:00:00+05:30 (in 53584.686818 seconds)
+2025-09-27 17:06:55,328 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.1.8:5000
+2025-09-27 17:06:55,328 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2025-09-27 17:06:58,272 - werkzeug - INFO - 127.0.0.1 - - [27/Sep/2025 17:06:58] "GET /api/summary/TSLA HTTP/1.1" 200 -
+2025-09-27 17:06:59,702 - __main__ - INFO - === Starting news processing for TSLA ===
+2025-09-27 17:06:59,703 - __main__ - DEBUG - Collecting news from all sources
+2025-09-27 17:06:59,703 - __main__ - DEBUG - Starting TradingView scraping for TSLA
+2025-09-27 17:06:59,703 - __main__ - DEBUG - Fetching URL: https://www.tradingview.com/symbols/TSLA/news/
+2025-09-27 17:06:59,707 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): www.tradingview.com:443
+2025-09-27 17:07:00,455 - urllib3.connectionpool - DEBUG - https://www.tradingview.com:443 "GET /symbols/TSLA/news/ HTTP/1.1" 301 0
+2025-09-27 17:07:00,467 - urllib3.connectionpool - DEBUG - https://www.tradingview.com:443 "GET /symbols/NASDAQ-TSLA/news/ HTTP/1.1" 200 None
+2025-09-27 17:07:00,473 - __main__ - DEBUG - Response status: 200, Content length: 244356
+2025-09-27 17:07:00,562 - __main__ - DEBUG - Selector 'div.news-item' found 0 items
+2025-09-27 17:07:00,574 - __main__ - DEBUG - Selector '[data-role="news-item"]' found 0 items
+2025-09-27 17:07:00,579 - __main__ - DEBUG - Selector 'a[href*="news"]' found 4 items
+2025-09-27 17:07:00,579 - __main__ - INFO - TradingView: Found 1 articles for TSLA
+2025-09-27 17:07:00,579 - __main__ - DEBUG - Starting Finviz scraping for TSLA
+2025-09-27 17:07:00,580 - __main__ - DEBUG - Fetching URL: https://finviz.com/quote.ashx?t=TSLA
+2025-09-27 17:07:00,582 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): finviz.com:443
+2025-09-27 17:07:01,566 - urllib3.connectionpool - DEBUG - https://finviz.com:443 "GET /quote.ashx?t=TSLA HTTP/1.1" 200 None
+2025-09-27 17:07:01,593 - __main__ - DEBUG - Response status: 200, Content length: 277611
+2025-09-27 17:07:01,829 - __main__ - INFO - Finviz: Found 10 articles for TSLA
+2025-09-27 17:07:01,830 - __main__ - DEBUG - Starting Polygon API call for TSLA
+2025-09-27 17:07:01,830 - __main__ - DEBUG - API URL: https://api.polygon.io/v2/reference/news, Params: {'ticker': 'TSLA', 'limit': 10, 'apikey': 'BQoC8Jp25fffSdoxpLv0mI2gu2d74HT1'}
+2025-09-27 17:07:01,832 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): api.polygon.io:443
+2025-09-27 17:07:03,613 - urllib3.connectionpool - DEBUG - https://api.polygon.io:443 "GET /v2/reference/news?ticker=TSLA&limit=10&apikey=BQoC8Jp25fffSdoxpLv0mI2gu2d74HT1 HTTP/1.1" 200 None
+2025-09-27 17:07:03,615 - __main__ - INFO - Polygon: Found 10 articles for TSLA
+2025-09-27 17:07:03,616 - __main__ - INFO - Total articles collected: 21 (TV:1, FV:10, PG:10)
+2025-09-27 17:07:03,616 - __main__ - DEBUG - Selecting top articles using AI
+2025-09-27 17:07:03,617 - __main__ - DEBUG - Starting article selection with 21 articles
+2025-09-27 17:07:03,617 - __main__ - DEBUG - Sending prompt to Gemini (length: 5683 chars)
+2025-09-27 17:07:03,617 - __main__ - DEBUG - Using API key: AIzaSyDiWg...
+2025-09-27 17:07:04,567 - __main__ - ERROR - Article selection error: 404 models/gemini-1.5-flash is not found for API version v1beta, or is not supported for generateContent. Call ListModels to see the list of available models and their supported methods.
+2025-09-27 17:07:04,568 - __main__ - ERROR - Full error details: NotFound('models/gemini-1.5-flash is not found for API version v1beta, or is not supported for generateContent. Call ListModels to see the list of available models and their supported methods.')
+2025-09-27 17:07:04,568 - __main__ - INFO - Selected 5 articles for summary
+2025-09-27 17:07:04,570 - __main__ - DEBUG - Generating AI summary
+2025-09-27 17:07:04,570 - __main__ - DEBUG - Starting summary generation for TSLA
+2025-09-27 17:07:04,570 - __main__ - DEBUG - Sending summary prompt to Gemini (length: 2154 chars)
+2025-09-27 17:07:05,115 - __main__ - ERROR - Summary generation error for TSLA: 404 models/gemini-1.5-flash is not found for API version v1beta, or is not supported for generateContent. Call ListModels to see the list of available models and their supported methods.
+2025-09-27 17:07:05,116 - __main__ - ERROR - API Key being used: AIzaSyDiWg...elQ0M
+2025-09-27 17:07:05,117 - __main__ - ERROR - Full error details: NotFound('models/gemini-1.5-flash is not found for API version v1beta, or is not supported for generateContent. Call ListModels to see the list of available models and their supported methods.')
+2025-09-27 17:07:05,118 - __main__ - INFO - Generated summary for TSLA (length: 197 chars)
+2025-09-27 17:07:05,189 - __main__ - INFO - === Completed processing for TSLA ===
+2025-09-27 17:07:05,190 - werkzeug - INFO - 127.0.0.1 - - [27/Sep/2025 17:07:05] "GET /api/refresh/TSLA HTTP/1.1" 200 -
+2025-09-27 17:07:06,220 - werkzeug - INFO - 127.0.0.1 - - [27/Sep/2025 17:07:06] "GET /api/summary/TSLA HTTP/1.1" 200 -
+2025-09-27 17:07:34,394 - __main__ - INFO - === Starting news processing for TSLA ===
+2025-09-27 17:07:34,394 - __main__ - DEBUG - Collecting news from all sources
+2025-09-27 17:07:34,395 - __main__ - DEBUG - Starting TradingView scraping for TSLA
+2025-09-27 17:07:34,395 - __main__ - DEBUG - Fetching URL: https://www.tradingview.com/symbols/TSLA/news/
+2025-09-27 17:07:34,657 - urllib3.connectionpool - DEBUG - https://www.tradingview.com:443 "GET /symbols/TSLA/news/ HTTP/1.1" 301 0
+2025-09-27 17:07:34,973 - urllib3.connectionpool - DEBUG - https://www.tradingview.com:443 "GET /symbols/NASDAQ-TSLA/news/ HTTP/1.1" 200 None
+2025-09-27 17:07:34,976 - __main__ - DEBUG - Response status: 200, Content length: 244354
+2025-09-27 17:07:35,044 - __main__ - DEBUG - Selector 'div.news-item' found 0 items
+2025-09-27 17:07:35,055 - __main__ - DEBUG - Selector '[data-role="news-item"]' found 0 items
+2025-09-27 17:07:35,061 - __main__ - DEBUG - Selector 'a[href*="news"]' found 4 items
+2025-09-27 17:07:35,061 - __main__ - INFO - TradingView: Found 1 articles for TSLA
+2025-09-27 17:07:35,062 - __main__ - DEBUG - Starting Finviz scraping for TSLA
+2025-09-27 17:07:35,062 - __main__ - DEBUG - Fetching URL: https://finviz.com/quote.ashx?t=TSLA
+2025-09-27 17:07:35,356 - urllib3.connectionpool - DEBUG - https://finviz.com:443 "GET /quote.ashx?t=TSLA HTTP/1.1" 200 None
+2025-09-27 17:07:35,396 - __main__ - DEBUG - Response status: 200, Content length: 277611
+2025-09-27 17:07:35,535 - __main__ - INFO - Finviz: Found 10 articles for TSLA
+2025-09-27 17:07:35,535 - __main__ - DEBUG - Starting Polygon API call for TSLA
+2025-09-27 17:07:35,536 - __main__ - DEBUG - API URL: https://api.polygon.io/v2/reference/news, Params: {'ticker': 'TSLA', 'limit': 10, 'apikey': 'BQoC8Jp25fffSdoxpLv0mI2gu2d74HT1'}
+2025-09-27 17:07:35,891 - urllib3.connectionpool - DEBUG - https://api.polygon.io:443 "GET /v2/reference/news?ticker=TSLA&limit=10&apikey=BQoC8Jp25fffSdoxpLv0mI2gu2d74HT1 HTTP/1.1" 200 None
+2025-09-27 17:07:35,893 - __main__ - INFO - Polygon: Found 10 articles for TSLA
+2025-09-27 17:07:35,894 - __main__ - INFO - Total articles collected: 21 (TV:1, FV:10, PG:10)
+2025-09-27 17:07:35,895 - __main__ - DEBUG - Selecting top articles using AI
+2025-09-27 17:07:35,895 - __main__ - DEBUG - Starting article selection with 21 articles
+2025-09-27 17:07:35,896 - __main__ - DEBUG - Sending prompt to Gemini (length: 5683 chars)
+2025-09-27 17:07:35,897 - __main__ - DEBUG - Using API key: AIzaSyDiWg...
+2025-09-27 17:07:37,604 - __main__ - ERROR - Article selection error: 404 models/gemini-1.5-flash is not found for API version v1beta, or is not supported for generateContent. Call ListModels to see the list of available models and their supported methods.
+2025-09-27 17:07:37,604 - __main__ - ERROR - Full error details: NotFound('models/gemini-1.5-flash is not found for API version v1beta, or is not supported for generateContent. Call ListModels to see the list of available models and their supported methods.')
+2025-09-27 17:07:37,605 - __main__ - INFO - Selected 5 articles for summary
+2025-09-27 17:07:37,605 - __main__ - DEBUG - Generating AI summary
+2025-09-27 17:07:37,606 - __main__ - DEBUG - Starting summary generation for TSLA
+2025-09-27 17:07:37,606 - __main__ - DEBUG - Sending summary prompt to Gemini (length: 2207 chars)
+2025-09-27 17:07:37,932 - __main__ - ERROR - Summary generation error for TSLA: 404 models/gemini-1.5-flash is not found for API version v1beta, or is not supported for generateContent. Call ListModels to see the list of available models and their supported methods.
+2025-09-27 17:07:37,933 - __main__ - ERROR - API Key being used: AIzaSyDiWg...elQ0M
+2025-09-27 17:07:37,933 - __main__ - ERROR - Full error details: NotFound('models/gemini-1.5-flash is not found for API version v1beta, or is not supported for generateContent. Call ListModels to see the list of available models and their supported methods.')
+2025-09-27 17:07:37,934 - __main__ - INFO - Generated summary for TSLA (length: 197 chars)
+2025-09-27 17:07:38,005 - __main__ - INFO - === Completed processing for TSLA ===
+2025-09-27 17:07:38,006 - werkzeug - INFO - 127.0.0.1 - - [27/Sep/2025 17:07:38] "GET /api/refresh/TSLA HTTP/1.1" 200 -
+2025-09-27 17:07:39,021 - werkzeug - INFO - 127.0.0.1 - - [27/Sep/2025 17:07:39] "GET /api/summary/TSLA HTTP/1.1" 200 -
+2025-09-27 17:27:16,385 - __main__ - INFO - Gemini API Key loaded: Yes
+2025-09-27 17:27:16,385 - __main__ - INFO - Polygon API Key loaded: Yes
+2025-09-27 17:27:17,572 - tzlocal - DEBUG - Looking up time zone info from registry
+2025-09-27 17:27:17,583 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-09-27 17:27:17,585 - apscheduler.scheduler - INFO - Added job "daily_update" to job store "default"
+2025-09-27 17:27:17,586 - apscheduler.scheduler - INFO - Scheduler started
+2025-09-27 17:27:17,587 - apscheduler.scheduler - DEBUG - Looking for jobs to run
+2025-09-27 17:27:17,587 - apscheduler.scheduler - DEBUG - Next wakeup is due at 2025-09-28 08:00:00+05:30 (in 52362.412350 seconds)
+2025-09-27 17:27:17,607 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.1.8:5000
+2025-09-27 17:27:17,609 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2025-09-27 17:27:29,707 - __main__ - INFO - === Starting news processing for TSLA ===
+2025-09-27 17:27:29,707 - __main__ - DEBUG - Collecting news from all sources
+2025-09-27 17:27:29,707 - __main__ - DEBUG - Starting TradingView scraping for TSLA
+2025-09-27 17:27:29,708 - __main__ - DEBUG - Fetching URL: https://www.tradingview.com/symbols/TSLA/news/
+2025-09-27 17:27:29,712 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): www.tradingview.com:443
+2025-09-27 17:27:30,749 - urllib3.connectionpool - DEBUG - https://www.tradingview.com:443 "GET /symbols/TSLA/news/ HTTP/1.1" 301 0
+2025-09-27 17:27:31,074 - urllib3.connectionpool - DEBUG - https://www.tradingview.com:443 "GET /symbols/NASDAQ-TSLA/news/ HTTP/1.1" 200 None
+2025-09-27 17:27:31,079 - __main__ - DEBUG - Response status: 200, Content length: 244357
+2025-09-27 17:27:31,151 - __main__ - DEBUG - Selector 'div.news-item' found 0 items
+2025-09-27 17:27:31,163 - __main__ - DEBUG - Selector '[data-role="news-item"]' found 0 items
+2025-09-27 17:27:31,168 - __main__ - DEBUG - Selector 'a[href*="news"]' found 4 items
+2025-09-27 17:27:31,169 - __main__ - INFO - TradingView: Found 1 articles for TSLA
+2025-09-27 17:27:31,169 - __main__ - DEBUG - Starting Finviz scraping for TSLA
+2025-09-27 17:27:31,169 - __main__ - DEBUG - Fetching URL: https://finviz.com/quote.ashx?t=TSLA
+2025-09-27 17:27:31,171 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): finviz.com:443
+2025-09-27 17:27:32,116 - urllib3.connectionpool - DEBUG - https://finviz.com:443 "GET /quote.ashx?t=TSLA HTTP/1.1" 200 None
+2025-09-27 17:27:32,147 - __main__ - DEBUG - Response status: 200, Content length: 277611
+2025-09-27 17:27:32,293 - __main__ - INFO - Finviz: Found 10 articles for TSLA
+2025-09-27 17:27:32,293 - __main__ - DEBUG - Starting Polygon API call for TSLA
+2025-09-27 17:27:32,294 - __main__ - DEBUG - API URL: https://api.polygon.io/v2/reference/news, Params: {'ticker': 'TSLA', 'limit': 10, 'apikey': 'BQoC8Jp25fffSdoxpLv0mI2gu2d74HT1'}
+2025-09-27 17:27:32,296 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): api.polygon.io:443
+2025-09-27 17:27:34,256 - urllib3.connectionpool - DEBUG - https://api.polygon.io:443 "GET /v2/reference/news?ticker=TSLA&limit=10&apikey=BQoC8Jp25fffSdoxpLv0mI2gu2d74HT1 HTTP/1.1" 200 None
+2025-09-27 17:27:34,258 - __main__ - INFO - Polygon: Found 10 articles for TSLA
+2025-09-27 17:27:34,258 - __main__ - INFO - Total articles collected: 21 (TV:1, FV:10, PG:10)
+2025-09-27 17:27:34,259 - __main__ - DEBUG - Selecting top articles using AI
+2025-09-27 17:27:34,260 - __main__ - DEBUG - Starting article selection with 21 articles
+2025-09-27 17:27:34,260 - __main__ - DEBUG - Sending prompt to Gemini (length: 5683 chars)
+2025-09-27 17:27:34,261 - __main__ - DEBUG - Using API key: AIzaSyDiWg...
+2025-09-27 17:27:34,262 - google_genai.models - INFO - AFC is enabled with max remote calls: 10.
+2025-09-27 17:27:34,266 - httpcore.connection - DEBUG - connect_tcp.started host='generativelanguage.googleapis.com' port=443 local_address=None timeout=None socket_options=None
+2025-09-27 17:27:34,272 - httpcore.connection - DEBUG - connect_tcp.complete return_value=<httpcore._backends.sync.SyncStream object at 0x0000023C45471E80>
+2025-09-27 17:27:34,273 - httpcore.connection - DEBUG - start_tls.started ssl_context=<ssl.SSLContext object at 0x0000023C45181B30> server_hostname='generativelanguage.googleapis.com' timeout=None
+2025-09-27 17:27:34,285 - httpcore.connection - DEBUG - start_tls.complete return_value=<httpcore._backends.sync.SyncStream object at 0x0000023C4544EE90>
+2025-09-27 17:27:34,286 - httpcore.http11 - DEBUG - send_request_headers.started request=<Request [b'POST']>
+2025-09-27 17:27:34,287 - httpcore.http11 - DEBUG - send_request_headers.complete
+2025-09-27 17:27:34,287 - httpcore.http11 - DEBUG - send_request_body.started request=<Request [b'POST']>
+2025-09-27 17:27:34,288 - httpcore.http11 - DEBUG - send_request_body.complete
+2025-09-27 17:27:34,288 - httpcore.http11 - DEBUG - receive_response_headers.started request=<Request [b'POST']>
+2025-09-27 17:28:01,060 - httpcore.http11 - DEBUG - receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Content-Type', b'application/json; charset=UTF-8'), (b'Vary', b'Origin'), (b'Vary', b'X-Origin'), (b'Vary', b'Referer'), (b'Content-Encoding', b'gzip'), (b'Date', b'Sat, 27 Sep 2025 11:58:00 GMT'), (b'Server', b'scaffolding on HTTPServer2'), (b'X-XSS-Protection', b'0'), (b'X-Frame-Options', b'SAMEORIGIN'), (b'X-Content-Type-Options', b'nosniff'), (b'Server-Timing', b'gfet4t7; dur=26764'), (b'Alt-Svc', b'h3=":443"; ma=2592000,h3-29=":443"; ma=2592000'), (b'Transfer-Encoding', b'chunked')])
+2025-09-27 17:28:01,062 - httpx - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent "HTTP/1.1 200 OK"
+2025-09-27 17:28:01,062 - httpcore.http11 - DEBUG - receive_response_body.started request=<Request [b'POST']>
+2025-09-27 17:28:01,063 - httpcore.http11 - DEBUG - receive_response_body.complete
+2025-09-27 17:28:01,064 - httpcore.http11 - DEBUG - response_closed.started
+2025-09-27 17:28:01,065 - httpcore.http11 - DEBUG - response_closed.complete
+2025-09-27 17:28:01,066 - __main__ - DEBUG - Gemini response: 5, 6, 8, 9, 11, 12, 13...
+2025-09-27 17:28:01,067 - __main__ - DEBUG - Selected article indices: [4, 5, 7, 8, 10, 11, 12]
+2025-09-27 17:28:01,067 - __main__ - INFO - Selected 7 articles for summary
+2025-09-27 17:28:01,451 - __main__ - DEBUG - Generating AI summary
+2025-09-27 17:28:01,452 - __main__ - DEBUG - Starting summary generation for TSLA
+2025-09-27 17:28:01,453 - __main__ - DEBUG - Sending summary prompt to Gemini (length: 3167 chars)
+2025-09-27 17:28:01,454 - google_genai.models - INFO - AFC is enabled with max remote calls: 10.
+2025-09-27 17:28:01,458 - httpcore.http11 - DEBUG - send_request_headers.started request=<Request [b'POST']>
+2025-09-27 17:28:01,460 - httpcore.http11 - DEBUG - send_request_headers.complete
+2025-09-27 17:28:01,461 - httpcore.http11 - DEBUG - send_request_body.started request=<Request [b'POST']>
+2025-09-27 17:28:01,463 - httpcore.http11 - DEBUG - send_request_body.complete
+2025-09-27 17:28:01,464 - httpcore.http11 - DEBUG - receive_response_headers.started request=<Request [b'POST']>
+2025-09-27 17:28:26,441 - httpcore.http11 - DEBUG - receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Content-Type', b'application/json; charset=UTF-8'), (b'Vary', b'Origin'), (b'Vary', b'X-Origin'), (b'Vary', b'Referer'), (b'Content-Encoding', b'gzip'), (b'Date', b'Sat, 27 Sep 2025 11:58:26 GMT'), (b'Server', b'scaffolding on HTTPServer2'), (b'X-XSS-Protection', b'0'), (b'X-Frame-Options', b'SAMEORIGIN'), (b'X-Content-Type-Options', b'nosniff'), (b'Server-Timing', b'gfet4t7; dur=24974'), (b'Alt-Svc', b'h3=":443"; ma=2592000,h3-29=":443"; ma=2592000'), (b'Transfer-Encoding', b'chunked')])
+2025-09-27 17:28:26,445 - httpx - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent "HTTP/1.1 200 OK"
+2025-09-27 17:28:26,446 - httpcore.http11 - DEBUG - receive_response_body.started request=<Request [b'POST']>
+2025-09-27 17:28:26,448 - httpcore.http11 - DEBUG - receive_response_body.complete
+2025-09-27 17:28:26,449 - httpcore.http11 - DEBUG - response_closed.started
+2025-09-27 17:28:26,450 - httpcore.http11 - DEBUG - response_closed.complete
+2025-09-27 17:28:26,452 - __main__ - DEBUG - Gemini summary response received: 2485 chars
+2025-09-27 17:28:26,453 - __main__ - INFO - Generated summary for TSLA (length: 2485 chars)
+2025-09-27 17:28:26,520 - __main__ - INFO - === Completed processing for TSLA ===
+2025-09-27 17:28:26,522 - werkzeug - INFO - 127.0.0.1 - - [27/Sep/2025 17:28:26] "GET /api/refresh/TSLA HTTP/1.1" 200 -
+2025-09-27 17:28:27,545 - werkzeug - INFO - 127.0.0.1 - - [27/Sep/2025 17:28:27] "GET /api/summary/TSLA HTTP/1.1" 200 -
+2025-09-27 17:29:06,137 - werkzeug - INFO - 127.0.0.1 - - [27/Sep/2025 17:29:06] "[33mGET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1[0m" 404 -
+2025-09-27 17:29:06,302 - werkzeug - INFO - 127.0.0.1 - - [27/Sep/2025 17:29:06] "[36mGET /static/style.css HTTP/1.1[0m" 304 -
+2025-09-27 17:31:28,124 - werkzeug - INFO - 127.0.0.1 - - [27/Sep/2025 17:31:28] "[33mGET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1[0m" 404 -
+2025-09-27 17:32:04,321 - __main__ - INFO - === Starting news processing for TSLA ===
+2025-09-27 17:32:04,321 - __main__ - DEBUG - Collecting news from all sources
+2025-09-27 17:32:04,322 - __main__ - DEBUG - Starting TradingView scraping for TSLA
+2025-09-27 17:32:04,323 - __main__ - DEBUG - Fetching URL: https://www.tradingview.com/symbols/TSLA/news/
+2025-09-27 17:32:04,327 - urllib3.connectionpool - DEBUG - Resetting dropped connection: www.tradingview.com
+2025-09-27 17:32:05,293 - urllib3.connectionpool - DEBUG - https://www.tradingview.com:443 "GET /symbols/TSLA/news/ HTTP/1.1" 301 0
+2025-09-27 17:32:05,622 - urllib3.connectionpool - DEBUG - https://www.tradingview.com:443 "GET /symbols/NASDAQ-TSLA/news/ HTTP/1.1" 200 None
+2025-09-27 17:32:05,630 - __main__ - DEBUG - Response status: 200, Content length: 244356
+2025-09-27 17:32:05,712 - __main__ - DEBUG - Selector 'div.news-item' found 0 items
+2025-09-27 17:32:05,726 - __main__ - DEBUG - Selector '[data-role="news-item"]' found 0 items
+2025-09-27 17:32:05,730 - __main__ - DEBUG - Selector 'a[href*="news"]' found 4 items
+2025-09-27 17:32:05,731 - __main__ - INFO - TradingView: Found 1 articles for TSLA
+2025-09-27 17:32:05,731 - __main__ - DEBUG - Starting Finviz scraping for TSLA
+2025-09-27 17:32:05,732 - __main__ - DEBUG - Fetching URL: https://finviz.com/quote.ashx?t=TSLA
+2025-09-27 17:32:06,030 - urllib3.connectionpool - DEBUG - https://finviz.com:443 "GET /quote.ashx?t=TSLA HTTP/1.1" 200 None
+2025-09-27 17:32:06,055 - __main__ - DEBUG - Response status: 200, Content length: 277611
+2025-09-27 17:32:06,220 - __main__ - INFO - Finviz: Found 10 articles for TSLA
+2025-09-27 17:32:06,221 - __main__ - DEBUG - Starting Polygon API call for TSLA
+2025-09-27 17:32:06,222 - __main__ - DEBUG - API URL: https://api.polygon.io/v2/reference/news, Params: {'ticker': 'TSLA', 'limit': 10, 'apikey': 'BQoC8Jp25fffSdoxpLv0mI2gu2d74HT1'}
+2025-09-27 17:32:06,225 - urllib3.connectionpool - DEBUG - Resetting dropped connection: api.polygon.io
+2025-09-27 17:32:07,964 - urllib3.connectionpool - DEBUG - https://api.polygon.io:443 "GET /v2/reference/news?ticker=TSLA&limit=10&apikey=BQoC8Jp25fffSdoxpLv0mI2gu2d74HT1 HTTP/1.1" 200 None
+2025-09-27 17:32:07,972 - __main__ - INFO - Polygon: Found 10 articles for TSLA
+2025-09-27 17:32:07,973 - __main__ - INFO - Total articles collected: 21 (TV:1, FV:10, PG:10)
+2025-09-27 17:32:07,974 - __main__ - DEBUG - Selecting top articles using AI
+2025-09-27 17:32:07,975 - __main__ - DEBUG - Starting article selection with 21 articles
+2025-09-27 17:32:07,976 - __main__ - DEBUG - Sending prompt to Gemini (length: 5683 chars)
+2025-09-27 17:32:07,976 - __main__ - DEBUG - Using API key: AIzaSyDiWg...
+2025-09-27 17:32:07,977 - google_genai.models - INFO - AFC is enabled with max remote calls: 10.
+2025-09-27 17:32:07,980 - httpcore.connection - DEBUG - close.started
+2025-09-27 17:32:07,981 - httpcore.connection - DEBUG - close.complete
+2025-09-27 17:32:07,982 - httpcore.connection - DEBUG - connect_tcp.started host='generativelanguage.googleapis.com' port=443 local_address=None timeout=None socket_options=None
+2025-09-27 17:32:08,081 - httpcore.connection - DEBUG - connect_tcp.complete return_value=<httpcore._backends.sync.SyncStream object at 0x0000023C46238410>
+2025-09-27 17:32:08,082 - httpcore.connection - DEBUG - start_tls.started ssl_context=<ssl.SSLContext object at 0x0000023C45181B30> server_hostname='generativelanguage.googleapis.com' timeout=None
+2025-09-27 17:32:08,094 - httpcore.connection - DEBUG - start_tls.complete return_value=<httpcore._backends.sync.SyncStream object at 0x0000023C453F2EA0>
+2025-09-27 17:32:08,095 - httpcore.http11 - DEBUG - send_request_headers.started request=<Request [b'POST']>
+2025-09-27 17:32:08,095 - httpcore.http11 - DEBUG - send_request_headers.complete
+2025-09-27 17:32:08,095 - httpcore.http11 - DEBUG - send_request_body.started request=<Request [b'POST']>
+2025-09-27 17:32:08,096 - httpcore.http11 - DEBUG - send_request_body.complete
+2025-09-27 17:32:08,096 - httpcore.http11 - DEBUG - receive_response_headers.started request=<Request [b'POST']>
+2025-09-27 17:33:00,334 - httpcore.http11 - DEBUG - receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Content-Type', b'application/json; charset=UTF-8'), (b'Vary', b'Origin'), (b'Vary', b'X-Origin'), (b'Vary', b'Referer'), (b'Content-Encoding', b'gzip'), (b'Date', b'Sat, 27 Sep 2025 12:03:00 GMT'), (b'Server', b'scaffolding on HTTPServer2'), (b'X-XSS-Protection', b'0'), (b'X-Frame-Options', b'SAMEORIGIN'), (b'X-Content-Type-Options', b'nosniff'), (b'Server-Timing', b'gfet4t7; dur=52230'), (b'Alt-Svc', b'h3=":443"; ma=2592000,h3-29=":443"; ma=2592000'), (b'Transfer-Encoding', b'chunked')])
+2025-09-27 17:33:00,336 - httpx - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent "HTTP/1.1 200 OK"
+2025-09-27 17:33:00,338 - httpcore.http11 - DEBUG - receive_response_body.started request=<Request [b'POST']>
+2025-09-27 17:33:00,339 - httpcore.http11 - DEBUG - receive_response_body.complete
+2025-09-27 17:33:00,340 - httpcore.http11 - DEBUG - response_closed.started
+2025-09-27 17:33:00,342 - httpcore.http11 - DEBUG - response_closed.complete
+2025-09-27 17:33:00,346 - __main__ - DEBUG - Gemini response: 5, 6, 8, 10, 11, 13...
+2025-09-27 17:33:00,347 - __main__ - DEBUG - Selected article indices: [4, 5, 7, 9, 10, 12]
+2025-09-27 17:33:00,348 - __main__ - INFO - Selected 6 articles for summary
+2025-09-27 17:33:00,351 - __main__ - DEBUG - Generating AI summary
+2025-09-27 17:33:00,352 - __main__ - DEBUG - Starting summary generation for TSLA
+2025-09-27 17:33:00,353 - __main__ - DEBUG - Sending summary prompt to Gemini (length: 3530 chars)
+2025-09-27 17:33:00,354 - google_genai.models - INFO - AFC is enabled with max remote calls: 10.
+2025-09-27 17:33:00,356 - httpcore.http11 - DEBUG - send_request_headers.started request=<Request [b'POST']>
+2025-09-27 17:33:00,357 - httpcore.http11 - DEBUG - send_request_headers.complete
+2025-09-27 17:33:00,358 - httpcore.http11 - DEBUG - send_request_body.started request=<Request [b'POST']>
+2025-09-27 17:33:00,359 - httpcore.http11 - DEBUG - send_request_body.complete
+2025-09-27 17:33:00,360 - httpcore.http11 - DEBUG - receive_response_headers.started request=<Request [b'POST']>
+2025-09-27 17:33:22,652 - httpcore.http11 - DEBUG - receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Content-Type', b'application/json; charset=UTF-8'), (b'Vary', b'Origin'), (b'Vary', b'X-Origin'), (b'Vary', b'Referer'), (b'Content-Encoding', b'gzip'), (b'Date', b'Sat, 27 Sep 2025 12:03:22 GMT'), (b'Server', b'scaffolding on HTTPServer2'), (b'X-XSS-Protection', b'0'), (b'X-Frame-Options', b'SAMEORIGIN'), (b'X-Content-Type-Options', b'nosniff'), (b'Server-Timing', b'gfet4t7; dur=22285'), (b'Alt-Svc', b'h3=":443"; ma=2592000,h3-29=":443"; ma=2592000'), (b'Transfer-Encoding', b'chunked')])
+2025-09-27 17:33:22,653 - httpx - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent "HTTP/1.1 200 OK"
+2025-09-27 17:33:22,653 - httpcore.http11 - DEBUG - receive_response_body.started request=<Request [b'POST']>
+2025-09-27 17:33:22,654 - httpcore.http11 - DEBUG - receive_response_body.complete
+2025-09-27 17:33:22,654 - httpcore.http11 - DEBUG - response_closed.started
+2025-09-27 17:33:22,654 - httpcore.http11 - DEBUG - response_closed.complete
+2025-09-27 17:33:22,655 - __main__ - DEBUG - Gemini summary response received: 2282 chars
+2025-09-27 17:33:22,656 - __main__ - INFO - Generated summary for TSLA (length: 2282 chars)
+2025-09-27 17:33:22,729 - __main__ - INFO - === Completed processing for TSLA ===
+2025-09-27 17:33:22,730 - werkzeug - INFO - 127.0.0.1 - - [27/Sep/2025 17:33:22] "GET /api/refresh/TSLA HTTP/1.1" 200 -
+2025-09-27 17:33:23,751 - werkzeug - INFO - 127.0.0.1 - - [27/Sep/2025 17:33:23] "GET /api/summary/TSLA HTTP/1.1" 200 -
+2025-09-27 17:35:07,526 - werkzeug - INFO - 127.0.0.1 - - [27/Sep/2025 17:35:07] "GET / HTTP/1.1" 200 -
+2025-09-27 17:35:07,587 - werkzeug - INFO - 127.0.0.1 - - [27/Sep/2025 17:35:07] "[36mGET /static/style.css HTTP/1.1[0m" 304 -
+2025-09-27 17:35:07,590 - werkzeug - INFO - 127.0.0.1 - - [27/Sep/2025 17:35:07] "GET /static/script.js HTTP/1.1" 200 -
+2025-09-27 17:35:07,680 - werkzeug - INFO - 127.0.0.1 - - [27/Sep/2025 17:35:07] "GET /api/tickers HTTP/1.1" 200 -
+2025-09-27 17:35:15,089 - __main__ - INFO - Validating ticker: AAP
+2025-09-27 17:35:15,091 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): finviz.com:443
+2025-09-27 17:35:15,953 - urllib3.connectionpool - DEBUG - https://finviz.com:443 "GET /quote.ashx?t=AAP HTTP/1.1" 200 None
+2025-09-27 17:35:16,060 - __main__ - INFO - Successfully added ticker: AAP
+2025-09-27 17:35:16,061 - werkzeug - INFO - 127.0.0.1 - - [27/Sep/2025 17:35:16] "POST /api/tickers HTTP/1.1" 200 -
+2025-09-27 17:35:16,089 - werkzeug - INFO - 127.0.0.1 - - [27/Sep/2025 17:35:16] "GET /api/tickers HTTP/1.1" 200 -
+2025-09-27 17:35:18,689 - werkzeug - INFO - 127.0.0.1 - - [27/Sep/2025 17:35:18] "GET /api/summary/AAP HTTP/1.1" 200 -
+2025-09-27 17:35:21,880 - __main__ - INFO - === Starting news processing for AAP ===
+2025-09-27 17:35:21,881 - __main__ - DEBUG - Collecting news from all sources
+2025-09-27 17:35:21,881 - __main__ - DEBUG - Starting TradingView scraping for AAP
+2025-09-27 17:35:21,881 - __main__ - DEBUG - Fetching URL: https://www.tradingview.com/symbols/AAP/news/
+2025-09-27 17:35:22,191 - urllib3.connectionpool - DEBUG - https://www.tradingview.com:443 "GET /symbols/AAP/news/ HTTP/1.1" 301 0
+2025-09-27 17:35:22,557 - urllib3.connectionpool - DEBUG - https://www.tradingview.com:443 "GET /symbols/NYSE-AAP/news/ HTTP/1.1" 200 None
+2025-09-27 17:35:22,565 - __main__ - DEBUG - Response status: 200, Content length: 236832
+2025-09-27 17:35:22,648 - __main__ - DEBUG - Selector 'div.news-item' found 0 items
+2025-09-27 17:35:22,659 - __main__ - DEBUG - Selector '[data-role="news-item"]' found 0 items
+2025-09-27 17:35:22,670 - __main__ - DEBUG - Selector 'a[href*="news"]' found 4 items
+2025-09-27 17:35:22,671 - __main__ - INFO - TradingView: Found 1 articles for AAP
+2025-09-27 17:35:22,671 - __main__ - DEBUG - Starting Finviz scraping for AAP
+2025-09-27 17:35:22,672 - __main__ - DEBUG - Fetching URL: https://finviz.com/quote.ashx?t=AAP
+2025-09-27 17:35:22,980 - urllib3.connectionpool - DEBUG - https://finviz.com:443 "GET /quote.ashx?t=AAP HTTP/1.1" 200 None
+2025-09-27 17:35:23,014 - __main__ - DEBUG - Response status: 200, Content length: 215785
+2025-09-27 17:35:23,235 - __main__ - INFO - Finviz: Found 10 articles for AAP
+2025-09-27 17:35:23,235 - __main__ - DEBUG - Starting Polygon API call for AAP
+2025-09-27 17:35:23,236 - __main__ - DEBUG - API URL: https://api.polygon.io/v2/reference/news, Params: {'ticker': 'AAP', 'limit': 10, 'apikey': 'BQoC8Jp25fffSdoxpLv0mI2gu2d74HT1'}
+2025-09-27 17:35:23,240 - urllib3.connectionpool - DEBUG - Resetting dropped connection: api.polygon.io
+2025-09-27 17:35:24,958 - urllib3.connectionpool - DEBUG - https://api.polygon.io:443 "GET /v2/reference/news?ticker=AAP&limit=10&apikey=BQoC8Jp25fffSdoxpLv0mI2gu2d74HT1 HTTP/1.1" 200 None
+2025-09-27 17:35:24,960 - __main__ - INFO - Polygon: Found 10 articles for AAP
+2025-09-27 17:35:24,961 - __main__ - INFO - Total articles collected: 21 (TV:1, FV:10, PG:10)
+2025-09-27 17:35:24,961 - __main__ - DEBUG - Selecting top articles using AI
+2025-09-27 17:35:24,962 - __main__ - DEBUG - Starting article selection with 21 articles
+2025-09-27 17:35:24,963 - __main__ - DEBUG - Sending prompt to Gemini (length: 5259 chars)
+2025-09-27 17:35:24,963 - __main__ - DEBUG - Using API key: AIzaSyDiWg...
+2025-09-27 17:35:24,964 - google_genai.models - INFO - AFC is enabled with max remote calls: 10.
+2025-09-27 17:35:24,966 - httpcore.connection - DEBUG - close.started
+2025-09-27 17:35:24,967 - httpcore.connection - DEBUG - close.complete
+2025-09-27 17:35:24,968 - httpcore.connection - DEBUG - connect_tcp.started host='generativelanguage.googleapis.com' port=443 local_address=None timeout=None socket_options=None
+2025-09-27 17:35:24,984 - httpcore.connection - DEBUG - connect_tcp.complete return_value=<httpcore._backends.sync.SyncStream object at 0x0000023C45F502B0>
+2025-09-27 17:35:24,985 - httpcore.connection - DEBUG - start_tls.started ssl_context=<ssl.SSLContext object at 0x0000023C45181B30> server_hostname='generativelanguage.googleapis.com' timeout=None
+2025-09-27 17:35:24,996 - httpcore.connection - DEBUG - start_tls.complete return_value=<httpcore._backends.sync.SyncStream object at 0x0000023C45F6EE70>
+2025-09-27 17:35:24,996 - httpcore.http11 - DEBUG - send_request_headers.started request=<Request [b'POST']>
+2025-09-27 17:35:24,997 - httpcore.http11 - DEBUG - send_request_headers.complete
+2025-09-27 17:35:24,997 - httpcore.http11 - DEBUG - send_request_body.started request=<Request [b'POST']>
+2025-09-27 17:35:24,998 - httpcore.http11 - DEBUG - send_request_body.complete
+2025-09-27 17:35:24,998 - httpcore.http11 - DEBUG - receive_response_headers.started request=<Request [b'POST']>
+2025-09-27 17:36:09,369 - httpcore.http11 - DEBUG - receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Content-Type', b'application/json; charset=UTF-8'), (b'Vary', b'Origin'), (b'Vary', b'X-Origin'), (b'Vary', b'Referer'), (b'Content-Encoding', b'gzip'), (b'Date', b'Sat, 27 Sep 2025 12:06:09 GMT'), (b'Server', b'scaffolding on HTTPServer2'), (b'X-XSS-Protection', b'0'), (b'X-Frame-Options', b'SAMEORIGIN'), (b'X-Content-Type-Options', b'nosniff'), (b'Server-Timing', b'gfet4t7; dur=44363'), (b'Alt-Svc', b'h3=":443"; ma=2592000,h3-29=":443"; ma=2592000'), (b'Transfer-Encoding', b'chunked')])
+2025-09-27 17:36:09,371 - httpx - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent "HTTP/1.1 200 OK"
+2025-09-27 17:36:09,373 - httpcore.http11 - DEBUG - receive_response_body.started request=<Request [b'POST']>
+2025-09-27 17:36:09,375 - httpcore.http11 - DEBUG - receive_response_body.complete
+2025-09-27 17:36:09,376 - httpcore.http11 - DEBUG - response_closed.started
+2025-09-27 17:36:09,377 - httpcore.http11 - DEBUG - response_closed.complete
+2025-09-27 17:36:09,379 - __main__ - DEBUG - Gemini response: 4, 10, 12, 14, 16, 17...
+2025-09-27 17:36:09,380 - __main__ - DEBUG - Selected article indices: [3, 9, 11, 13, 15, 16]
+2025-09-27 17:36:09,380 - __main__ - INFO - Selected 6 articles for summary
+2025-09-27 17:36:09,382 - __main__ - DEBUG - Generating AI summary
+2025-09-27 17:36:09,383 - __main__ - DEBUG - Starting summary generation for AAP
+2025-09-27 17:36:09,383 - __main__ - DEBUG - Sending summary prompt to Gemini (length: 2215 chars)
+2025-09-27 17:36:09,384 - google_genai.models - INFO - AFC is enabled with max remote calls: 10.
+2025-09-27 17:36:09,386 - httpcore.http11 - DEBUG - send_request_headers.started request=<Request [b'POST']>
+2025-09-27 17:36:09,388 - httpcore.http11 - DEBUG - send_request_headers.complete
+2025-09-27 17:36:09,388 - httpcore.http11 - DEBUG - send_request_body.started request=<Request [b'POST']>
+2025-09-27 17:36:09,389 - httpcore.http11 - DEBUG - send_request_body.complete
+2025-09-27 17:36:09,390 - httpcore.http11 - DEBUG - receive_response_headers.started request=<Request [b'POST']>
+2025-09-27 17:36:38,401 - httpcore.http11 - DEBUG - receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Content-Type', b'application/json; charset=UTF-8'), (b'Vary', b'Origin'), (b'Vary', b'X-Origin'), (b'Vary', b'Referer'), (b'Content-Encoding', b'gzip'), (b'Date', b'Sat, 27 Sep 2025 12:06:38 GMT'), (b'Server', b'scaffolding on HTTPServer2'), (b'X-XSS-Protection', b'0'), (b'X-Frame-Options', b'SAMEORIGIN'), (b'X-Content-Type-Options', b'nosniff'), (b'Server-Timing', b'gfet4t7; dur=29001'), (b'Alt-Svc', b'h3=":443"; ma=2592000,h3-29=":443"; ma=2592000'), (b'Transfer-Encoding', b'chunked')])
+2025-09-27 17:36:38,403 - httpx - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent "HTTP/1.1 200 OK"
+2025-09-27 17:36:38,404 - httpcore.http11 - DEBUG - receive_response_body.started request=<Request [b'POST']>
+2025-09-27 17:36:38,406 - httpcore.http11 - DEBUG - receive_response_body.complete
+2025-09-27 17:36:38,408 - httpcore.http11 - DEBUG - response_closed.started
+2025-09-27 17:36:38,409 - httpcore.http11 - DEBUG - response_closed.complete
+2025-09-27 17:36:38,412 - __main__ - DEBUG - Gemini summary response received: 3028 chars
+2025-09-27 17:36:38,413 - __main__ - INFO - Generated summary for AAP (length: 3028 chars)
+2025-09-27 17:36:38,565 - __main__ - INFO - === Completed processing for AAP ===
+2025-09-27 17:36:38,566 - werkzeug - INFO - 127.0.0.1 - - [27/Sep/2025 17:36:38] "GET /api/refresh/AAP HTTP/1.1" 200 -
+2025-09-27 17:36:41,596 - werkzeug - INFO - 127.0.0.1 - - [27/Sep/2025 17:36:41] "GET /api/summary/AAP HTTP/1.1" 200 -
+2025-09-27 17:43:36,193 - __main__ - INFO - Validating ticker: TESLA
+2025-09-27 17:43:36,195 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): finviz.com:443
+2025-09-27 17:43:37,041 - urllib3.connectionpool - DEBUG - https://finviz.com:443 "GET /quote.ashx?t=TESLA HTTP/1.1" 404 None
+2025-09-27 17:43:37,045 - werkzeug - INFO - 127.0.0.1 - - [27/Sep/2025 17:43:37] "[31m[1mPOST /api/tickers HTTP/1.1[0m" 400 -
+2025-09-27 17:43:45,875 - __main__ - INFO - Validating ticker: TATA
+2025-09-27 17:43:45,877 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): finviz.com:443
+2025-09-27 17:43:46,686 - urllib3.connectionpool - DEBUG - https://finviz.com:443 "GET /quote.ashx?t=TATA HTTP/1.1" 404 None
+2025-09-27 17:43:46,692 - werkzeug - INFO - 127.0.0.1 - - [27/Sep/2025 17:43:46] "[31m[1mPOST /api/tickers HTTP/1.1[0m" 400 -
+2025-09-27 17:59:25,302 - werkzeug - INFO - 127.0.0.1 - - [27/Sep/2025 17:59:25] "[36mGET /static/style.css HTTP/1.1[0m" 304 -
+2025-09-27 17:59:25,318 - werkzeug - INFO - 127.0.0.1 - - [27/Sep/2025 17:59:25] "[33mGET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1[0m" 404 -
+2025-09-27 18:04:50,787 - werkzeug - INFO - 127.0.0.1 - - [27/Sep/2025 18:04:50] "[33mGET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1[0m" 404 -
+2025-09-27 18:04:55,700 - werkzeug - INFO - 127.0.0.1 - - [27/Sep/2025 18:04:55] "GET /api/summary/TSLA HTTP/1.1" 200 -
+2025-09-27 18:04:57,589 - __main__ - INFO - === Starting news processing for TSLA ===
+2025-09-27 18:04:57,589 - __main__ - DEBUG - Collecting news from all sources
+2025-09-27 18:04:57,631 - __main__ - DEBUG - Starting TradingView scraping for TSLA
+2025-09-27 18:04:57,631 - __main__ - DEBUG - Fetching URL: https://www.tradingview.com/symbols/TSLA/news/
+2025-09-27 18:04:57,677 - urllib3.connectionpool - DEBUG - Resetting dropped connection: www.tradingview.com
+2025-09-27 18:04:59,026 - urllib3.connectionpool - DEBUG - https://www.tradingview.com:443 "GET /symbols/TSLA/news/ HTTP/1.1" 301 0
+2025-09-27 18:04:59,346 - urllib3.connectionpool - DEBUG - https://www.tradingview.com:443 "GET /symbols/NASDAQ-TSLA/news/ HTTP/1.1" 200 None
+2025-09-27 18:04:59,352 - __main__ - DEBUG - Response status: 200, Content length: 244356
+2025-09-27 18:05:00,149 - __main__ - DEBUG - Selector 'div.news-item' found 0 items
+2025-09-27 18:05:00,169 - __main__ - DEBUG - Selector '[data-role="news-item"]' found 0 items
+2025-09-27 18:05:00,178 - __main__ - DEBUG - Selector 'a[href*="news"]' found 4 items
+2025-09-27 18:05:00,179 - __main__ - INFO - TradingView: Found 1 articles for TSLA
+2025-09-27 18:05:00,180 - __main__ - DEBUG - Starting Finviz scraping for TSLA
+2025-09-27 18:05:00,181 - __main__ - DEBUG - Fetching URL: https://finviz.com/quote.ashx?t=TSLA
+2025-09-27 18:05:00,183 - urllib3.connectionpool - DEBUG - Resetting dropped connection: finviz.com
+2025-09-27 18:05:01,808 - urllib3.connectionpool - DEBUG - https://finviz.com:443 "GET /quote.ashx?t=TSLA HTTP/1.1" 200 None
+2025-09-27 18:05:01,909 - __main__ - DEBUG - Response status: 200, Content length: 277611
+2025-09-27 18:05:02,342 - __main__ - INFO - Finviz: Found 10 articles for TSLA
+2025-09-27 18:05:02,344 - __main__ - DEBUG - Starting Polygon API call for TSLA
+2025-09-27 18:05:02,344 - __main__ - DEBUG - API URL: https://api.polygon.io/v2/reference/news, Params: {'ticker': 'TSLA', 'limit': 10, 'apikey': 'BQoC8Jp25fffSdoxpLv0mI2gu2d74HT1'}
+2025-09-27 18:05:02,347 - urllib3.connectionpool - DEBUG - Resetting dropped connection: api.polygon.io
+2025-09-27 18:05:06,424 - urllib3.connectionpool - DEBUG - https://api.polygon.io:443 "GET /v2/reference/news?ticker=TSLA&limit=10&apikey=BQoC8Jp25fffSdoxpLv0mI2gu2d74HT1 HTTP/1.1" 200 None
+2025-09-27 18:05:07,098 - __main__ - INFO - Polygon: Found 10 articles for TSLA
+2025-09-27 18:05:07,100 - __main__ - INFO - Total articles collected: 21 (TV:1, FV:10, PG:10)
+2025-09-27 18:05:07,100 - __main__ - DEBUG - Selecting top articles using AI
+2025-09-27 18:05:07,101 - __main__ - DEBUG - Starting article selection with 21 articles
+2025-09-27 18:05:07,103 - __main__ - DEBUG - Sending prompt to Gemini (length: 5683 chars)
+2025-09-27 18:05:07,104 - __main__ - DEBUG - Using API key: AIzaSyDiWg...
+2025-09-27 18:05:07,105 - google_genai.models - INFO - AFC is enabled with max remote calls: 10.
+2025-09-27 18:05:07,107 - httpcore.connection - DEBUG - close.started
+2025-09-27 18:05:07,107 - httpcore.connection - DEBUG - close.complete
+2025-09-27 18:05:07,108 - httpcore.connection - DEBUG - connect_tcp.started host='generativelanguage.googleapis.com' port=443 local_address=None timeout=None socket_options=None
+2025-09-27 18:05:07,138 - httpcore.connection - DEBUG - connect_tcp.complete return_value=<httpcore._backends.sync.SyncStream object at 0x0000023C459CD7B0>
+2025-09-27 18:05:07,139 - httpcore.connection - DEBUG - start_tls.started ssl_context=<ssl.SSLContext object at 0x0000023C45181B30> server_hostname='generativelanguage.googleapis.com' timeout=None
+2025-09-27 18:05:07,158 - httpcore.connection - DEBUG - start_tls.complete return_value=<httpcore._backends.sync.SyncStream object at 0x0000023C459CD8C0>
+2025-09-27 18:05:07,159 - httpcore.http11 - DEBUG - send_request_headers.started request=<Request [b'POST']>
+2025-09-27 18:05:07,160 - httpcore.http11 - DEBUG - send_request_headers.complete
+2025-09-27 18:05:07,162 - httpcore.http11 - DEBUG - send_request_body.started request=<Request [b'POST']>
+2025-09-27 18:05:07,163 - httpcore.http11 - DEBUG - send_request_body.complete
+2025-09-27 18:05:07,163 - httpcore.http11 - DEBUG - receive_response_headers.started request=<Request [b'POST']>
+2025-09-27 18:05:35,670 - httpcore.http11 - DEBUG - receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Content-Type', b'application/json; charset=UTF-8'), (b'Vary', b'Origin'), (b'Vary', b'X-Origin'), (b'Vary', b'Referer'), (b'Content-Encoding', b'gzip'), (b'Date', b'Sat, 27 Sep 2025 12:35:35 GMT'), (b'Server', b'scaffolding on HTTPServer2'), (b'X-XSS-Protection', b'0'), (b'X-Frame-Options', b'SAMEORIGIN'), (b'X-Content-Type-Options', b'nosniff'), (b'Server-Timing', b'gfet4t7; dur=28504'), (b'Alt-Svc', b'h3=":443"; ma=2592000,h3-29=":443"; ma=2592000'), (b'Transfer-Encoding', b'chunked')])
+2025-09-27 18:05:35,674 - httpx - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent "HTTP/1.1 200 OK"
+2025-09-27 18:05:35,675 - httpcore.http11 - DEBUG - receive_response_body.started request=<Request [b'POST']>
+2025-09-27 18:05:35,677 - httpcore.http11 - DEBUG - receive_response_body.complete
+2025-09-27 18:05:35,678 - httpcore.http11 - DEBUG - response_closed.started
+2025-09-27 18:05:35,678 - httpcore.http11 - DEBUG - response_closed.complete
+2025-09-27 18:05:35,684 - __main__ - DEBUG - Gemini response: 4, 5, 6, 8, 10, 11, 12...
+2025-09-27 18:05:35,684 - __main__ - DEBUG - Selected article indices: [3, 4, 5, 7, 9, 10, 11]
+2025-09-27 18:05:35,685 - __main__ - INFO - Selected 7 articles for summary
+2025-09-27 18:05:35,686 - __main__ - DEBUG - Generating AI summary
+2025-09-27 18:05:35,686 - __main__ - DEBUG - Starting summary generation for TSLA
+2025-09-27 18:05:35,686 - __main__ - DEBUG - Sending summary prompt to Gemini (length: 4085 chars)
+2025-09-27 18:05:35,687 - google_genai.models - INFO - AFC is enabled with max remote calls: 10.
+2025-09-27 18:05:35,688 - httpcore.http11 - DEBUG - send_request_headers.started request=<Request [b'POST']>
+2025-09-27 18:05:35,690 - httpcore.http11 - DEBUG - send_request_headers.complete
+2025-09-27 18:05:35,691 - httpcore.http11 - DEBUG - send_request_body.started request=<Request [b'POST']>
+2025-09-27 18:05:35,693 - httpcore.http11 - DEBUG - send_request_body.complete
+2025-09-27 18:05:35,693 - httpcore.http11 - DEBUG - receive_response_headers.started request=<Request [b'POST']>
+2025-09-27 18:06:00,681 - httpcore.http11 - DEBUG - receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Content-Type', b'application/json; charset=UTF-8'), (b'Vary', b'Origin'), (b'Vary', b'X-Origin'), (b'Vary', b'Referer'), (b'Content-Encoding', b'gzip'), (b'Date', b'Sat, 27 Sep 2025 12:36:00 GMT'), (b'Server', b'scaffolding on HTTPServer2'), (b'X-XSS-Protection', b'0'), (b'X-Frame-Options', b'SAMEORIGIN'), (b'X-Content-Type-Options', b'nosniff'), (b'Server-Timing', b'gfet4t7; dur=24986'), (b'Alt-Svc', b'h3=":443"; ma=2592000,h3-29=":443"; ma=2592000'), (b'Transfer-Encoding', b'chunked')])
+2025-09-27 18:06:00,683 - httpx - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent "HTTP/1.1 200 OK"
+2025-09-27 18:06:00,684 - httpcore.http11 - DEBUG - receive_response_body.started request=<Request [b'POST']>
+2025-09-27 18:06:00,684 - httpcore.http11 - DEBUG - receive_response_body.complete
+2025-09-27 18:06:00,685 - httpcore.http11 - DEBUG - response_closed.started
+2025-09-27 18:06:00,685 - httpcore.http11 - DEBUG - response_closed.complete
+2025-09-27 18:06:00,687 - __main__ - DEBUG - Gemini summary response received: 2660 chars
+2025-09-27 18:06:00,687 - __main__ - INFO - Generated summary for TSLA (length: 2660 chars)
+2025-09-27 18:06:00,773 - __main__ - INFO - === Completed processing for TSLA ===
+2025-09-27 18:06:00,775 - werkzeug - INFO - 127.0.0.1 - - [27/Sep/2025 18:06:00] "GET /api/refresh/TSLA HTTP/1.1" 200 -
+2025-09-27 18:06:03,825 - werkzeug - INFO - 127.0.0.1 - - [27/Sep/2025 18:06:03] "GET /api/summary/TSLA HTTP/1.1" 200 -
+2025-09-27 18:09:09,929 - werkzeug - INFO - 127.0.0.1 - - [27/Sep/2025 18:09:09] "GET /api/summary/AAP HTTP/1.1" 200 -
+2025-09-27 18:09:10,738 - werkzeug - INFO - 127.0.0.1 - - [27/Sep/2025 18:09:10] "GET /api/summary/TSLA HTTP/1.1" 200 -
+2025-09-27 18:09:28,425 - werkzeug - INFO - 127.0.0.1 - - [27/Sep/2025 18:09:28] "GET /api/summary/AAP HTTP/1.1" 200 -
+2025-09-27 18:09:29,100 - werkzeug - INFO - 127.0.0.1 - - [27/Sep/2025 18:09:29] "GET /api/summary/TSLA HTTP/1.1" 200 -
+2025-09-27 18:09:32,609 - werkzeug - INFO - 127.0.0.1 - - [27/Sep/2025 18:09:32] "GET /api/summary/AAP HTTP/1.1" 200 -
+2025-09-27 18:11:55,811 - __main__ - INFO - Gemini API Key loaded: Yes
+2025-09-27 18:11:55,811 - __main__ - INFO - Polygon API Key loaded: Yes
+2025-09-27 18:11:57,445 - tzlocal - DEBUG - Looking up time zone info from registry
+2025-09-27 18:11:57,464 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-09-27 18:11:57,467 - apscheduler.scheduler - INFO - Added job "daily_update" to job store "default"
+2025-09-27 18:11:57,467 - apscheduler.scheduler - INFO - Scheduler started
+2025-09-27 18:11:57,469 - apscheduler.scheduler - DEBUG - Looking for jobs to run
+2025-09-27 18:11:57,469 - apscheduler.scheduler - DEBUG - Next wakeup is due at 2025-09-28 08:00:00+05:30 (in 49682.530070 seconds)
+2025-09-27 18:11:57,497 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.1.8:5000
+2025-09-27 18:11:57,498 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2025-09-27 18:12:00,482 - werkzeug - INFO - 127.0.0.1 - - [27/Sep/2025 18:12:00] "GET / HTTP/1.1" 200 -
+2025-09-27 18:12:00,953 - werkzeug - INFO - 127.0.0.1 - - [27/Sep/2025 18:12:00] "GET /static/script.js HTTP/1.1" 200 -
+2025-09-27 18:12:01,117 - werkzeug - INFO - 127.0.0.1 - - [27/Sep/2025 18:12:01] "[36mGET /static/style.css HTTP/1.1[0m" 304 -
+2025-09-27 18:12:01,241 - werkzeug - INFO - 127.0.0.1 - - [27/Sep/2025 18:12:01] "GET /api/tickers HTTP/1.1" 200 -
+2025-09-27 18:12:03,283 - __main__ - DEBUG - Getting summary for TSLA
+2025-09-27 18:12:03,285 - __main__ - DEBUG - Executed query for TSLA
+2025-09-27 18:12:03,287 - __main__ - DEBUG - Query result for TSLA: Found
+2025-09-27 18:12:03,287 - __main__ - DEBUG - Summary data found: date=2025-09-27, summary_len=53, what_changed_len=28
+2025-09-27 18:12:03,290 - werkzeug - INFO - 127.0.0.1 - - [27/Sep/2025 18:12:03] "GET /api/summary/TSLA HTTP/1.1" 200 -
+2025-09-27 18:12:04,864 - __main__ - DEBUG - Getting summary for AAP
+2025-09-27 18:12:04,866 - __main__ - DEBUG - Executed query for AAP
+2025-09-27 18:12:04,867 - __main__ - DEBUG - Query result for AAP: Found
+2025-09-27 18:12:04,867 - __main__ - DEBUG - Summary data found: date=2025-09-27, summary_len=3028, what_changed_len=702
+2025-09-27 18:12:04,869 - werkzeug - INFO - 127.0.0.1 - - [27/Sep/2025 18:12:04] "GET /api/summary/AAP HTTP/1.1" 200 -
+2025-09-27 18:12:05,493 - __main__ - DEBUG - Getting summary for TSLA
+2025-09-27 18:12:05,495 - __main__ - DEBUG - Executed query for TSLA
+2025-09-27 18:12:05,495 - __main__ - DEBUG - Query result for TSLA: Found
+2025-09-27 18:12:05,496 - __main__ - DEBUG - Summary data found: date=2025-09-27, summary_len=53, what_changed_len=28
+2025-09-27 18:12:05,498 - werkzeug - INFO - 127.0.0.1 - - [27/Sep/2025 18:12:05] "GET /api/summary/TSLA HTTP/1.1" 200 -
+2025-09-27 18:12:14,346 - __main__ - INFO - Remove ticker requested: TSLA
+2025-09-27 18:12:14,402 - __main__ - INFO - Successfully removed ticker: TSLA
+2025-09-27 18:12:14,427 - werkzeug - INFO - 127.0.0.1 - - [27/Sep/2025 18:12:14] "DELETE /api/tickers/TSLA HTTP/1.1" 200 -
+2025-09-27 18:12:14,496 - werkzeug - INFO - 127.0.0.1 - - [27/Sep/2025 18:12:14] "GET /api/tickers HTTP/1.1" 200 -
+2025-09-27 18:12:17,475 - __main__ - DEBUG - Getting summary for AAP
+2025-09-27 18:12:17,476 - __main__ - DEBUG - Executed query for AAP
+2025-09-27 18:12:17,477 - __main__ - DEBUG - Query result for AAP: Found
+2025-09-27 18:12:17,480 - __main__ - DEBUG - Summary data found: date=2025-09-27, summary_len=3028, what_changed_len=702
+2025-09-27 18:12:17,483 - werkzeug - INFO - 127.0.0.1 - - [27/Sep/2025 18:12:17] "GET /api/summary/AAP HTTP/1.1" 200 -
+2025-09-27 18:19:52,827 - __main__ - INFO - Gemini API Key loaded: Yes
+2025-09-27 18:19:52,828 - __main__ - INFO - Polygon API Key loaded: Yes
+2025-09-27 18:19:54,412 - tzlocal - DEBUG - Looking up time zone info from registry
+2025-09-27 18:19:54,426 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-09-27 18:19:54,427 - apscheduler.scheduler - INFO - Added job "daily_update" to job store "default"
+2025-09-27 18:19:54,428 - apscheduler.scheduler - INFO - Scheduler started
+2025-09-27 18:19:54,429 - apscheduler.scheduler - DEBUG - Looking for jobs to run
+2025-09-27 18:19:54,430 - apscheduler.scheduler - DEBUG - Next wakeup is due at 2025-09-28 08:00:00+05:30 (in 49205.570025 seconds)
+2025-09-27 18:19:54,455 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.1.8:5000
+2025-09-27 18:19:54,455 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2025-09-27 18:20:41,445 - werkzeug - INFO - 127.0.0.1 - - [27/Sep/2025 18:20:41] "GET / HTTP/1.1" 200 -
+2025-09-27 18:20:41,950 - werkzeug - INFO - 127.0.0.1 - - [27/Sep/2025 18:20:41] "[36mGET /static/script.js HTTP/1.1[0m" 304 -
+2025-09-27 18:20:42,056 - werkzeug - INFO - 127.0.0.1 - - [27/Sep/2025 18:20:42] "[36mGET /static/style.css HTTP/1.1[0m" 304 -
+2025-09-27 18:20:42,091 - werkzeug - INFO - 127.0.0.1 - - [27/Sep/2025 18:20:42] "GET /api/tickers HTTP/1.1" 200 -
+2025-09-27 18:20:42,895 - werkzeug - INFO - 127.0.0.1 - - [27/Sep/2025 18:20:42] "GET /static/favicon.svg HTTP/1.1" 200 -
+2025-09-27 20:17:44,888 - __main__ - INFO - Gemini API Key loaded: Yes
+2025-09-27 20:17:44,889 - __main__ - INFO - Polygon API Key loaded: Yes
+2025-09-27 20:17:46,426 - tzlocal - DEBUG - Looking up time zone info from registry
+2025-09-27 20:17:46,439 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-09-27 20:17:46,442 - apscheduler.scheduler - INFO - Added job "daily_update" to job store "default"
+2025-09-27 20:17:46,442 - apscheduler.scheduler - INFO - Scheduler started
+2025-09-27 20:17:46,444 - apscheduler.scheduler - DEBUG - Looking for jobs to run
+2025-09-27 20:17:46,444 - apscheduler.scheduler - DEBUG - Next wakeup is due at 2025-09-28 08:00:00+05:30 (in 42133.555522 seconds)
+2025-09-27 20:17:46,465 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:10000
+ * Running on http://192.168.1.8:10000
+2025-09-27 20:17:46,465 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2025-09-27 20:17:49,281 - werkzeug - INFO - 127.0.0.1 - - [27/Sep/2025 20:17:49] "GET / HTTP/1.1" 200 -
+2025-09-27 20:17:49,658 - werkzeug - INFO - 127.0.0.1 - - [27/Sep/2025 20:17:49] "GET /static/style.css HTTP/1.1" 200 -
+2025-09-27 20:17:49,687 - werkzeug - INFO - 127.0.0.1 - - [27/Sep/2025 20:17:49] "GET /static/script.js HTTP/1.1" 200 -
+2025-09-27 20:17:50,151 - werkzeug - INFO - 127.0.0.1 - - [27/Sep/2025 20:17:50] "GET /api/tickers HTTP/1.1" 200 -
+2025-09-27 20:17:50,358 - werkzeug - INFO - 127.0.0.1 - - [27/Sep/2025 20:17:50] "GET /static/favicon.svg HTTP/1.1" 200 -
+2025-09-27 20:17:58,754 - __main__ - DEBUG - Received ticker request: TSLA
+2025-09-27 20:17:58,754 - __main__ - INFO - Validating ticker: TSLA
+2025-09-27 20:17:58,755 - __main__ - DEBUG - Validating ticker: TSLA
+2025-09-27 20:17:58,760 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): finviz.com:443
+2025-09-27 20:17:59,669 - urllib3.connectionpool - DEBUG - https://finviz.com:443 "GET /quote.ashx?t=TSLA HTTP/1.1" 200 None
+2025-09-27 20:17:59,978 - __main__ - DEBUG - Ticker TSLA validated successfully
+2025-09-27 20:18:00,134 - __main__ - INFO - Successfully added ticker: TSLA
+2025-09-27 20:18:00,138 - werkzeug - INFO - 127.0.0.1 - - [27/Sep/2025 20:18:00] "POST /api/tickers HTTP/1.1" 200 -
+2025-09-27 20:18:00,213 - werkzeug - INFO - 127.0.0.1 - - [27/Sep/2025 20:18:00] "GET /api/tickers HTTP/1.1" 200 -
+2025-09-27 20:18:07,956 - __main__ - DEBUG - Getting summary for TSLA
+2025-09-27 20:18:07,957 - __main__ - DEBUG - Executed query for TSLA
+2025-09-27 20:18:07,958 - __main__ - DEBUG - Query result for TSLA: None
+2025-09-27 20:18:07,958 - __main__ - WARNING - No summary data found for TSLA
+2025-09-27 20:18:07,959 - werkzeug - INFO - 127.0.0.1 - - [27/Sep/2025 20:18:07] "GET /api/summary/TSLA HTTP/1.1" 200 -
+2025-09-27 20:18:10,327 - __main__ - INFO - Manual refresh requested for TSLA
+2025-09-27 20:18:10,328 - __main__ - INFO - === Starting news processing for TSLA ===
+2025-09-27 20:18:10,329 - __main__ - DEBUG - Collecting fresh news from all sources
+2025-09-27 20:18:10,329 - __main__ - DEBUG - Starting TradingView scraping for TSLA
+2025-09-27 20:18:10,330 - __main__ - DEBUG - Fetching URL: https://www.tradingview.com/symbols/TSLA/news/
+2025-09-27 20:18:10,334 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): www.tradingview.com:443
+2025-09-27 20:18:11,316 - urllib3.connectionpool - DEBUG - https://www.tradingview.com:443 "GET /symbols/TSLA/news/ HTTP/1.1" 301 0
+2025-09-27 20:18:11,637 - urllib3.connectionpool - DEBUG - https://www.tradingview.com:443 "GET /symbols/NASDAQ-TSLA/news/ HTTP/1.1" 200 None
+2025-09-27 20:18:11,642 - __main__ - DEBUG - Response status: 200, Content length: 244359
+2025-09-27 20:18:11,731 - __main__ - DEBUG - Selector 'div.news-item' found 0 items
+2025-09-27 20:18:11,742 - __main__ - DEBUG - Selector '[data-role="news-item"]' found 0 items
+2025-09-27 20:18:11,747 - __main__ - DEBUG - Selector 'a[href*="news"]' found 4 items
+2025-09-27 20:18:11,747 - __main__ - INFO - TradingView: Found 1 articles for TSLA
+2025-09-27 20:18:11,748 - __main__ - DEBUG - Starting Finviz scraping for TSLA
+2025-09-27 20:18:11,748 - __main__ - DEBUG - Fetching URL: https://finviz.com/quote.ashx?t=TSLA
+2025-09-27 20:18:11,749 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): finviz.com:443
+2025-09-27 20:18:12,674 - urllib3.connectionpool - DEBUG - https://finviz.com:443 "GET /quote.ashx?t=TSLA HTTP/1.1" 200 None
+2025-09-27 20:18:13,607 - __main__ - DEBUG - Response status: 200, Content length: 277611
+2025-09-27 20:18:13,749 - __main__ - INFO - Finviz: Found 10 articles for TSLA
+2025-09-27 20:18:13,749 - __main__ - DEBUG - Starting Polygon API call for TSLA
+2025-09-27 20:18:13,750 - __main__ - DEBUG - API URL: https://api.polygon.io/v2/reference/news, Params: {'ticker': 'TSLA', 'limit': 10, 'apikey': 'BQoC8Jp25fffSdoxpLv0mI2gu2d74HT1'}
+2025-09-27 20:18:25,756 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): api.polygon.io:443
+2025-09-27 20:18:28,576 - urllib3.connectionpool - DEBUG - https://api.polygon.io:443 "GET /v2/reference/news?ticker=TSLA&limit=10&apikey=BQoC8Jp25fffSdoxpLv0mI2gu2d74HT1 HTTP/1.1" 200 None
+2025-09-27 20:18:28,579 - __main__ - DEBUG - polygon API call #1
+2025-09-27 20:18:28,581 - __main__ - INFO - Polygon: Found 10 articles for TSLA
+2025-09-27 20:18:28,582 - __main__ - INFO - Fresh articles collected: 21 (TV:1, FV:10, PG:10)
+2025-09-27 20:18:28,583 - __main__ - DEBUG - Cached 21 articles for TSLA
+2025-09-27 20:18:28,584 - __main__ - DEBUG - Selecting top articles using AI
+2025-09-27 20:18:28,585 - __main__ - DEBUG - Starting article selection with 21 articles
+2025-09-27 20:18:28,586 - __main__ - DEBUG - Sending prompt to Gemini (length: 5928 chars)
+2025-09-27 20:18:28,586 - __main__ - DEBUG - Using API key: AIzaSyDiWg...
+2025-09-27 20:18:32,588 - google_genai.models - INFO - AFC is enabled with max remote calls: 10.
+2025-09-27 20:18:32,599 - httpcore.connection - DEBUG - connect_tcp.started host='generativelanguage.googleapis.com' port=443 local_address=None timeout=None socket_options=None
+2025-09-27 20:18:32,624 - httpcore.connection - DEBUG - connect_tcp.complete return_value=<httpcore._backends.sync.SyncStream object at 0x0000022E8FCEDA90>
+2025-09-27 20:18:32,625 - httpcore.connection - DEBUG - start_tls.started ssl_context=<ssl.SSLContext object at 0x0000022E8FA020D0> server_hostname='generativelanguage.googleapis.com' timeout=None
+2025-09-27 20:18:32,673 - httpcore.connection - DEBUG - start_tls.complete return_value=<httpcore._backends.sync.SyncStream object at 0x0000022E8FCC6350>
+2025-09-27 20:18:32,674 - httpcore.http11 - DEBUG - send_request_headers.started request=<Request [b'POST']>
+2025-09-27 20:18:32,675 - httpcore.http11 - DEBUG - send_request_headers.complete
+2025-09-27 20:18:32,676 - httpcore.http11 - DEBUG - send_request_body.started request=<Request [b'POST']>
+2025-09-27 20:18:32,677 - httpcore.http11 - DEBUG - send_request_body.complete
+2025-09-27 20:18:32,677 - httpcore.http11 - DEBUG - receive_response_headers.started request=<Request [b'POST']>
+2025-09-27 20:19:04,540 - httpcore.http11 - DEBUG - receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Content-Type', b'application/json; charset=UTF-8'), (b'Vary', b'Origin'), (b'Vary', b'X-Origin'), (b'Vary', b'Referer'), (b'Content-Encoding', b'gzip'), (b'Date', b'Sat, 27 Sep 2025 14:49:04 GMT'), (b'Server', b'scaffolding on HTTPServer2'), (b'X-XSS-Protection', b'0'), (b'X-Frame-Options', b'SAMEORIGIN'), (b'X-Content-Type-Options', b'nosniff'), (b'Server-Timing', b'gfet4t7; dur=31855'), (b'Alt-Svc', b'h3=":443"; ma=2592000,h3-29=":443"; ma=2592000'), (b'Transfer-Encoding', b'chunked')])
+2025-09-27 20:19:04,545 - httpx - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent "HTTP/1.1 200 OK"
+2025-09-27 20:19:04,546 - httpcore.http11 - DEBUG - receive_response_body.started request=<Request [b'POST']>
+2025-09-27 20:19:04,548 - httpcore.http11 - DEBUG - receive_response_body.complete
+2025-09-27 20:19:04,548 - httpcore.http11 - DEBUG - response_closed.started
+2025-09-27 20:19:04,549 - httpcore.http11 - DEBUG - response_closed.complete
+2025-09-27 20:19:04,562 - __main__ - DEBUG - gemini API call #1
+2025-09-27 20:19:04,563 - __main__ - DEBUG - Gemini response: 3,5,6,9,11,17...
+2025-09-27 20:19:04,564 - __main__ - DEBUG - Selected article indices: [2, 4, 5, 8, 10, 16]
+2025-09-27 20:19:04,565 - __main__ - INFO - Selected 6 articles for summary
+2025-09-27 20:19:04,567 - __main__ - DEBUG - Generating fresh AI summary
+2025-09-27 20:19:04,568 - __main__ - DEBUG - Starting summary generation for TSLA
+2025-09-27 20:19:04,569 - __main__ - DEBUG - Sending summary prompt to Gemini (length: 2402 chars)
+2025-09-27 20:19:08,570 - google_genai.models - INFO - AFC is enabled with max remote calls: 10.
+2025-09-27 20:19:08,575 - httpcore.http11 - DEBUG - send_request_headers.started request=<Request [b'POST']>
+2025-09-27 20:19:08,577 - httpcore.http11 - DEBUG - send_request_headers.complete
+2025-09-27 20:19:08,579 - httpcore.http11 - DEBUG - send_request_body.started request=<Request [b'POST']>
+2025-09-27 20:19:08,581 - httpcore.http11 - DEBUG - send_request_body.complete
+2025-09-27 20:19:08,582 - httpcore.http11 - DEBUG - receive_response_headers.started request=<Request [b'POST']>
+2025-09-27 20:19:35,666 - httpcore.http11 - DEBUG - receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Content-Type', b'application/json; charset=UTF-8'), (b'Vary', b'Origin'), (b'Vary', b'X-Origin'), (b'Vary', b'Referer'), (b'Content-Encoding', b'gzip'), (b'Date', b'Sat, 27 Sep 2025 14:49:35 GMT'), (b'Server', b'scaffolding on HTTPServer2'), (b'X-XSS-Protection', b'0'), (b'X-Frame-Options', b'SAMEORIGIN'), (b'X-Content-Type-Options', b'nosniff'), (b'Server-Timing', b'gfet4t7; dur=27081'), (b'Alt-Svc', b'h3=":443"; ma=2592000,h3-29=":443"; ma=2592000'), (b'Transfer-Encoding', b'chunked')])
+2025-09-27 20:19:35,667 - httpx - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent "HTTP/1.1 200 OK"
+2025-09-27 20:19:35,667 - httpcore.http11 - DEBUG - receive_response_body.started request=<Request [b'POST']>
+2025-09-27 20:19:35,668 - httpcore.http11 - DEBUG - receive_response_body.complete
+2025-09-27 20:19:35,668 - httpcore.http11 - DEBUG - response_closed.started
+2025-09-27 20:19:35,669 - httpcore.http11 - DEBUG - response_closed.complete
+2025-09-27 20:19:35,670 - __main__ - DEBUG - gemini API call #2
+2025-09-27 20:19:35,670 - __main__ - DEBUG - Gemini summary response received: 3650 chars
+2025-09-27 20:19:35,670 - __main__ - INFO - Generated fresh summary for TSLA (length: 3650 chars)
+2025-09-27 20:19:35,671 - __main__ - DEBUG - Cached summary for TSLA
+2025-09-27 20:19:35,671 - __main__ - DEBUG - Saving summary to database for TSLA on 2025-09-27
+2025-09-27 20:19:35,671 - __main__ - DEBUG - Summary length: 3650 chars
+2025-09-27 20:19:35,671 - __main__ - DEBUG - What changed: Relative to a quiet preceding week, today introduced several new, conflicting data points. The prima...
+2025-09-27 20:19:35,674 - __main__ - DEBUG - Database save completed for TSLA
+2025-09-27 20:19:35,734 - __main__ - INFO - === Completed processing for TSLA ===
+2025-09-27 20:19:35,735 - werkzeug - INFO - 127.0.0.1 - - [27/Sep/2025 20:19:35] "GET /api/refresh/TSLA HTTP/1.1" 200 -
+2025-09-27 20:19:38,757 - __main__ - DEBUG - Getting summary for TSLA
+2025-09-27 20:19:38,762 - __main__ - DEBUG - Executed query for TSLA
+2025-09-27 20:19:38,763 - __main__ - DEBUG - Query result for TSLA: Found
+2025-09-27 20:19:38,764 - __main__ - DEBUG - Summary data found: date=2025-09-27, summary_len=3650, what_changed_len=381
+2025-09-27 20:19:38,765 - werkzeug - INFO - 127.0.0.1 - - [27/Sep/2025 20:19:38] "GET /api/summary/TSLA HTTP/1.1" 200 -
+2025-09-27 20:25:03,670 - __main__ - INFO - Remove ticker requested: TSLA
+2025-09-27 20:25:03,859 - __main__ - INFO - Successfully removed ticker: TSLA
+2025-09-27 20:25:03,861 - werkzeug - INFO - 127.0.0.1 - - [27/Sep/2025 20:25:03] "DELETE /api/tickers/TSLA HTTP/1.1" 200 -
+2025-09-27 20:25:03,885 - werkzeug - INFO - 127.0.0.1 - - [27/Sep/2025 20:25:03] "GET /api/tickers HTTP/1.1" 200 -
+2025-09-27 20:25:09,191 - __main__ - DEBUG - Received ticker request: TSLA
+2025-09-27 20:25:09,191 - __main__ - INFO - Validating ticker: TSLA
+2025-09-27 20:25:09,191 - __main__ - DEBUG - Validating ticker: TSLA
+2025-09-27 20:25:09,193 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): finviz.com:443
+2025-09-27 20:25:10,170 - urllib3.connectionpool - DEBUG - https://finviz.com:443 "GET /quote.ashx?t=TSLA HTTP/1.1" 200 None
+2025-09-27 20:25:10,206 - __main__ - DEBUG - Ticker TSLA validated successfully
+2025-09-27 20:25:10,253 - __main__ - INFO - Successfully added ticker: TSLA
+2025-09-27 20:25:10,254 - werkzeug - INFO - 127.0.0.1 - - [27/Sep/2025 20:25:10] "POST /api/tickers HTTP/1.1" 200 -
+2025-09-27 20:25:10,263 - werkzeug - INFO - 127.0.0.1 - - [27/Sep/2025 20:25:10] "GET /api/tickers HTTP/1.1" 200 -
+2025-09-27 20:25:11,178 - __main__ - DEBUG - Getting summary for TSLA
+2025-09-27 20:25:11,179 - __main__ - DEBUG - Executed query for TSLA
+2025-09-27 20:25:11,180 - __main__ - DEBUG - Query result for TSLA: None
+2025-09-27 20:25:11,181 - __main__ - WARNING - No summary data found for TSLA
+2025-09-27 20:25:11,184 - werkzeug - INFO - 127.0.0.1 - - [27/Sep/2025 20:25:11] "GET /api/summary/TSLA HTTP/1.1" 200 -
+2025-09-27 20:25:12,349 - __main__ - INFO - Manual refresh requested for TSLA
+2025-09-27 20:25:12,350 - __main__ - INFO - === Starting news processing for TSLA ===
+2025-09-27 20:25:12,350 - __main__ - DEBUG - Collecting fresh news from all sources
+2025-09-27 20:25:12,351 - __main__ - DEBUG - Starting TradingView scraping for TSLA
+2025-09-27 20:25:12,351 - __main__ - DEBUG - Fetching URL: https://www.tradingview.com/symbols/TSLA/news/
+2025-09-27 20:25:12,353 - urllib3.connectionpool - DEBUG - Resetting dropped connection: www.tradingview.com
+2025-09-27 20:25:13,557 - urllib3.connectionpool - DEBUG - https://www.tradingview.com:443 "GET /symbols/TSLA/news/ HTTP/1.1" 301 0
+2025-09-27 20:25:13,950 - urllib3.connectionpool - DEBUG - https://www.tradingview.com:443 "GET /symbols/NASDAQ-TSLA/news/ HTTP/1.1" 200 None
+2025-09-27 20:25:13,961 - __main__ - DEBUG - Response status: 200, Content length: 244359
+2025-09-27 20:25:14,038 - __main__ - DEBUG - Selector 'div.news-item' found 0 items
+2025-09-27 20:25:14,052 - __main__ - DEBUG - Selector '[data-role="news-item"]' found 0 items
+2025-09-27 20:25:14,056 - __main__ - DEBUG - Selector 'a[href*="news"]' found 4 items
+2025-09-27 20:25:14,056 - __main__ - INFO - TradingView: Found 1 articles for TSLA
+2025-09-27 20:25:14,057 - __main__ - DEBUG - Starting Finviz scraping for TSLA
+2025-09-27 20:25:14,057 - __main__ - DEBUG - Fetching URL: https://finviz.com/quote.ashx?t=TSLA
+2025-09-27 20:25:14,059 - urllib3.connectionpool - DEBUG - Resetting dropped connection: finviz.com
+2025-09-27 20:25:14,867 - urllib3.connectionpool - DEBUG - https://finviz.com:443 "GET /quote.ashx?t=TSLA HTTP/1.1" 200 None
+2025-09-27 20:25:14,894 - __main__ - DEBUG - Response status: 200, Content length: 277611
+2025-09-27 20:25:15,015 - __main__ - INFO - Finviz: Found 10 articles for TSLA
+2025-09-27 20:25:15,016 - __main__ - DEBUG - Starting Polygon API call for TSLA
+2025-09-27 20:25:15,016 - __main__ - DEBUG - API URL: https://api.polygon.io/v2/reference/news, Params: {'ticker': 'TSLA', 'limit': 10, 'apikey': 'BQoC8Jp25fffSdoxpLv0mI2gu2d74HT1'}
+2025-09-27 20:25:27,018 - urllib3.connectionpool - DEBUG - Resetting dropped connection: api.polygon.io
+2025-09-27 20:25:28,836 - urllib3.connectionpool - DEBUG - https://api.polygon.io:443 "GET /v2/reference/news?ticker=TSLA&limit=10&apikey=BQoC8Jp25fffSdoxpLv0mI2gu2d74HT1 HTTP/1.1" 200 None
+2025-09-27 20:25:28,838 - __main__ - DEBUG - polygon API call #2
+2025-09-27 20:25:28,839 - __main__ - INFO - Polygon: Found 10 articles for TSLA
+2025-09-27 20:25:28,839 - __main__ - INFO - Fresh articles collected: 21 (TV:1, FV:10, PG:10)
+2025-09-27 20:25:28,840 - __main__ - DEBUG - Cached 21 articles for TSLA
+2025-09-27 20:25:28,840 - __main__ - DEBUG - Selecting top articles using AI
+2025-09-27 20:25:28,841 - __main__ - DEBUG - Starting article selection with 21 articles
+2025-09-27 20:25:28,841 - __main__ - DEBUG - Sending prompt to Gemini (length: 5928 chars)
+2025-09-27 20:25:28,842 - __main__ - DEBUG - Using API key: AIzaSyDiWg...
+2025-09-27 20:25:32,843 - google_genai.models - INFO - AFC is enabled with max remote calls: 10.
+2025-09-27 20:25:32,848 - httpcore.connection - DEBUG - close.started
+2025-09-27 20:25:32,850 - httpcore.connection - DEBUG - close.complete
+2025-09-27 20:25:32,852 - httpcore.connection - DEBUG - connect_tcp.started host='generativelanguage.googleapis.com' port=443 local_address=None timeout=None socket_options=None
+2025-09-27 20:25:32,870 - httpcore.connection - DEBUG - connect_tcp.complete return_value=<httpcore._backends.sync.SyncStream object at 0x0000022E90ACCB90>
+2025-09-27 20:25:32,871 - httpcore.connection - DEBUG - start_tls.started ssl_context=<ssl.SSLContext object at 0x0000022E8FA020D0> server_hostname='generativelanguage.googleapis.com' timeout=None
+2025-09-27 20:25:32,884 - httpcore.connection - DEBUG - start_tls.complete return_value=<httpcore._backends.sync.SyncStream object at 0x0000022E8FC6F5C0>
+2025-09-27 20:25:32,884 - httpcore.http11 - DEBUG - send_request_headers.started request=<Request [b'POST']>
+2025-09-27 20:25:32,885 - httpcore.http11 - DEBUG - send_request_headers.complete
+2025-09-27 20:25:32,885 - httpcore.http11 - DEBUG - send_request_body.started request=<Request [b'POST']>
+2025-09-27 20:25:32,886 - httpcore.http11 - DEBUG - send_request_body.complete
+2025-09-27 20:25:32,886 - httpcore.http11 - DEBUG - receive_response_headers.started request=<Request [b'POST']>
+2025-09-27 20:26:18,624 - httpcore.http11 - DEBUG - receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Content-Type', b'application/json; charset=UTF-8'), (b'Vary', b'Origin'), (b'Vary', b'X-Origin'), (b'Vary', b'Referer'), (b'Content-Encoding', b'gzip'), (b'Date', b'Sat, 27 Sep 2025 14:56:18 GMT'), (b'Server', b'scaffolding on HTTPServer2'), (b'X-XSS-Protection', b'0'), (b'X-Frame-Options', b'SAMEORIGIN'), (b'X-Content-Type-Options', b'nosniff'), (b'Server-Timing', b'gfet4t7; dur=45732'), (b'Alt-Svc', b'h3=":443"; ma=2592000,h3-29=":443"; ma=2592000'), (b'Transfer-Encoding', b'chunked')])
+2025-09-27 20:26:18,625 - httpx - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent "HTTP/1.1 200 OK"
+2025-09-27 20:26:18,625 - httpcore.http11 - DEBUG - receive_response_body.started request=<Request [b'POST']>
+2025-09-27 20:26:18,626 - httpcore.http11 - DEBUG - receive_response_body.complete
+2025-09-27 20:26:18,626 - httpcore.http11 - DEBUG - response_closed.started
+2025-09-27 20:26:18,626 - httpcore.http11 - DEBUG - response_closed.complete
+2025-09-27 20:26:18,627 - __main__ - DEBUG - gemini API call #3
+2025-09-27 20:26:18,628 - __main__ - DEBUG - Gemini response: 3,5,6,9,11,15,17...
+2025-09-27 20:26:18,628 - __main__ - DEBUG - Selected article indices: [2, 4, 5, 8, 10, 14, 16]
+2025-09-27 20:26:18,628 - __main__ - INFO - Selected 7 articles for summary
+2025-09-27 20:26:18,629 - __main__ - DEBUG - Generating fresh AI summary
+2025-09-27 20:26:18,630 - __main__ - DEBUG - Starting summary generation for TSLA
+2025-09-27 20:26:18,630 - __main__ - DEBUG - Sending summary prompt to Gemini (length: 2745 chars)
+2025-09-27 20:26:22,631 - google_genai.models - INFO - AFC is enabled with max remote calls: 10.
+2025-09-27 20:26:22,634 - httpcore.http11 - DEBUG - send_request_headers.started request=<Request [b'POST']>
+2025-09-27 20:26:22,636 - httpcore.http11 - DEBUG - send_request_headers.complete
+2025-09-27 20:26:22,637 - httpcore.http11 - DEBUG - send_request_body.started request=<Request [b'POST']>
+2025-09-27 20:26:22,639 - httpcore.http11 - DEBUG - send_request_body.complete
+2025-09-27 20:26:22,641 - httpcore.http11 - DEBUG - receive_response_headers.started request=<Request [b'POST']>
+2025-09-27 20:27:14,057 - httpcore.http11 - DEBUG - receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Content-Type', b'application/json; charset=UTF-8'), (b'Vary', b'Origin'), (b'Vary', b'X-Origin'), (b'Vary', b'Referer'), (b'Content-Encoding', b'gzip'), (b'Date', b'Sat, 27 Sep 2025 14:57:14 GMT'), (b'Server', b'scaffolding on HTTPServer2'), (b'X-XSS-Protection', b'0'), (b'X-Frame-Options', b'SAMEORIGIN'), (b'X-Content-Type-Options', b'nosniff'), (b'Server-Timing', b'gfet4t7; dur=51412'), (b'Alt-Svc', b'h3=":443"; ma=2592000,h3-29=":443"; ma=2592000'), (b'Transfer-Encoding', b'chunked')])
+2025-09-27 20:27:14,059 - httpx - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent "HTTP/1.1 200 OK"
+2025-09-27 20:27:14,060 - httpcore.http11 - DEBUG - receive_response_body.started request=<Request [b'POST']>
+2025-09-27 20:27:14,061 - httpcore.http11 - DEBUG - receive_response_body.complete
+2025-09-27 20:27:14,062 - httpcore.http11 - DEBUG - response_closed.started
+2025-09-27 20:27:14,063 - httpcore.http11 - DEBUG - response_closed.complete
+2025-09-27 20:27:14,066 - __main__ - DEBUG - gemini API call #4
+2025-09-27 20:27:14,069 - __main__ - DEBUG - Gemini summary response received: 3903 chars
+2025-09-27 20:27:14,071 - __main__ - INFO - Generated fresh summary for TSLA (length: 3903 chars)
+2025-09-27 20:27:14,072 - __main__ - DEBUG - Cached summary for TSLA
+2025-09-27 20:27:14,073 - __main__ - DEBUG - Saving summary to database for TSLA on 2025-09-27
+2025-09-27 20:27:14,074 - __main__ - DEBUG - Summary length: 3903 chars
+2025-09-27 20:27:14,074 - __main__ - DEBUG - What changed: Compared to the ongoing focus on Q3 deliveries and margin pressure from recent price cuts, today int...
+2025-09-27 20:27:14,077 - __main__ - DEBUG - Database save completed for TSLA
+2025-09-27 20:27:14,234 - __main__ - INFO - === Completed processing for TSLA ===
+2025-09-27 20:27:14,235 - werkzeug - INFO - 127.0.0.1 - - [27/Sep/2025 20:27:14] "GET /api/refresh/TSLA HTTP/1.1" 200 -
+2025-09-27 20:27:17,405 - __main__ - DEBUG - Getting summary for TSLA
+2025-09-27 20:27:17,411 - __main__ - DEBUG - Executed query for TSLA
+2025-09-27 20:27:17,412 - __main__ - DEBUG - Query result for TSLA: Found
+2025-09-27 20:27:17,413 - __main__ - DEBUG - Summary data found: date=2025-09-27, summary_len=3903, what_changed_len=456
+2025-09-27 20:27:17,418 - werkzeug - INFO - 127.0.0.1 - - [27/Sep/2025 20:27:17] "GET /api/summary/TSLA HTTP/1.1" 200 -

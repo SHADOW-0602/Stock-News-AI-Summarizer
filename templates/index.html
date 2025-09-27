@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stock News AI Summarizer</title>
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📈 Stock News AI Summarizer</h1>
+            <p>AI-powered financial news analysis for smart trading decisions</p>
+        </header>
+
+        <div class="main-content">
+            <!-- Left Side: News Sources & Summary -->
+            <div class="left-panel">
+                <div class="summary-section">
+                    <div class="summary-header">
+                        <h2 id="current-ticker">Select a ticker to view summary</h2>
+                        <button id="refresh-btn" class="refresh-btn" style="display: none;">🤖 Generate</button>
+                    </div>
+                    
+                    <div id="summary-content" class="summary-content">
+                        <div class="welcome-message">
+                            <h3>Welcome to Stock News AI Summarizer</h3>
+                            <p>Add stock tickers from the sidebar to get started with AI-powered news analysis.</p>
+                            <ul>
+                                <li>📊 Real-time news from TradingView, Finviz, and Polygon</li>
+                                <li>🤖 AI-curated top articles using Gemini Pro</li>
+                                <li>📝 Daily summaries with "What Changed Today" insights</li>
+                                <li>📅 7-day historical tracking</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="sources-section" id="sources-section" style="display: none;">
+                    <h3>📰 Sources Used</h3>
+                    <div id="sources-list" class="sources-list"></div>
+                </div>
+
+                <div class="history-section" id="history-section" style="display: none;">
+                    <h3>📅 7-Day History</h3>
+                    <div id="history-list" class="history-list"></div>
+                </div>
+            </div>
+
+            <!-- Right Sidebar: Tickers -->
+            <div class="right-sidebar">
+                <div class="ticker-section">
+                    <h3>📋 Stock Tickers</h3>
+                    
+                    <div class="add-ticker">
+                        <input type="text" id="ticker-input" placeholder="Enter ticker (e.g., AAPL)" maxlength="10">
+                        <button id="add-ticker-btn">+ Add</button>
+                    </div>
+
+                    <div id="ticker-list" class="ticker-list">
+                        <div class="loading">Loading tickers...</div>
+                    </div>
+                </div>
+
+                <div class="info-section">
+                    <h4>ℹ️ How it works</h4>
+                    <ol>
+                        <li>Add stock tickers you want to track</li>
+                        <li>AI analyzes news from multiple sources</li>
+                        <li>Get daily summaries at 8 AM IST</li>
+                        <li>Track changes over 7 days</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
