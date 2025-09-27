@@ -37,8 +37,9 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Configuration
-GEMINI_API_KEY = os.getenv('GEMINI_API_KEY', 'your-gemini-api-key')
-POLYGON_API_KEY = os.getenv('POLYGON_API_KEY', 'your-polygon-api-key')
+GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
+POLYGON_API_KEY = os.getenv('POLYGON_API_KEY')
+ALPHA_VANTAGE_API_KEY = os.getenv('ALPHA_VANTAGE_API_KEY')
 
 logger.info(f"Gemini API Key loaded: {'Yes' if GEMINI_API_KEY != 'your-gemini-api-key' else 'No'}")
 logger.info(f"Polygon API Key loaded: {'Yes' if POLYGON_API_KEY != 'your-polygon-api-key' else 'No'}")
@@ -161,44 +162,82 @@ class NewsCollector:
             raise e
     
     def get_tradingview_news(self, ticker):
-        """Scrape TradingView news for ticker with session reuse"""
+        """Scrape TradingView news for ticker - improved version"""
         logger.debug(f"Starting TradingView scraping for {ticker}")
         try:
-            url = f"https://www.tradingview.com/symbols/{ticker}/news/"
-            logger.debug(f"Fetching URL: {url}")
-            response = self.session.get(url, timeout=10)
-            logger.debug(f"Response status: {response.status_code}, Content length: {len(response.content)}")
-            soup = BeautifulSoup(response.content, 'html.parser')
+            # Try different TradingView URLs
+            urls = [
+                f"https://www.tradingview.com/symbols/{ticker}/news/",
+                f"https://www.tradingview.com/symbols/NASDAQ-{ticker}/news/",
+                f"https://www.tradingview.com/symbols/NYSE-{ticker}/news/"
+            ]
             
             articles = []
-            # Try multiple selectors
-            selectors = ['div.news-item', '[data-role="news-item"]', 'a[href*="news"]']
-            
-            for selector in selectors:
-                news_items = soup.select(selector)[:10]
-                logger.debug(f"Selector '{selector}' found {len(news_items)} items")
-                if news_items:
-                    break
-            
-            for item in news_items:
-                title_elem = item.find('a') or item
-                if title_elem:
-                    title = title_elem.get_text(strip=True)
-                    if title and len(title) > 10:  # Filter short/empty titles
-                        url = title_elem.get('href', '')
-                        if url.startswith('/'):
-                            url = 'https://www.tradingview.com' + url
+            for url in urls:
+                try:
+                    logger.debug(f"Trying URL: {url}")
+                    response = self.session.get(url, timeout=15)
+                    
+                    if response.status_code != 200:
+                        continue
+                    
+                    soup = BeautifulSoup(response.content, 'html.parser')
+                    
+                    # Look for JSON data in script tags (TradingView often embeds data)
+                    scripts = soup.find_all('script')
+                    for script in scripts:
+                        if script.string and 'news' in script.string.lower():
+                            script_content = script.string
+                            # Try to extract news titles from JSON-like content
+                            import re
+                            titles = re.findall(r'"title"\s*:\s*"([^"]+)"', script_content)
+                            urls_found = re.findall(r'"url"\s*:\s*"([^"]+)"', script_content)
+                            
+                            for i, title in enumerate(titles[:8]):
+                                if len(title) > 15:
+                                    article_url = urls_found[i] if i < len(urls_found) else url
+                                    articles.append({
+                                        'title': title,
+                                        'url': article_url,
+                                        'source': 'TradingView',
+                                        'content': title,
+                                        'date': datetime.now().isoformat()
+                                    })
+                    
+                    # Fallback: look for any text that looks like news headlines
+                    if not articles:
+                        # Find all text elements and filter for news-like content
+                        all_text = soup.get_text()
+                        lines = [line.strip() for line in all_text.split('\n') if line.strip()]
                         
-                        articles.append({
-                            'title': title,
-                            'url': url,
-                            'source': 'TradingView',
-                            'content': title,
-                            'date': datetime.now().isoformat()
-                        })
+                        potential_headlines = []
+                        for line in lines:
+                            # Filter for lines that look like headlines
+                            if (20 < len(line) < 150 and 
+                                not line.startswith(('http', 'www', 'Copyright', 'Terms')) and
+                                any(word in line.lower() for word in ['stock', 'market', 'price', 'earnings', 'revenue', ticker.lower()])):
+                                potential_headlines.append(line)
+                        
+                        # Take first few potential headlines
+                        for headline in potential_headlines[:5]:
+                            articles.append({
+                                'title': headline,
+                                'url': url,
+                                'source': 'TradingView',
+                                'content': headline,
+                                'date': datetime.now().isoformat()
+                            })
+                    
+                    if articles:
+                        break
+                        
+                except Exception as url_error:
+                    logger.debug(f"Error with URL {url}: {url_error}")
+                    continue
             
             logger.info(f"TradingView: Found {len(articles)} articles for {ticker}")
             return articles
+            
         except Exception as e:
             logger.error(f"TradingView scraping error for {ticker}: {e}")
             return []
@@ -269,6 +308,53 @@ class NewsCollector:
             return articles
         except Exception as e:
             logger.error(f"Polygon API error for {ticker}: {e}")
+            return []
+    
+    def get_alphavantage_news(self, ticker):
+        """Get news from Alpha Vantage API"""
+        logger.debug(f"Starting Alpha Vantage API call for {ticker}")
+        try:
+            url = "https://www.alphavantage.co/query"
+            params = {
+                'function': 'NEWS_SENTIMENT',
+                'tickers': ticker,
+                'apikey': ALPHA_VANTAGE_API_KEY,
+                'limit': 10
+            }
+            
+            response = self.session.get(url, params=params, timeout=15)
+            
+            if response.status_code != 200:
+                logger.error(f"Alpha Vantage returned status {response.status_code}")
+                return []
+            
+            data = response.json()
+            
+            articles = []
+            if 'feed' in data:
+                for item in data['feed'][:10]:
+                    try:
+                        title = item.get('title', '')
+                        url = item.get('url', '')
+                        summary = item.get('summary', '')
+                        
+                        if title and len(title) > 15:
+                            articles.append({
+                                'title': title,
+                                'url': url,
+                                'source': 'Alpha Vantage',
+                                'content': summary or title,
+                                'date': item.get('time_published', datetime.now().isoformat())
+                            })
+                    except Exception as item_error:
+                        logger.debug(f"Error processing Alpha Vantage item: {item_error}")
+                        continue
+            
+            logger.info(f"Alpha Vantage: Found {len(articles)} articles for {ticker}")
+            return articles
+            
+        except Exception as e:
+            logger.error(f"Alpha Vantage API error for {ticker}: {e}")
             return []
 
 class AIProcessor:
@@ -459,12 +545,21 @@ def index():
 
 @app.route('/api/tickers', methods=['GET'])
 def get_tickers():
-    conn = sqlite3.connect('news_data.db')
-    c = conn.cursor()
-    c.execute('SELECT symbol FROM tickers ORDER BY added_date DESC')
-    tickers = [row[0] for row in c.fetchall()]
-    conn.close()
-    return jsonify(tickers)
+    try:
+        logger.debug("Getting tickers list")
+        # Ensure database exists
+        init_db()
+        
+        conn = sqlite3.connect('news_data.db')
+        c = conn.cursor()
+        c.execute('SELECT symbol FROM tickers ORDER BY added_date DESC')
+        tickers = [row[0] for row in c.fetchall()]
+        conn.close()
+        logger.debug(f"Found {len(tickers)} tickers: {tickers}")
+        return jsonify(tickers)
+    except Exception as e:
+        logger.error(f"Error getting tickers: {e}")
+        return jsonify([])
 
 def validate_ticker(ticker):
     """Validate if ticker exists by checking multiple sources"""
@@ -654,9 +749,11 @@ def process_ticker_news(ticker):
         all_articles.extend(fv_articles)
         pg_articles = collector.get_polygon_news(ticker)
         all_articles.extend(pg_articles)
+        av_articles = collector.get_alphavantage_news(ticker)
+        all_articles.extend(av_articles)
         
-        source_counts = {'TV': len(tv_articles), 'FV': len(fv_articles), 'PG': len(pg_articles)}
-        logger.info(f"Fresh articles collected: {len(all_articles)} (TV:{len(tv_articles)}, FV:{len(fv_articles)}, PG:{len(pg_articles)})")
+        source_counts = {'TV': len(tv_articles), 'FV': len(fv_articles), 'PG': len(pg_articles), 'AV': len(av_articles)}
+        logger.info(f"Fresh articles collected: {len(all_articles)} (TV:{len(tv_articles)}, FV:{len(fv_articles)}, PG:{len(pg_articles)}, AV:{len(av_articles)})")
         
         # Cache the collected news
         if all_articles:
@@ -775,5 +872,5 @@ if __name__ == '__main__':
     )
     scheduler.start()
     
-    port = int(os.environ.get('PORT'))
+    port = int(os.environ.get('PORT', 10000))
     app.run(host='0.0.0.0', port=port, debug=False)

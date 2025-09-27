@@ -31,21 +31,29 @@ class StockNewsApp {
 
     async loadTickers() {
         try {
+            console.log('Fetching tickers...');
             const response = await fetch('/api/tickers');
+            console.log('Response status:', response.status);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+            
             const tickers = await response.json();
+            console.log('Tickers received:', tickers);
             this.displayTickers(tickers);
         } catch (error) {
             console.error('Error loading tickers:', error);
             document.getElementById('ticker-list').innerHTML =
-                '<div class="error-message">Failed to load tickers</div>';
+                `<div class="error-message">Error: ${error.message}</div>`;
         }
     }
 
     displayTickers(tickers) {
         const tickerList = document.getElementById('ticker-list');
 
-        if (tickers.length === 0) {
-            tickerList.innerHTML = '<div class="loading">No tickers added yet</div>';
+        if (!tickers || tickers.length === 0) {
+            tickerList.innerHTML = '<div class="no-tickers">No tickers added yet</div>';
             return;
         }
 
@@ -197,8 +205,14 @@ class StockNewsApp {
             .replace(/WHAT CHANGED TODAY[\s\S]*?(?=\n\n|$)/gi, '')
             // Format headers
             .replace(/\*\*(.*?)\*\*/g, '<h4>$1</h4>')
-            // Format bullet points
+            // Clean up empty bullet points and asterisks
+            .replace(/^\s*\*\s*$/gm, '')
+            .replace(/^\s*[•·-]\s*$/gm, '')
+            // Format bullet points with content
+            .replace(/^\s*\*\s+(.+)$/gm, '<li>$1</li>')
             .replace(/^\s*[•·-]\s+(.+)$/gm, '<li>$1</li>')
+            // Clean up multiple line breaks
+            .replace(/\n{3,}/g, '\n\n')
             // Format paragraphs
             .replace(/\n\n/g, '</p><p>')
             .replace(/\n/g, '<br>')
@@ -208,9 +222,15 @@ class StockNewsApp {
             // Clean up list formatting
             .replace(/(<li>.*?<\/li>)/gs, '<ul>$1</ul>')
             .replace(/<\/ul>\s*<ul>/g, '')
-            // Clean up empty paragraphs
+            // Clean up empty elements
             .replace(/<p>\s*<\/p>/g, '')
-            .replace(/<p>\s*<br>\s*<\/p>/g, '');
+            .replace(/<p>\s*<br>\s*<\/p>/g, '')
+            .replace(/<li>\s*<\/li>/g, '')
+            .replace(/<ul>\s*<\/ul>/g, '')
+            // Clean up empty headers
+            .replace(/<h4>\s*<\/h4>/g, '')
+            // Remove standalone asterisks and bullets
+            .replace(/<p>\s*[\*•·-]\s*<\/p>/g, '');
         
         return formatted;
     }
@@ -413,8 +433,18 @@ style.textContent = `
         font-size: 14px;
         color: #7f8c8d;
     }
+    
+    .no-tickers {
+        text-align: center;
+        color: #7f8c8d;
+        font-style: italic;
+        padding: 20px;
+    }
 `;
 document.head.appendChild(style);
 
-// Initialize the app
-const app = new StockNewsApp();
+// Initialize the app after DOM loads
+document.addEventListener('DOMContentLoaded', () => {
+    const app = new StockNewsApp();
+    window.app = app; // Make globally accessible
+});
