@@ -4,7 +4,7 @@ A professional-grade financial news aggregation and AI analysis platform that de
 
 ## 🚀 Key Features
 
-- **Multi-Source Intelligence**: Aggregates news from TradingView, Finviz, and Polygon API
+- **Multi-Source Intelligence**: Aggregates news from 4 sources: Alpha Vantage, Finviz, Polygon, and TradingView
 - **Professional AI Analysis**: Uses Gemini 2.5 Pro for institutional-grade summaries
 - **Intelligent Caching**: 4-hour news cache reduces API calls by 60%
 - **Graceful Rate Limiting**: Handles API quotas with automatic fallbacks
@@ -46,6 +46,11 @@ pip install -r requirements.txt
 2. Get free API key (5 calls/minute)
 3. Provides professional news feed with sentiment analysis
 
+#### Alpha Vantage API (Optional but Recommended)
+1. Sign up at [Alpha Vantage](https://www.alphavantage.co/support/#api-key)
+2. Get free API key (5 calls/minute, 500 calls/day)
+3. Provides news sentiment analysis and financial data
+
 ### 3. Environment Setup
 ```bash
 # Copy environment template
@@ -54,6 +59,7 @@ cp .env.example .env
 # Edit .env file with your keys
 GEMINI_API_KEY=your_gemini_api_key_here
 POLYGON_API_KEY=your_polygon_api_key_here
+ALPHA_VANTAGE_API_KEY=your_alpha_vantage_api_key_here
 PORT=5000
 ```
 
@@ -76,6 +82,7 @@ python app.py
 # 4. Add environment variables:
 #    - GEMINI_API_KEY
 #    - POLYGON_API_KEY
+#    - ALPHA_VANTAGE_API_KEY
 # 5. Deploy automatically
 ```
 
@@ -97,6 +104,7 @@ heroku create your-app-name
 # 3. Set environment variables
 heroku config:set GEMINI_API_KEY=your_key
 heroku config:set POLYGON_API_KEY=your_key
+heroku config:set ALPHA_VANTAGE_API_KEY=your_key
 
 # 4. Deploy
 git push heroku main
@@ -138,7 +146,8 @@ git push heroku main
 | **APIs** |
 | Gemini 2.5 Pro | Free | $0 | 240 requests/month | 21,600 available | 60% reduction |
 | Polygon API | Free | $0 | 360 requests/month | 216,000 available | 60% reduction |
-| **Total** | | **$0** | | **98%+ headroom** | **Major savings** |
+| Alpha Vantage API | Free | $0 | 300 requests/month | 15,000 available | 60% reduction |
+| **Total** | | **$0** | | **97%+ headroom** | **Major savings** |
 
 ### Scaling Cost Projections
 | Tickers | Monthly Requests | Estimated Cost | Optimization |

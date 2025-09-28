@@ -2077,3 +2077,62 @@ Pfizer (PFE) today executed a significant strategic pivot into the high-growth o
 2025-09-28 12:25:21,185 - __main__ - DEBUG - Query result for PFE: Found
 2025-09-28 12:25:21,185 - __main__ - DEBUG - Summary data found: date=2025-09-28, summary_len=3507, what_changed_len=584
 2025-09-28 12:25:21,187 - werkzeug - INFO - 127.0.0.1 - - [28/Sep/2025 12:25:21] "GET /api/summary/PFE HTTP/1.1" 200 -
+2025-09-28 12:37:38,711 - __main__ - INFO - Gemini API Key loaded: Yes
+2025-09-28 12:37:38,759 - __main__ - INFO - Polygon API Key loaded: Yes
+2025-09-28 12:37:40,677 - tzlocal - DEBUG - Looking up time zone info from registry
+2025-09-28 12:37:40,696 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-09-28 12:37:40,699 - apscheduler.scheduler - INFO - Added job "daily_update" to job store "default"
+2025-09-28 12:37:40,700 - apscheduler.scheduler - INFO - Scheduler started
+2025-09-28 12:37:40,703 - apscheduler.scheduler - DEBUG - Looking for jobs to run
+2025-09-28 12:37:40,704 - apscheduler.scheduler - DEBUG - Next wakeup is due at 2025-09-29 08:00:00+05:30 (in 69739.295437 seconds)
+2025-09-28 12:37:40,761 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:10000
+ * Running on http://192.168.1.6:10000
+2025-09-28 12:37:40,761 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2025-09-28 12:37:43,366 - werkzeug - INFO - 127.0.0.1 - - [28/Sep/2025 12:37:43] "GET / HTTP/1.1" 200 -
+2025-09-28 12:37:43,647 - werkzeug - INFO - 127.0.0.1 - - [28/Sep/2025 12:37:43] "[36mGET /static/style.css HTTP/1.1[0m" 304 -
+2025-09-28 12:37:43,712 - werkzeug - INFO - 127.0.0.1 - - [28/Sep/2025 12:37:43] "[36mGET /static/script.js HTTP/1.1[0m" 304 -
+2025-09-28 12:37:43,942 - __main__ - DEBUG - Getting tickers list
+2025-09-28 12:37:43,946 - __main__ - DEBUG - Found 12 tickers: ['PFE', 'KO', 'LLY', 'MA', 'BAC', 'JPM', 'XOM', 'BA', 'BP', 'NVDA', 'TSLA', 'AAP']
+2025-09-28 12:37:43,947 - werkzeug - INFO - 127.0.0.1 - - [28/Sep/2025 12:37:43] "GET /api/tickers HTTP/1.1" 200 -
+2025-09-28 12:37:54,494 - __main__ - DEBUG - Getting summary for BAC
+2025-09-28 12:37:54,496 - __main__ - DEBUG - Executed query for BAC
+2025-09-28 12:37:54,497 - __main__ - DEBUG - Query result for BAC: Found
+2025-09-28 12:37:54,497 - __main__ - DEBUG - Summary data found: date=2025-09-28, summary_len=3672, what_changed_len=0
+2025-09-28 12:37:54,498 - werkzeug - INFO - 127.0.0.1 - - [28/Sep/2025 12:37:54] "GET /api/summary/BAC HTTP/1.1" 200 -
+2025-09-28 12:38:03,282 - __main__ - DEBUG - Getting summary for MA
+2025-09-28 12:38:03,286 - __main__ - DEBUG - Executed query for MA
+2025-09-28 12:38:03,288 - __main__ - DEBUG - Query result for MA: Found
+2025-09-28 12:38:03,289 - __main__ - DEBUG - Summary data found: date=2025-09-28, summary_len=3953, what_changed_len=0
+2025-09-28 12:38:03,295 - werkzeug - INFO - 127.0.0.1 - - [28/Sep/2025 12:38:03] "GET /api/summary/MA HTTP/1.1" 200 -
+2025-09-28 12:38:08,754 - __main__ - DEBUG - Getting summary for LLY
+2025-09-28 12:38:08,758 - __main__ - DEBUG - Executed query for LLY
+2025-09-28 12:38:08,759 - __main__ - DEBUG - Query result for LLY: Found
+2025-09-28 12:38:08,761 - __main__ - DEBUG - Summary data found: date=2025-09-28, summary_len=4037, what_changed_len=624
+2025-09-28 12:38:08,768 - werkzeug - INFO - 127.0.0.1 - - [28/Sep/2025 12:38:08] "GET /api/summary/LLY HTTP/1.1" 200 -
+2025-09-28 12:38:15,908 - __main__ - DEBUG - Getting summary for JPM
+2025-09-28 12:38:15,909 - __main__ - DEBUG - Executed query for JPM
+2025-09-28 12:38:15,909 - __main__ - DEBUG - Query result for JPM: Found
+2025-09-28 12:38:15,910 - __main__ - DEBUG - Summary data found: date=2025-09-28, summary_len=3556, what_changed_len=0
+2025-09-28 12:38:15,910 - werkzeug - INFO - 127.0.0.1 - - [28/Sep/2025 12:38:15] "GET /api/summary/JPM HTTP/1.1" 200 -
+2025-09-28 12:41:33,146 - __main__ - DEBUG - Getting summary for XOM
+2025-09-28 12:41:33,152 - __main__ - DEBUG - Executed query for XOM
+2025-09-28 12:41:33,154 - __main__ - DEBUG - Query result for XOM: Found
+2025-09-28 12:41:33,155 - __main__ - DEBUG - Summary data found: date=2025-09-27, summary_len=3636, what_changed_len=647
+2025-09-28 12:41:33,162 - werkzeug - INFO - 127.0.0.1 - - [28/Sep/2025 12:41:33] "GET /api/summary/XOM HTTP/1.1" 200 -
+2025-09-28 12:41:38,712 - __main__ - DEBUG - Getting summary for BAC
+2025-09-28 12:41:38,715 - __main__ - DEBUG - Executed query for BAC
+2025-09-28 12:41:38,716 - __main__ - DEBUG - Query result for BAC: Found
+2025-09-28 12:41:38,716 - __main__ - DEBUG - Summary data found: date=2025-09-28, summary_len=3672, what_changed_len=0
+2025-09-28 12:41:38,719 - werkzeug - INFO - 127.0.0.1 - - [28/Sep/2025 12:41:38] "GET /api/summary/BAC HTTP/1.1" 200 -
+2025-09-28 12:43:46,857 - __main__ - DEBUG - Getting summary for TSLA
+2025-09-28 12:43:46,860 - __main__ - DEBUG - Executed query for TSLA
+2025-09-28 12:43:46,862 - __main__ - DEBUG - Query result for TSLA: Found
+2025-09-28 12:43:46,862 - __main__ - DEBUG - Summary data found: date=2025-09-27, summary_len=3903, what_changed_len=456
+2025-09-28 12:43:46,864 - werkzeug - INFO - 127.0.0.1 - - [28/Sep/2025 12:43:46] "GET /api/summary/TSLA HTTP/1.1" 200 -
+2025-09-28 12:49:59,408 - __main__ - DEBUG - Getting summary for JPM
+2025-09-28 12:49:59,412 - __main__ - DEBUG - Executed query for JPM
+2025-09-28 12:49:59,413 - __main__ - DEBUG - Query result for JPM: Found
+2025-09-28 12:49:59,413 - __main__ - DEBUG - Summary data found: date=2025-09-28, summary_len=3556, what_changed_len=0
+2025-09-28 12:49:59,416 - werkzeug - INFO - 127.0.0.1 - - [28/Sep/2025 12:49:59] "GET /api/summary/JPM HTTP/1.1" 200 -
