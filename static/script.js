@@ -147,20 +147,36 @@ class StockNewsApp {
         }
 
         const summary = data.current_summary;
-
+        
         // Display main summary
         summaryContent.innerHTML = `
             <div class="summary-date">
                 <strong>Last Updated:</strong> ${new Date(summary.date).toLocaleDateString()}
             </div>
             <div class="summary-text">${this.formatSummary(summary.summary)}</div>
-            ${summary.what_changed && summary.what_changed !== 'No material developments identified.' ? `
+            ${summary.what_changed && summary.what_changed.trim() !== '' && 
+              summary.what_changed !== 'No material developments identified.' && 
+              summary.what_changed !== 'API quota exceeded - manual review recommended.' &&
+              summary.what_changed !== 'Unable to determine changes due to API error.' ? `
                 <div class="what-changed-box">
                     <div class="what-changed-header">
                         <span class="change-icon">📊</span>
                         <strong>What Changed Today</strong>
                     </div>
                     <div class="what-changed-content">${summary.what_changed}</div>
+                </div>
+            ` : ''}
+            ${summary.risk_factors && summary.risk_factors.trim() !== '' && 
+              summary.risk_factors !== 'Unable to generate risk analysis.' && 
+              summary.risk_factors !== 'Risk analysis unavailable - API quota exceeded.' &&
+              summary.risk_factors !== 'Risk analysis unavailable due to API error.' &&
+              summary.risk_factors !== 'undefined' ? `
+                <div class="risk-factors-box">
+                    <div class="risk-factors-header">
+                        <span class="risk-icon">⚠️</span>
+                        <strong>Risk Factors</strong>
+                    </div>
+                    <div class="risk-factors-content">${summary.risk_factors}</div>
                 </div>
             ` : ''}
         `;
@@ -200,11 +216,18 @@ class StockNewsApp {
     formatSummary(text) {
         // Enhanced formatting for professional readability
         let formatted = text
-            // Remove "What Changed Today" section from main summary
-            .replace(/\*\*WHAT CHANGED TODAY\*\*[\s\S]*?(?=\n\n|$)/gi, '')
-            .replace(/WHAT CHANGED TODAY[\s\S]*?(?=\n\n|$)/gi, '')
-            // Format headers
+            // Remove "What Changed Today" and "Risk Factors" sections from main summary
+            .replace(/\*\*WHAT CHANGED TODAY\*\*[\s\S]*?(?=\n\n|\*\*|$)/gi, '')
+            .replace(/WHAT CHANGED TODAY[\s\S]*?(?=\n\n|\*\*|$)/gi, '')
+            .replace(/\*\*What Changed Today\*\*[\s\S]*?(?=\n\n|\*\*|$)/gi, '')
+            .replace(/\*\*RISK FACTORS\*\*[\s\S]*?(?=\n\n|\*\*|$)/gi, '')
+            .replace(/RISK FACTORS[\s\S]*?(?=\n\n|\*\*|$)/gi, '')
+            .replace(/\*\*Risk Factors\*\*[\s\S]*?(?=\n\n|\*\*|$)/gi, '')
+            // Format headers (but preserve remaining content)
             .replace(/\*\*(.*?)\*\*/g, '<h4>$1</h4>')
+            // Clean up any remaining "What Changed" fragments
+            .replace(/<h4>What Changed Today<\/h4>/gi, '')
+            .replace(/<h4>WHAT CHANGED TODAY<\/h4>/gi, '')
             // Clean up empty bullet points and asterisks
             .replace(/^\s*\*\s*$/gm, '')
             .replace(/^\s*[•·-]\s*$/gm, '')
@@ -230,7 +253,11 @@ class StockNewsApp {
             // Clean up empty headers
             .replace(/<h4>\s*<\/h4>/g, '')
             // Remove standalone asterisks and bullets
-            .replace(/<p>\s*[\*•·-]\s*<\/p>/g, '');
+            .replace(/<p>\s*[\*•·-]\s*<\/p>/g, '')
+            // Remove headers followed immediately by another header (empty sections)
+            .replace(/<h4>([^<]+)<\/h4>\s*<h4>/g, '<h4>')
+            // Remove headers at the end with no content
+            .replace(/<h4>([^<]+)<\/h4>\s*<\/p>\s*$/g, '</p>');
         
         return formatted;
     }

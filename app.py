@@ -474,12 +474,13 @@ class AIProcessor:
             
             **MARKET IMPLICATIONS**
             • Price catalysts and trading considerations
-            • Risk factors and opportunities
+            • Investment opportunities and upside potential
             • Sector/peer comparison context
             
             **WHAT CHANGED TODAY**
             Compare to previous 7 days - highlight NEW developments only.
             
+            IMPORTANT: Do not include section headers with empty bullet points. Only include sections that have actual substantive content.
             Keep it professional, data-driven, and concise. Focus on material business impact.
             Length: 400-500 words maximum.
             """
@@ -494,36 +495,66 @@ class AIProcessor:
             if isinstance(response, dict):  # Fallback was returned
                 return response
             logger.debug(f"Gemini summary response received: {len(response.text)} chars")
+            logger.debug(f"Response preview: {response.text[:200]}...")
             
             # Extract "What changed today" section
             summary_text = response.text
             what_changed = "No material developments identified."
             
-            # Try multiple section headers
-            change_indicators = ["WHAT CHANGED TODAY", "What Changed Today", "**WHAT CHANGED TODAY**"]
+            # Try multiple section headers with more flexible matching
+            change_indicators = ["**WHAT CHANGED TODAY**", "WHAT CHANGED TODAY", "What Changed Today", "**What Changed Today**"]
             for indicator in change_indicators:
                 if indicator in summary_text:
                     parts = summary_text.split(indicator)
                     if len(parts) > 1:
-                        what_changed = parts[1].split("\n\n")[0].strip()
-                        # Clean up formatting and remove formal headers
+                        # Get everything after the indicator until next section or end
+                        remaining_text = parts[1]
+                        # Split by double newlines or next section headers
+                        next_section_patterns = ["\n\n**", "\n\n##", "\n\nEXECUTIVE", "\n\nKEY", "\n\nMARKET"]
+                        end_pos = len(remaining_text)
+                        for pattern in next_section_patterns:
+                            pos = remaining_text.find(pattern)
+                            if pos != -1 and pos < end_pos:
+                                end_pos = pos
+                        
+                        what_changed = remaining_text[:end_pos].strip()
+                        
+                        # Clean up formatting
                         what_changed = what_changed.replace("**", "").replace("*", "").strip()
-                        # Remove memo-style headers
+                        # Remove memo-style headers and empty lines
                         lines = what_changed.split('\n')
                         cleaned_lines = []
                         for line in lines:
                             line = line.strip()
-                            if not (line.startswith('TO:') or line.startswith('FROM:') or 
-                                   line.startswith('SUBJECT:') or line.startswith('DATE:') or
-                                   line.startswith('---') or line == ''):
+                            if (line and not line.startswith('TO:') and not line.startswith('FROM:') and 
+                                not line.startswith('SUBJECT:') and not line.startswith('DATE:') and
+                                not line.startswith('---') and line != '**' and line != '*'):
                                 cleaned_lines.append(line)
-                        what_changed = ' '.join(cleaned_lines)
+                        
+                        if cleaned_lines:
+                            what_changed = ' '.join(cleaned_lines)
+                            logger.debug(f"Extracted what_changed: {what_changed[:100]}...")
+                            break
+            
+            # If no specific section found, try to extract from the end of summary
+            if what_changed == "No material developments identified.":
+                # Look for change-related content at the end
+                lines = summary_text.split('\n')
+                for i in range(len(lines)-1, max(0, len(lines)-10), -1):
+                    line = lines[i].strip()
+                    if (line and ('new' in line.lower() or 'today' in line.lower() or 'changed' in line.lower() or 
+                                 'development' in line.lower() or 'announcement' in line.lower())):
+                        # Found potential change content
+                        what_changed = line
+                        logger.debug(f"Found change content from end: {what_changed[:100]}...")
                         break
             
-            return {
+            result = {
                 'summary': summary_text,
                 'what_changed': what_changed
             }
+            logger.debug(f"Final what_changed content: '{what_changed}'")
+            return result
         except Exception as e:
             error_msg = str(e)
             logger.error(f"Summary generation error for {ticker}: {error_msg}")
@@ -678,11 +709,18 @@ def get_summary(ticker):
         conn = sqlite3.connect('news_data.db')
         c = conn.cursor()
     
-        # Get latest summary
-        c.execute('''SELECT date, summary, articles_used, what_changed 
-                     FROM daily_summaries 
-                     WHERE ticker = ? 
-                     ORDER BY date DESC LIMIT 1''', (ticker,))
+        # Get latest summary - handle missing columns gracefully
+        try:
+            c.execute('''SELECT date, summary, articles_used, what_changed, risk_factors 
+                         FROM daily_summaries 
+                         WHERE ticker = ? 
+                         ORDER BY date DESC LIMIT 1''', (ticker,))
+        except sqlite3.OperationalError:
+            # Fallback for old schema without risk_factors
+            c.execute('''SELECT date, summary, articles_used, what_changed 
+                         FROM daily_summaries 
+                         WHERE ticker = ? 
+                         ORDER BY date DESC LIMIT 1''', (ticker,))
         
         logger.debug(f"Executed query for {ticker}")
         
@@ -690,12 +728,13 @@ def get_summary(ticker):
         logger.debug(f"Query result for {ticker}: {'Found' if result else 'None'}")
         
         if result:
-            logger.debug(f"Summary data found: date={result[0]}, summary_len={len(result[1])}, what_changed_len={len(result[3])}")
+            logger.debug(f"Summary data found: date={result[0]}, summary_len={len(result[1])}, what_changed_len={len(result[3]) if len(result) > 3 else 0}")
             summary_data = {
                 'date': result[0],
                 'summary': result[1],
                 'articles_used': json.loads(result[2]),
-                'what_changed': result[3]
+                'what_changed': result[3] if len(result) > 3 else '',
+                'risk_factors': result[4] if len(result) > 4 else ''
             }
         else:
             logger.warning(f"No summary data found for {ticker}")

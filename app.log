@@ -1336,3 +1336,744 @@
 2025-09-27 23:17:26,389 - __main__ - DEBUG - Query result for XOM: Found
 2025-09-27 23:17:26,389 - __main__ - DEBUG - Summary data found: date=2025-09-27, summary_len=3636, what_changed_len=647
 2025-09-27 23:17:26,390 - werkzeug - INFO - 127.0.0.1 - - [27/Sep/2025 23:17:26] "GET /api/summary/XOM HTTP/1.1" 200 -
+2025-09-28 11:21:55,159 - __main__ - INFO - Gemini API Key loaded: Yes
+2025-09-28 11:21:55,217 - __main__ - INFO - Polygon API Key loaded: Yes
+2025-09-28 11:21:56,790 - tzlocal - DEBUG - Looking up time zone info from registry
+2025-09-28 11:21:56,822 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-09-28 11:21:56,825 - apscheduler.scheduler - INFO - Added job "daily_update" to job store "default"
+2025-09-28 11:21:56,825 - apscheduler.scheduler - INFO - Scheduler started
+2025-09-28 11:21:56,827 - apscheduler.scheduler - DEBUG - Looking for jobs to run
+2025-09-28 11:21:56,827 - apscheduler.scheduler - DEBUG - Next wakeup is due at 2025-09-29 08:00:00+05:30 (in 74283.172594 seconds)
+2025-09-28 11:21:56,894 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:10000
+ * Running on http://192.168.1.6:10000
+2025-09-28 11:21:56,894 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2025-09-28 11:21:59,891 - werkzeug - INFO - 127.0.0.1 - - [28/Sep/2025 11:21:59] "GET / HTTP/1.1" 200 -
+2025-09-28 11:22:00,765 - werkzeug - INFO - 127.0.0.1 - - [28/Sep/2025 11:22:00] "[36mGET /static/script.js HTTP/1.1[0m" 304 -
+2025-09-28 11:22:00,931 - werkzeug - INFO - 127.0.0.1 - - [28/Sep/2025 11:22:00] "[36mGET /static/style.css HTTP/1.1[0m" 304 -
+2025-09-28 11:22:01,385 - __main__ - DEBUG - Getting tickers list
+2025-09-28 11:22:01,390 - __main__ - DEBUG - Found 6 tickers: ['XOM', 'BA', 'BP', 'NVDA', 'TSLA', 'AAP']
+2025-09-28 11:22:01,392 - werkzeug - INFO - 127.0.0.1 - - [28/Sep/2025 11:22:01] "GET /api/tickers HTTP/1.1" 200 -
+2025-09-28 11:22:08,265 - __main__ - DEBUG - Getting summary for XOM
+2025-09-28 11:22:08,268 - __main__ - DEBUG - Executed query for XOM
+2025-09-28 11:22:08,268 - __main__ - DEBUG - Query result for XOM: Found
+2025-09-28 11:22:08,269 - __main__ - DEBUG - Summary data found: date=2025-09-27, summary_len=3636, what_changed_len=647
+2025-09-28 11:22:08,271 - werkzeug - INFO - 127.0.0.1 - - [28/Sep/2025 11:22:08] "GET /api/summary/XOM HTTP/1.1" 200 -
+2025-09-28 11:22:40,467 - __main__ - DEBUG - Received ticker request: JPM
+2025-09-28 11:22:40,468 - __main__ - INFO - Validating ticker: JPM
+2025-09-28 11:22:40,468 - __main__ - DEBUG - Validating ticker: JPM
+2025-09-28 11:22:40,472 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): finviz.com:443
+2025-09-28 11:22:41,684 - urllib3.connectionpool - DEBUG - https://finviz.com:443 "GET /quote.ashx?t=JPM HTTP/1.1" 200 None
+2025-09-28 11:22:41,723 - __main__ - DEBUG - Ticker JPM validated successfully
+2025-09-28 11:22:41,833 - __main__ - INFO - Successfully added ticker: JPM
+2025-09-28 11:22:41,834 - werkzeug - INFO - 127.0.0.1 - - [28/Sep/2025 11:22:41] "POST /api/tickers HTTP/1.1" 200 -
+2025-09-28 11:22:41,844 - __main__ - DEBUG - Getting tickers list
+2025-09-28 11:22:41,848 - __main__ - DEBUG - Found 7 tickers: ['JPM', 'XOM', 'BA', 'BP', 'NVDA', 'TSLA', 'AAP']
+2025-09-28 11:22:41,849 - werkzeug - INFO - 127.0.0.1 - - [28/Sep/2025 11:22:41] "GET /api/tickers HTTP/1.1" 200 -
+2025-09-28 11:22:43,061 - __main__ - DEBUG - Getting summary for JPM
+2025-09-28 11:22:43,062 - __main__ - DEBUG - Executed query for JPM
+2025-09-28 11:22:43,063 - __main__ - DEBUG - Query result for JPM: None
+2025-09-28 11:22:43,063 - __main__ - WARNING - No summary data found for JPM
+2025-09-28 11:22:43,064 - werkzeug - INFO - 127.0.0.1 - - [28/Sep/2025 11:22:43] "GET /api/summary/JPM HTTP/1.1" 200 -
+2025-09-28 11:22:45,146 - __main__ - INFO - Manual refresh requested for JPM
+2025-09-28 11:22:45,147 - __main__ - INFO - === Starting news processing for JPM ===
+2025-09-28 11:22:45,147 - __main__ - DEBUG - Collecting fresh news from all sources
+2025-09-28 11:22:45,147 - __main__ - DEBUG - Starting TradingView scraping for JPM
+2025-09-28 11:22:45,148 - __main__ - DEBUG - Trying URL: https://www.tradingview.com/symbols/JPM/news/
+2025-09-28 11:22:45,149 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): www.tradingview.com:443
+2025-09-28 11:22:46,136 - urllib3.connectionpool - DEBUG - https://www.tradingview.com:443 "GET /symbols/JPM/news/ HTTP/1.1" 301 0
+2025-09-28 11:22:46,460 - urllib3.connectionpool - DEBUG - https://www.tradingview.com:443 "GET /symbols/NYSE-JPM/news/ HTTP/1.1" 200 None
+2025-09-28 11:22:46,545 - __main__ - INFO - TradingView: Found 3 articles for JPM
+2025-09-28 11:22:46,545 - __main__ - DEBUG - Starting Finviz scraping for JPM
+2025-09-28 11:22:46,546 - __main__ - DEBUG - Fetching URL: https://finviz.com/quote.ashx?t=JPM
+2025-09-28 11:22:46,547 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): finviz.com:443
+2025-09-28 11:22:47,444 - urllib3.connectionpool - DEBUG - https://finviz.com:443 "GET /quote.ashx?t=JPM HTTP/1.1" 200 None
+2025-09-28 11:22:47,466 - __main__ - DEBUG - Response status: 200, Content length: 268799
+2025-09-28 11:22:47,662 - __main__ - INFO - Finviz: Found 10 articles for JPM
+2025-09-28 11:22:47,662 - __main__ - DEBUG - Starting Polygon API call for JPM
+2025-09-28 11:22:47,663 - __main__ - DEBUG - API URL: https://api.polygon.io/v2/reference/news, Params: {'ticker': 'JPM', 'limit': 10, 'apikey': 'BQoC8Jp25fffSdoxpLv0mI2gu2d74HT1'}
+2025-09-28 11:22:59,667 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): api.polygon.io:443
+2025-09-28 11:23:01,493 - urllib3.connectionpool - DEBUG - https://api.polygon.io:443 "GET /v2/reference/news?ticker=JPM&limit=10&apikey=BQoC8Jp25fffSdoxpLv0mI2gu2d74HT1 HTTP/1.1" 200 None
+2025-09-28 11:23:01,497 - __main__ - DEBUG - polygon API call #1
+2025-09-28 11:23:01,500 - __main__ - INFO - Polygon: Found 10 articles for JPM
+2025-09-28 11:23:01,500 - __main__ - DEBUG - Starting Alpha Vantage API call for JPM
+2025-09-28 11:23:01,505 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): www.alphavantage.co:443
+2025-09-28 11:23:03,481 - urllib3.connectionpool - DEBUG - https://www.alphavantage.co:443 "GET /query?function=NEWS_SENTIMENT&tickers=JPM&apikey=DO5HF4HW9CY6SUFH&limit=10 HTTP/1.1" 200 None
+2025-09-28 11:23:03,483 - __main__ - INFO - Alpha Vantage: Found 0 articles for JPM
+2025-09-28 11:23:03,484 - __main__ - INFO - Fresh articles collected: 23 (TV:3, FV:10, PG:10, AV:0)
+2025-09-28 11:23:03,485 - __main__ - DEBUG - Cached 23 articles for JPM
+2025-09-28 11:23:03,486 - __main__ - DEBUG - Selecting top articles using AI
+2025-09-28 11:23:03,487 - __main__ - DEBUG - Starting article selection with 23 articles
+2025-09-28 11:23:03,489 - __main__ - DEBUG - Sending prompt to Gemini (length: 6214 chars)
+2025-09-28 11:23:03,491 - __main__ - DEBUG - Using API key: AIzaSyDiWg...
+2025-09-28 11:23:07,494 - google_genai.models - INFO - AFC is enabled with max remote calls: 10.
+2025-09-28 11:23:07,501 - httpcore.connection - DEBUG - connect_tcp.started host='generativelanguage.googleapis.com' port=443 local_address=None timeout=None socket_options=None
+2025-09-28 11:23:07,546 - httpcore.connection - DEBUG - connect_tcp.complete return_value=<httpcore._backends.sync.SyncStream object at 0x000001B21121DBE0>
+2025-09-28 11:23:07,547 - httpcore.connection - DEBUG - start_tls.started ssl_context=<ssl.SSLContext object at 0x000001B210F36170> server_hostname='generativelanguage.googleapis.com' timeout=None
+2025-09-28 11:23:07,563 - httpcore.connection - DEBUG - start_tls.complete return_value=<httpcore._backends.sync.SyncStream object at 0x000001B2111FA850>
+2025-09-28 11:23:07,564 - httpcore.http11 - DEBUG - send_request_headers.started request=<Request [b'POST']>
+2025-09-28 11:23:07,565 - httpcore.http11 - DEBUG - send_request_headers.complete
+2025-09-28 11:23:07,565 - httpcore.http11 - DEBUG - send_request_body.started request=<Request [b'POST']>
+2025-09-28 11:23:07,566 - httpcore.http11 - DEBUG - send_request_body.complete
+2025-09-28 11:23:07,567 - httpcore.http11 - DEBUG - receive_response_headers.started request=<Request [b'POST']>
+2025-09-28 11:23:08,496 - httpcore.http11 - DEBUG - receive_response_headers.complete return_value=(b'HTTP/1.1', 503, b'Service Unavailable', [(b'Vary', b'Origin'), (b'Vary', b'X-Origin'), (b'Vary', b'Referer'), (b'Content-Type', b'application/json; charset=UTF-8'), (b'Content-Encoding', b'gzip'), (b'Date', b'Sun, 28 Sep 2025 05:53:08 GMT'), (b'Server', b'scaffolding on HTTPServer2'), (b'X-XSS-Protection', b'0'), (b'X-Frame-Options', b'SAMEORIGIN'), (b'X-Content-Type-Options', b'nosniff'), (b'Server-Timing', b'gfet4t7; dur=923'), (b'Alt-Svc', b'h3=":443"; ma=2592000,h3-29=":443"; ma=2592000'), (b'Transfer-Encoding', b'chunked')])
+2025-09-28 11:23:08,501 - httpx - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent "HTTP/1.1 503 Service Unavailable"
+2025-09-28 11:23:08,503 - httpcore.http11 - DEBUG - receive_response_body.started request=<Request [b'POST']>
+2025-09-28 11:23:08,506 - httpcore.http11 - DEBUG - receive_response_body.complete
+2025-09-28 11:23:08,506 - httpcore.http11 - DEBUG - response_closed.started
+2025-09-28 11:23:08,507 - httpcore.http11 - DEBUG - response_closed.complete
+2025-09-28 11:23:08,507 - __main__ - ERROR - Article selection error: 503 UNAVAILABLE. {'error': {'code': 503, 'message': 'The service is currently unavailable.', 'status': 'UNAVAILABLE'}}
+2025-09-28 11:23:08,508 - __main__ - ERROR - Full error details: ServerError("503 UNAVAILABLE. {'error': {'code': 503, 'message': 'The service is currently unavailable.', 'status': 'UNAVAILABLE'}}")
+2025-09-28 11:23:08,508 - __main__ - INFO - Selected 5 articles for summary
+2025-09-28 11:23:08,509 - __main__ - DEBUG - Generating fresh AI summary
+2025-09-28 11:23:08,509 - __main__ - DEBUG - Starting summary generation for JPM
+2025-09-28 11:23:08,510 - __main__ - DEBUG - Sending summary prompt to Gemini (length: 1690 chars)
+2025-09-28 11:23:12,511 - google_genai.models - INFO - AFC is enabled with max remote calls: 10.
+2025-09-28 11:23:12,512 - httpcore.http11 - DEBUG - send_request_headers.started request=<Request [b'POST']>
+2025-09-28 11:23:12,513 - httpcore.http11 - DEBUG - send_request_headers.complete
+2025-09-28 11:23:12,513 - httpcore.http11 - DEBUG - send_request_body.started request=<Request [b'POST']>
+2025-09-28 11:23:12,514 - httpcore.http11 - DEBUG - send_request_body.complete
+2025-09-28 11:23:12,514 - httpcore.http11 - DEBUG - receive_response_headers.started request=<Request [b'POST']>
+2025-09-28 11:23:39,275 - httpcore.http11 - DEBUG - receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Content-Type', b'application/json; charset=UTF-8'), (b'Vary', b'Origin'), (b'Vary', b'X-Origin'), (b'Vary', b'Referer'), (b'Content-Encoding', b'gzip'), (b'Date', b'Sun, 28 Sep 2025 05:53:38 GMT'), (b'Server', b'scaffolding on HTTPServer2'), (b'X-XSS-Protection', b'0'), (b'X-Frame-Options', b'SAMEORIGIN'), (b'X-Content-Type-Options', b'nosniff'), (b'Server-Timing', b'gfet4t7; dur=26737'), (b'Alt-Svc', b'h3=":443"; ma=2592000,h3-29=":443"; ma=2592000'), (b'Transfer-Encoding', b'chunked')])
+2025-09-28 11:23:39,276 - httpx - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent "HTTP/1.1 200 OK"
+2025-09-28 11:23:39,276 - httpcore.http11 - DEBUG - receive_response_body.started request=<Request [b'POST']>
+2025-09-28 11:23:39,278 - httpcore.http11 - DEBUG - receive_response_body.complete
+2025-09-28 11:23:39,278 - httpcore.http11 - DEBUG - response_closed.started
+2025-09-28 11:23:39,279 - httpcore.http11 - DEBUG - response_closed.complete
+2025-09-28 11:23:39,281 - __main__ - DEBUG - gemini API call #1
+2025-09-28 11:23:39,281 - __main__ - DEBUG - Gemini summary response received: 3556 chars
+2025-09-28 11:23:39,282 - __main__ - INFO - Generated fresh summary for JPM (length: 3556 chars)
+2025-09-28 11:23:39,283 - __main__ - DEBUG - Cached summary for JPM
+2025-09-28 11:23:39,283 - __main__ - DEBUG - Saving summary to database for JPM on 2025-09-28
+2025-09-28 11:23:39,284 - __main__ - DEBUG - Summary length: 3556 chars
+2025-09-28 11:23:39,284 - __main__ - DEBUG - What changed: ...
+2025-09-28 11:23:39,287 - __main__ - DEBUG - Database save completed for JPM
+2025-09-28 11:23:39,398 - __main__ - INFO - === Completed processing for JPM ===
+2025-09-28 11:23:39,399 - werkzeug - INFO - 127.0.0.1 - - [28/Sep/2025 11:23:39] "GET /api/refresh/JPM HTTP/1.1" 200 -
+2025-09-28 11:23:42,417 - __main__ - DEBUG - Getting summary for JPM
+2025-09-28 11:23:42,420 - __main__ - DEBUG - Executed query for JPM
+2025-09-28 11:23:42,421 - __main__ - DEBUG - Query result for JPM: Found
+2025-09-28 11:23:42,421 - __main__ - DEBUG - Summary data found: date=2025-09-28, summary_len=3556, what_changed_len=0
+2025-09-28 11:23:42,423 - werkzeug - INFO - 127.0.0.1 - - [28/Sep/2025 11:23:42] "GET /api/summary/JPM HTTP/1.1" 200 -
+2025-09-28 11:24:03,331 - __main__ - DEBUG - Getting summary for XOM
+2025-09-28 11:24:03,333 - __main__ - DEBUG - Executed query for XOM
+2025-09-28 11:24:03,333 - __main__ - DEBUG - Query result for XOM: Found
+2025-09-28 11:24:03,334 - __main__ - DEBUG - Summary data found: date=2025-09-27, summary_len=3636, what_changed_len=647
+2025-09-28 11:24:03,335 - werkzeug - INFO - 127.0.0.1 - - [28/Sep/2025 11:24:03] "GET /api/summary/XOM HTTP/1.1" 200 -
+2025-09-28 11:24:39,657 - __main__ - DEBUG - Getting summary for JPM
+2025-09-28 11:24:39,659 - __main__ - DEBUG - Executed query for JPM
+2025-09-28 11:24:39,659 - __main__ - DEBUG - Query result for JPM: Found
+2025-09-28 11:24:39,660 - __main__ - DEBUG - Summary data found: date=2025-09-28, summary_len=3556, what_changed_len=0
+2025-09-28 11:24:39,661 - werkzeug - INFO - 127.0.0.1 - - [28/Sep/2025 11:24:39] "GET /api/summary/JPM HTTP/1.1" 200 -
+2025-09-28 11:25:58,520 - __main__ - DEBUG - Received ticker request: BAC
+2025-09-28 11:25:58,520 - __main__ - INFO - Validating ticker: BAC
+2025-09-28 11:25:58,521 - __main__ - DEBUG - Validating ticker: BAC
+2025-09-28 11:25:58,523 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): finviz.com:443
+2025-09-28 11:25:59,327 - urllib3.connectionpool - DEBUG - https://finviz.com:443 "GET /quote.ashx?t=BAC HTTP/1.1" 200 None
+2025-09-28 11:25:59,355 - __main__ - DEBUG - Ticker BAC validated successfully
+2025-09-28 11:25:59,419 - __main__ - INFO - Successfully added ticker: BAC
+2025-09-28 11:25:59,420 - werkzeug - INFO - 127.0.0.1 - - [28/Sep/2025 11:25:59] "POST /api/tickers HTTP/1.1" 200 -
+2025-09-28 11:25:59,430 - __main__ - DEBUG - Getting tickers list
+2025-09-28 11:25:59,432 - __main__ - DEBUG - Found 8 tickers: ['BAC', 'JPM', 'XOM', 'BA', 'BP', 'NVDA', 'TSLA', 'AAP']
+2025-09-28 11:25:59,433 - werkzeug - INFO - 127.0.0.1 - - [28/Sep/2025 11:25:59] "GET /api/tickers HTTP/1.1" 200 -
+2025-09-28 11:26:00,145 - __main__ - DEBUG - Getting summary for BAC
+2025-09-28 11:26:00,147 - __main__ - DEBUG - Executed query for BAC
+2025-09-28 11:26:00,147 - __main__ - DEBUG - Query result for BAC: None
+2025-09-28 11:26:00,147 - __main__ - WARNING - No summary data found for BAC
+2025-09-28 11:26:00,149 - werkzeug - INFO - 127.0.0.1 - - [28/Sep/2025 11:26:00] "GET /api/summary/BAC HTTP/1.1" 200 -
+2025-09-28 11:26:01,283 - __main__ - INFO - Manual refresh requested for BAC
+2025-09-28 11:26:01,283 - __main__ - INFO - === Starting news processing for BAC ===
+2025-09-28 11:26:01,283 - __main__ - DEBUG - Collecting fresh news from all sources
+2025-09-28 11:26:01,284 - __main__ - DEBUG - Starting TradingView scraping for BAC
+2025-09-28 11:26:01,284 - __main__ - DEBUG - Trying URL: https://www.tradingview.com/symbols/BAC/news/
+2025-09-28 11:26:01,563 - urllib3.connectionpool - DEBUG - https://www.tradingview.com:443 "GET /symbols/BAC/news/ HTTP/1.1" 301 0
+2025-09-28 11:26:01,893 - urllib3.connectionpool - DEBUG - https://www.tradingview.com:443 "GET /symbols/NYSE-BAC/news/ HTTP/1.1" 200 None
+2025-09-28 11:26:01,952 - __main__ - INFO - TradingView: Found 3 articles for BAC
+2025-09-28 11:26:01,953 - __main__ - DEBUG - Starting Finviz scraping for BAC
+2025-09-28 11:26:01,953 - __main__ - DEBUG - Fetching URL: https://finviz.com/quote.ashx?t=BAC
+2025-09-28 11:26:02,252 - urllib3.connectionpool - DEBUG - https://finviz.com:443 "GET /quote.ashx?t=BAC HTTP/1.1" 200 None
+2025-09-28 11:26:02,271 - __main__ - DEBUG - Response status: 200, Content length: 258880
+2025-09-28 11:26:02,385 - __main__ - INFO - Finviz: Found 10 articles for BAC
+2025-09-28 11:26:02,385 - __main__ - DEBUG - Starting Polygon API call for BAC
+2025-09-28 11:26:02,386 - __main__ - DEBUG - API URL: https://api.polygon.io/v2/reference/news, Params: {'ticker': 'BAC', 'limit': 10, 'apikey': 'BQoC8Jp25fffSdoxpLv0mI2gu2d74HT1'}
+2025-09-28 11:26:14,390 - urllib3.connectionpool - DEBUG - Resetting dropped connection: api.polygon.io
+2025-09-28 11:26:16,044 - urllib3.connectionpool - DEBUG - https://api.polygon.io:443 "GET /v2/reference/news?ticker=BAC&limit=10&apikey=BQoC8Jp25fffSdoxpLv0mI2gu2d74HT1 HTTP/1.1" 200 None
+2025-09-28 11:26:16,048 - __main__ - DEBUG - polygon API call #2
+2025-09-28 11:26:16,049 - __main__ - INFO - Polygon: Found 10 articles for BAC
+2025-09-28 11:26:16,050 - __main__ - DEBUG - Starting Alpha Vantage API call for BAC
+2025-09-28 11:26:17,286 - urllib3.connectionpool - DEBUG - https://www.alphavantage.co:443 "GET /query?function=NEWS_SENTIMENT&tickers=BAC&apikey=DO5HF4HW9CY6SUFH&limit=10 HTTP/1.1" 200 None
+2025-09-28 11:26:18,494 - __main__ - INFO - Alpha Vantage: Found 10 articles for BAC
+2025-09-28 11:26:18,494 - __main__ - INFO - Fresh articles collected: 33 (TV:3, FV:10, PG:10, AV:10)
+2025-09-28 11:26:18,495 - __main__ - DEBUG - Cached 33 articles for BAC
+2025-09-28 11:26:18,495 - __main__ - DEBUG - Selecting top articles using AI
+2025-09-28 11:26:18,496 - __main__ - DEBUG - Starting article selection with 33 articles
+2025-09-28 11:26:18,496 - __main__ - DEBUG - Sending prompt to Gemini (length: 9317 chars)
+2025-09-28 11:26:18,497 - __main__ - DEBUG - Using API key: AIzaSyDiWg...
+2025-09-28 11:26:22,498 - google_genai.models - INFO - AFC is enabled with max remote calls: 10.
+2025-09-28 11:26:22,502 - httpcore.connection - DEBUG - close.started
+2025-09-28 11:26:22,504 - httpcore.connection - DEBUG - close.complete
+2025-09-28 11:26:22,505 - httpcore.connection - DEBUG - connect_tcp.started host='generativelanguage.googleapis.com' port=443 local_address=None timeout=None socket_options=None
+2025-09-28 11:26:22,519 - httpcore.connection - DEBUG - connect_tcp.complete return_value=<httpcore._backends.sync.SyncStream object at 0x000001B211DB8410>
+2025-09-28 11:26:22,519 - httpcore.connection - DEBUG - start_tls.started ssl_context=<ssl.SSLContext object at 0x000001B210F36170> server_hostname='generativelanguage.googleapis.com' timeout=None
+2025-09-28 11:26:22,527 - httpcore.connection - DEBUG - start_tls.complete return_value=<httpcore._backends.sync.SyncStream object at 0x000001B2111A2EA0>
+2025-09-28 11:26:22,527 - httpcore.http11 - DEBUG - send_request_headers.started request=<Request [b'POST']>
+2025-09-28 11:26:22,528 - httpcore.http11 - DEBUG - send_request_headers.complete
+2025-09-28 11:26:22,528 - httpcore.http11 - DEBUG - send_request_body.started request=<Request [b'POST']>
+2025-09-28 11:26:22,529 - httpcore.http11 - DEBUG - send_request_body.complete
+2025-09-28 11:26:22,529 - httpcore.http11 - DEBUG - receive_response_headers.started request=<Request [b'POST']>
+2025-09-28 11:26:49,641 - httpcore.http11 - DEBUG - receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Content-Type', b'application/json; charset=UTF-8'), (b'Vary', b'Origin'), (b'Vary', b'X-Origin'), (b'Vary', b'Referer'), (b'Content-Encoding', b'gzip'), (b'Date', b'Sun, 28 Sep 2025 05:56:49 GMT'), (b'Server', b'scaffolding on HTTPServer2'), (b'X-XSS-Protection', b'0'), (b'X-Frame-Options', b'SAMEORIGIN'), (b'X-Content-Type-Options', b'nosniff'), (b'Server-Timing', b'gfet4t7; dur=27102'), (b'Alt-Svc', b'h3=":443"; ma=2592000,h3-29=":443"; ma=2592000'), (b'Transfer-Encoding', b'chunked')])
+2025-09-28 11:26:49,644 - httpx - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent "HTTP/1.1 200 OK"
+2025-09-28 11:26:49,644 - httpcore.http11 - DEBUG - receive_response_body.started request=<Request [b'POST']>
+2025-09-28 11:26:49,645 - httpcore.http11 - DEBUG - receive_response_body.complete
+2025-09-28 11:26:49,646 - httpcore.http11 - DEBUG - response_closed.started
+2025-09-28 11:26:49,646 - httpcore.http11 - DEBUG - response_closed.complete
+2025-09-28 11:26:49,647 - __main__ - DEBUG - gemini API call #2
+2025-09-28 11:26:49,647 - __main__ - DEBUG - Gemini response: 4,7,13,23,27,30...
+2025-09-28 11:26:49,647 - __main__ - DEBUG - Selected article indices: [3, 6, 12, 22, 26, 29]
+2025-09-28 11:26:49,648 - __main__ - INFO - Selected 6 articles for summary
+2025-09-28 11:26:49,648 - __main__ - DEBUG - Generating fresh AI summary
+2025-09-28 11:26:49,649 - __main__ - DEBUG - Starting summary generation for BAC
+2025-09-28 11:26:49,649 - __main__ - DEBUG - Sending summary prompt to Gemini (length: 2586 chars)
+2025-09-28 11:26:53,650 - google_genai.models - INFO - AFC is enabled with max remote calls: 10.
+2025-09-28 11:26:53,653 - httpcore.http11 - DEBUG - send_request_headers.started request=<Request [b'POST']>
+2025-09-28 11:26:53,655 - httpcore.http11 - DEBUG - send_request_headers.complete
+2025-09-28 11:26:53,656 - httpcore.http11 - DEBUG - send_request_body.started request=<Request [b'POST']>
+2025-09-28 11:26:53,657 - httpcore.http11 - DEBUG - send_request_body.complete
+2025-09-28 11:26:53,658 - httpcore.http11 - DEBUG - receive_response_headers.started request=<Request [b'POST']>
+2025-09-28 11:27:22,582 - httpcore.http11 - DEBUG - receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Content-Type', b'application/json; charset=UTF-8'), (b'Vary', b'Origin'), (b'Vary', b'X-Origin'), (b'Vary', b'Referer'), (b'Content-Encoding', b'gzip'), (b'Date', b'Sun, 28 Sep 2025 05:57:22 GMT'), (b'Server', b'scaffolding on HTTPServer2'), (b'X-XSS-Protection', b'0'), (b'X-Frame-Options', b'SAMEORIGIN'), (b'X-Content-Type-Options', b'nosniff'), (b'Server-Timing', b'gfet4t7; dur=28911'), (b'Alt-Svc', b'h3=":443"; ma=2592000,h3-29=":443"; ma=2592000'), (b'Transfer-Encoding', b'chunked')])
+2025-09-28 11:27:22,584 - httpx - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent "HTTP/1.1 200 OK"
+2025-09-28 11:27:22,586 - httpcore.http11 - DEBUG - receive_response_body.started request=<Request [b'POST']>
+2025-09-28 11:27:22,590 - httpcore.http11 - DEBUG - receive_response_body.complete
+2025-09-28 11:27:22,590 - httpcore.http11 - DEBUG - response_closed.started
+2025-09-28 11:27:22,591 - httpcore.http11 - DEBUG - response_closed.complete
+2025-09-28 11:27:22,591 - __main__ - DEBUG - gemini API call #3
+2025-09-28 11:27:22,592 - __main__ - DEBUG - Gemini summary response received: 3672 chars
+2025-09-28 11:27:22,592 - __main__ - INFO - Generated fresh summary for BAC (length: 3672 chars)
+2025-09-28 11:27:22,592 - __main__ - DEBUG - Cached summary for BAC
+2025-09-28 11:27:22,592 - __main__ - DEBUG - Saving summary to database for BAC on 2025-09-28
+2025-09-28 11:27:22,593 - __main__ - DEBUG - Summary length: 3672 chars
+2025-09-28 11:27:22,593 - __main__ - DEBUG - What changed: ...
+2025-09-28 11:27:22,595 - __main__ - DEBUG - Database save completed for BAC
+2025-09-28 11:27:22,654 - __main__ - INFO - === Completed processing for BAC ===
+2025-09-28 11:27:22,655 - werkzeug - INFO - 127.0.0.1 - - [28/Sep/2025 11:27:22] "GET /api/refresh/BAC HTTP/1.1" 200 -
+2025-09-28 11:27:25,667 - __main__ - DEBUG - Getting summary for BAC
+2025-09-28 11:27:25,672 - __main__ - DEBUG - Executed query for BAC
+2025-09-28 11:27:25,673 - __main__ - DEBUG - Query result for BAC: Found
+2025-09-28 11:27:25,673 - __main__ - DEBUG - Summary data found: date=2025-09-28, summary_len=3672, what_changed_len=0
+2025-09-28 11:27:25,677 - werkzeug - INFO - 127.0.0.1 - - [28/Sep/2025 11:27:25] "GET /api/summary/BAC HTTP/1.1" 200 -
+2025-09-28 11:27:55,427 - __main__ - DEBUG - Getting summary for JPM
+2025-09-28 11:27:55,430 - __main__ - DEBUG - Executed query for JPM
+2025-09-28 11:27:55,431 - __main__ - DEBUG - Query result for JPM: Found
+2025-09-28 11:27:55,432 - __main__ - DEBUG - Summary data found: date=2025-09-28, summary_len=3556, what_changed_len=0
+2025-09-28 11:27:55,434 - werkzeug - INFO - 127.0.0.1 - - [28/Sep/2025 11:27:55] "GET /api/summary/JPM HTTP/1.1" 200 -
+2025-09-28 11:28:00,687 - __main__ - DEBUG - Getting summary for BA
+2025-09-28 11:28:00,689 - __main__ - DEBUG - Executed query for BA
+2025-09-28 11:28:00,690 - __main__ - DEBUG - Query result for BA: Found
+2025-09-28 11:28:00,691 - __main__ - DEBUG - Summary data found: date=2025-09-27, summary_len=4264, what_changed_len=608
+2025-09-28 11:28:00,692 - werkzeug - INFO - 127.0.0.1 - - [28/Sep/2025 11:28:00] "GET /api/summary/BA HTTP/1.1" 200 -
+2025-09-28 11:28:06,971 - __main__ - DEBUG - Getting summary for BAC
+2025-09-28 11:28:06,972 - __main__ - DEBUG - Executed query for BAC
+2025-09-28 11:28:06,972 - __main__ - DEBUG - Query result for BAC: Found
+2025-09-28 11:28:06,973 - __main__ - DEBUG - Summary data found: date=2025-09-28, summary_len=3672, what_changed_len=0
+2025-09-28 11:28:06,974 - werkzeug - INFO - 127.0.0.1 - - [28/Sep/2025 11:28:06] "GET /api/summary/BAC HTTP/1.1" 200 -
+2025-09-28 11:28:38,469 - __main__ - DEBUG - Getting summary for JPM
+2025-09-28 11:28:38,473 - __main__ - DEBUG - Executed query for JPM
+2025-09-28 11:28:38,474 - __main__ - DEBUG - Query result for JPM: Found
+2025-09-28 11:28:38,475 - __main__ - DEBUG - Summary data found: date=2025-09-28, summary_len=3556, what_changed_len=0
+2025-09-28 11:28:38,477 - werkzeug - INFO - 127.0.0.1 - - [28/Sep/2025 11:28:38] "GET /api/summary/JPM HTTP/1.1" 200 -
+2025-09-28 11:28:45,977 - __main__ - DEBUG - Getting summary for XOM
+2025-09-28 11:28:45,978 - __main__ - DEBUG - Executed query for XOM
+2025-09-28 11:28:45,978 - __main__ - DEBUG - Query result for XOM: Found
+2025-09-28 11:28:45,979 - __main__ - DEBUG - Summary data found: date=2025-09-27, summary_len=3636, what_changed_len=647
+2025-09-28 11:28:45,979 - werkzeug - INFO - 127.0.0.1 - - [28/Sep/2025 11:28:45] "GET /api/summary/XOM HTTP/1.1" 200 -
+2025-09-28 11:28:51,509 - __main__ - DEBUG - Getting summary for BAC
+2025-09-28 11:28:51,512 - __main__ - DEBUG - Executed query for BAC
+2025-09-28 11:28:51,513 - __main__ - DEBUG - Query result for BAC: Found
+2025-09-28 11:28:51,513 - __main__ - DEBUG - Summary data found: date=2025-09-28, summary_len=3672, what_changed_len=0
+2025-09-28 11:28:51,515 - werkzeug - INFO - 127.0.0.1 - - [28/Sep/2025 11:28:51] "GET /api/summary/BAC HTTP/1.1" 200 -
+2025-09-28 11:32:21,458 - __main__ - INFO - Gemini API Key loaded: Yes
+2025-09-28 11:32:21,459 - __main__ - INFO - Polygon API Key loaded: Yes
+2025-09-28 11:32:22,715 - tzlocal - DEBUG - Looking up time zone info from registry
+2025-09-28 11:32:22,724 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-09-28 11:32:22,726 - apscheduler.scheduler - INFO - Added job "daily_update" to job store "default"
+2025-09-28 11:32:22,726 - apscheduler.scheduler - INFO - Scheduler started
+2025-09-28 11:32:22,728 - apscheduler.scheduler - DEBUG - Looking for jobs to run
+2025-09-28 11:32:22,728 - apscheduler.scheduler - DEBUG - Next wakeup is due at 2025-09-29 08:00:00+05:30 (in 73657.271281 seconds)
+2025-09-28 11:32:22,750 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:10000
+ * Running on http://192.168.1.6:10000
+2025-09-28 11:32:22,750 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2025-09-28 11:32:24,600 - werkzeug - INFO - 127.0.0.1 - - [28/Sep/2025 11:32:24] "GET / HTTP/1.1" 200 -
+2025-09-28 11:32:24,886 - werkzeug - INFO - 127.0.0.1 - - [28/Sep/2025 11:32:24] "[36mGET /static/style.css HTTP/1.1[0m" 304 -
+2025-09-28 11:32:24,968 - werkzeug - INFO - 127.0.0.1 - - [28/Sep/2025 11:32:24] "GET /static/script.js HTTP/1.1" 200 -
+2025-09-28 11:32:25,253 - __main__ - DEBUG - Getting tickers list
+2025-09-28 11:32:25,256 - __main__ - DEBUG - Found 8 tickers: ['BAC', 'JPM', 'XOM', 'BA', 'BP', 'NVDA', 'TSLA', 'AAP']
+2025-09-28 11:32:25,258 - werkzeug - INFO - 127.0.0.1 - - [28/Sep/2025 11:32:25] "GET /api/tickers HTTP/1.1" 200 -
+2025-09-28 11:32:33,662 - __main__ - DEBUG - Received ticker request: MA
+2025-09-28 11:32:33,662 - __main__ - INFO - Validating ticker: MA
+2025-09-28 11:32:33,663 - __main__ - DEBUG - Validating ticker: MA
+2025-09-28 11:32:33,708 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): finviz.com:443
+2025-09-28 11:32:34,982 - urllib3.connectionpool - DEBUG - https://finviz.com:443 "GET /quote.ashx?t=MA HTTP/1.1" 200 None
+2025-09-28 11:32:34,992 - __main__ - DEBUG - Ticker MA validated successfully
+2025-09-28 11:32:35,069 - __main__ - INFO - Successfully added ticker: MA
+2025-09-28 11:32:35,070 - werkzeug - INFO - 127.0.0.1 - - [28/Sep/2025 11:32:35] "POST /api/tickers HTTP/1.1" 200 -
+2025-09-28 11:32:35,078 - __main__ - DEBUG - Getting tickers list
+2025-09-28 11:32:35,083 - __main__ - DEBUG - Found 9 tickers: ['MA', 'BAC', 'JPM', 'XOM', 'BA', 'BP', 'NVDA', 'TSLA', 'AAP']
+2025-09-28 11:32:35,085 - werkzeug - INFO - 127.0.0.1 - - [28/Sep/2025 11:32:35] "GET /api/tickers HTTP/1.1" 200 -
+2025-09-28 11:32:36,410 - __main__ - DEBUG - Getting summary for MA
+2025-09-28 11:32:36,411 - __main__ - DEBUG - Executed query for MA
+2025-09-28 11:32:36,411 - __main__ - DEBUG - Query result for MA: None
+2025-09-28 11:32:36,412 - __main__ - WARNING - No summary data found for MA
+2025-09-28 11:32:36,412 - werkzeug - INFO - 127.0.0.1 - - [28/Sep/2025 11:32:36] "GET /api/summary/MA HTTP/1.1" 200 -
+2025-09-28 11:32:37,509 - __main__ - INFO - Manual refresh requested for MA
+2025-09-28 11:32:37,509 - __main__ - INFO - === Starting news processing for MA ===
+2025-09-28 11:32:37,510 - __main__ - DEBUG - Collecting fresh news from all sources
+2025-09-28 11:32:37,511 - __main__ - DEBUG - Starting TradingView scraping for MA
+2025-09-28 11:32:37,512 - __main__ - DEBUG - Trying URL: https://www.tradingview.com/symbols/MA/news/
+2025-09-28 11:32:37,518 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): www.tradingview.com:443
+2025-09-28 11:32:38,795 - urllib3.connectionpool - DEBUG - https://www.tradingview.com:443 "GET /symbols/MA/news/ HTTP/1.1" 301 0
+2025-09-28 11:32:39,141 - urllib3.connectionpool - DEBUG - https://www.tradingview.com:443 "GET /symbols/NYSE-MA/news/ HTTP/1.1" 200 None
+2025-09-28 11:32:39,239 - __main__ - INFO - TradingView: Found 4 articles for MA
+2025-09-28 11:32:39,239 - __main__ - DEBUG - Starting Finviz scraping for MA
+2025-09-28 11:32:39,240 - __main__ - DEBUG - Fetching URL: https://finviz.com/quote.ashx?t=MA
+2025-09-28 11:32:39,241 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): finviz.com:443
+2025-09-28 11:32:40,055 - urllib3.connectionpool - DEBUG - https://finviz.com:443 "GET /quote.ashx?t=MA HTTP/1.1" 200 None
+2025-09-28 11:32:40,076 - __main__ - DEBUG - Response status: 200, Content length: 257636
+2025-09-28 11:32:40,192 - __main__ - INFO - Finviz: Found 10 articles for MA
+2025-09-28 11:32:40,192 - __main__ - DEBUG - Starting Polygon API call for MA
+2025-09-28 11:32:40,192 - __main__ - DEBUG - API URL: https://api.polygon.io/v2/reference/news, Params: {'ticker': 'MA', 'limit': 10, 'apikey': 'BQoC8Jp25fffSdoxpLv0mI2gu2d74HT1'}
+2025-09-28 11:32:52,196 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): api.polygon.io:443
+2025-09-28 11:32:54,017 - urllib3.connectionpool - DEBUG - https://api.polygon.io:443 "GET /v2/reference/news?ticker=MA&limit=10&apikey=BQoC8Jp25fffSdoxpLv0mI2gu2d74HT1 HTTP/1.1" 200 None
+2025-09-28 11:32:54,018 - __main__ - DEBUG - polygon API call #1
+2025-09-28 11:32:54,019 - __main__ - INFO - Polygon: Found 10 articles for MA
+2025-09-28 11:32:54,019 - __main__ - DEBUG - Starting Alpha Vantage API call for MA
+2025-09-28 11:32:54,022 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): www.alphavantage.co:443
+2025-09-28 11:32:54,977 - urllib3.connectionpool - DEBUG - https://www.alphavantage.co:443 "GET /query?function=NEWS_SENTIMENT&tickers=MA&apikey=DO5HF4HW9CY6SUFH&limit=10 HTTP/1.1" 200 None
+2025-09-28 11:32:56,090 - __main__ - INFO - Alpha Vantage: Found 10 articles for MA
+2025-09-28 11:32:56,091 - __main__ - INFO - Fresh articles collected: 34 (TV:4, FV:10, PG:10, AV:10)
+2025-09-28 11:32:56,091 - __main__ - DEBUG - Cached 34 articles for MA
+2025-09-28 11:32:56,091 - __main__ - DEBUG - Selecting top articles using AI
+2025-09-28 11:32:56,092 - __main__ - DEBUG - Starting article selection with 34 articles
+2025-09-28 11:32:56,092 - __main__ - DEBUG - Sending prompt to Gemini (length: 9093 chars)
+2025-09-28 11:32:56,092 - __main__ - DEBUG - Using API key: AIzaSyDiWg...
+2025-09-28 11:33:00,093 - google_genai.models - INFO - AFC is enabled with max remote calls: 10.
+2025-09-28 11:33:00,095 - httpcore.connection - DEBUG - connect_tcp.started host='generativelanguage.googleapis.com' port=443 local_address=None timeout=None socket_options=None
+2025-09-28 11:33:00,167 - httpcore.connection - DEBUG - connect_tcp.complete return_value=<httpcore._backends.sync.SyncStream object at 0x000002130CA1DA90>
+2025-09-28 11:33:00,168 - httpcore.connection - DEBUG - start_tls.started ssl_context=<ssl.SSLContext object at 0x000002130C746170> server_hostname='generativelanguage.googleapis.com' timeout=None
+2025-09-28 11:33:00,179 - httpcore.connection - DEBUG - start_tls.complete return_value=<httpcore._backends.sync.SyncStream object at 0x000002130C9FA0D0>
+2025-09-28 11:33:00,180 - httpcore.http11 - DEBUG - send_request_headers.started request=<Request [b'POST']>
+2025-09-28 11:33:00,181 - httpcore.http11 - DEBUG - send_request_headers.complete
+2025-09-28 11:33:00,181 - httpcore.http11 - DEBUG - send_request_body.started request=<Request [b'POST']>
+2025-09-28 11:33:00,182 - httpcore.http11 - DEBUG - send_request_body.complete
+2025-09-28 11:33:00,182 - httpcore.http11 - DEBUG - receive_response_headers.started request=<Request [b'POST']>
+2025-09-28 11:33:28,162 - httpcore.http11 - DEBUG - receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Content-Type', b'application/json; charset=UTF-8'), (b'Vary', b'Origin'), (b'Vary', b'X-Origin'), (b'Vary', b'Referer'), (b'Content-Encoding', b'gzip'), (b'Date', b'Sun, 28 Sep 2025 06:03:27 GMT'), (b'Server', b'scaffolding on HTTPServer2'), (b'X-XSS-Protection', b'0'), (b'X-Frame-Options', b'SAMEORIGIN'), (b'X-Content-Type-Options', b'nosniff'), (b'Server-Timing', b'gfet4t7; dur=27971'), (b'Alt-Svc', b'h3=":443"; ma=2592000,h3-29=":443"; ma=2592000'), (b'Transfer-Encoding', b'chunked')])
+2025-09-28 11:33:28,163 - httpx - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent "HTTP/1.1 200 OK"
+2025-09-28 11:33:28,164 - httpcore.http11 - DEBUG - receive_response_body.started request=<Request [b'POST']>
+2025-09-28 11:33:28,165 - httpcore.http11 - DEBUG - receive_response_body.complete
+2025-09-28 11:33:28,165 - httpcore.http11 - DEBUG - response_closed.started
+2025-09-28 11:33:28,165 - httpcore.http11 - DEBUG - response_closed.complete
+2025-09-28 11:33:28,167 - __main__ - DEBUG - gemini API call #1
+2025-09-28 11:33:28,167 - __main__ - DEBUG - Gemini response: 6,7,9,10,14,16,29...
+2025-09-28 11:33:28,168 - __main__ - DEBUG - Selected article indices: [5, 6, 8, 9, 13, 15, 28]
+2025-09-28 11:33:28,169 - __main__ - INFO - Selected 7 articles for summary
+2025-09-28 11:33:28,170 - __main__ - DEBUG - Generating fresh AI summary
+2025-09-28 11:33:28,171 - __main__ - DEBUG - Starting summary generation for MA
+2025-09-28 11:33:28,171 - __main__ - DEBUG - Sending summary prompt to Gemini (length: 2608 chars)
+2025-09-28 11:33:32,172 - google_genai.models - INFO - AFC is enabled with max remote calls: 10.
+2025-09-28 11:33:32,177 - httpcore.http11 - DEBUG - send_request_headers.started request=<Request [b'POST']>
+2025-09-28 11:33:32,177 - httpcore.http11 - DEBUG - send_request_headers.complete
+2025-09-28 11:33:32,178 - httpcore.http11 - DEBUG - send_request_body.started request=<Request [b'POST']>
+2025-09-28 11:33:32,178 - httpcore.http11 - DEBUG - send_request_body.complete
+2025-09-28 11:33:32,178 - httpcore.http11 - DEBUG - receive_response_headers.started request=<Request [b'POST']>
+2025-09-28 11:34:20,653 - httpcore.http11 - DEBUG - receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Content-Type', b'application/json; charset=UTF-8'), (b'Vary', b'Origin'), (b'Vary', b'X-Origin'), (b'Vary', b'Referer'), (b'Content-Encoding', b'gzip'), (b'Date', b'Sun, 28 Sep 2025 06:04:20 GMT'), (b'Server', b'scaffolding on HTTPServer2'), (b'X-XSS-Protection', b'0'), (b'X-Frame-Options', b'SAMEORIGIN'), (b'X-Content-Type-Options', b'nosniff'), (b'Server-Timing', b'gfet4t7; dur=48466'), (b'Alt-Svc', b'h3=":443"; ma=2592000,h3-29=":443"; ma=2592000'), (b'Transfer-Encoding', b'chunked')])
+2025-09-28 11:34:20,656 - httpx - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent "HTTP/1.1 200 OK"
+2025-09-28 11:34:20,658 - httpcore.http11 - DEBUG - receive_response_body.started request=<Request [b'POST']>
+2025-09-28 11:34:20,710 - httpcore.http11 - DEBUG - receive_response_body.complete
+2025-09-28 11:34:20,710 - httpcore.http11 - DEBUG - response_closed.started
+2025-09-28 11:34:20,711 - httpcore.http11 - DEBUG - response_closed.complete
+2025-09-28 11:34:20,712 - __main__ - DEBUG - gemini API call #2
+2025-09-28 11:34:20,712 - __main__ - DEBUG - Gemini summary response received: 3953 chars
+2025-09-28 11:34:20,713 - __main__ - INFO - Generated fresh summary for MA (length: 3953 chars)
+2025-09-28 11:34:20,713 - __main__ - DEBUG - Cached summary for MA
+2025-09-28 11:34:20,713 - __main__ - DEBUG - Saving summary to database for MA on 2025-09-28
+2025-09-28 11:34:20,714 - __main__ - DEBUG - Summary length: 3953 chars
+2025-09-28 11:34:20,714 - __main__ - DEBUG - What changed: ...
+2025-09-28 11:34:20,717 - __main__ - DEBUG - Database save completed for MA
+2025-09-28 11:34:20,780 - __main__ - INFO - === Completed processing for MA ===
+2025-09-28 11:34:20,781 - werkzeug - INFO - 127.0.0.1 - - [28/Sep/2025 11:34:20] "GET /api/refresh/MA HTTP/1.1" 200 -
+2025-09-28 11:34:23,804 - __main__ - DEBUG - Getting summary for MA
+2025-09-28 11:34:23,809 - __main__ - DEBUG - Executed query for MA
+2025-09-28 11:34:23,810 - __main__ - DEBUG - Query result for MA: Found
+2025-09-28 11:34:23,811 - __main__ - DEBUG - Summary data found: date=2025-09-28, summary_len=3953, what_changed_len=0
+2025-09-28 11:34:23,812 - werkzeug - INFO - 127.0.0.1 - - [28/Sep/2025 11:34:23] "GET /api/summary/MA HTTP/1.1" 200 -
+2025-09-28 11:41:16,716 - __main__ - DEBUG - Getting summary for XOM
+2025-09-28 11:41:16,784 - __main__ - DEBUG - Executed query for XOM
+2025-09-28 11:41:16,785 - __main__ - DEBUG - Query result for XOM: Found
+2025-09-28 11:41:16,787 - __main__ - DEBUG - Summary data found: date=2025-09-27, summary_len=3636, what_changed_len=647
+2025-09-28 11:41:16,788 - werkzeug - INFO - 127.0.0.1 - - [28/Sep/2025 11:41:16] "GET /api/summary/XOM HTTP/1.1" 200 -
+2025-09-28 12:12:17,145 - __main__ - INFO - Gemini API Key loaded: Yes
+2025-09-28 12:12:17,166 - __main__ - INFO - Polygon API Key loaded: Yes
+2025-09-28 12:12:18,564 - tzlocal - DEBUG - Looking up time zone info from registry
+2025-09-28 12:12:18,601 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-09-28 12:12:18,605 - apscheduler.scheduler - INFO - Added job "daily_update" to job store "default"
+2025-09-28 12:12:18,606 - apscheduler.scheduler - INFO - Scheduler started
+2025-09-28 12:12:18,607 - apscheduler.scheduler - DEBUG - Looking for jobs to run
+2025-09-28 12:12:18,607 - apscheduler.scheduler - DEBUG - Next wakeup is due at 2025-09-29 08:00:00+05:30 (in 71261.392032 seconds)
+2025-09-28 12:12:18,657 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:10000
+ * Running on http://192.168.1.6:10000
+2025-09-28 12:12:18,658 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2025-09-28 12:12:22,056 - werkzeug - INFO - 127.0.0.1 - - [28/Sep/2025 12:12:22] "GET / HTTP/1.1" 200 -
+2025-09-28 12:12:22,403 - werkzeug - INFO - 127.0.0.1 - - [28/Sep/2025 12:12:22] "GET /static/script.js HTTP/1.1" 200 -
+2025-09-28 12:12:22,415 - werkzeug - INFO - 127.0.0.1 - - [28/Sep/2025 12:12:22] "[36mGET /static/style.css HTTP/1.1[0m" 304 -
+2025-09-28 12:12:22,741 - __main__ - DEBUG - Getting tickers list
+2025-09-28 12:12:22,745 - __main__ - DEBUG - Found 9 tickers: ['MA', 'BAC', 'JPM', 'XOM', 'BA', 'BP', 'NVDA', 'TSLA', 'AAP']
+2025-09-28 12:12:22,747 - werkzeug - INFO - 127.0.0.1 - - [28/Sep/2025 12:12:22] "GET /api/tickers HTTP/1.1" 200 -
+2025-09-28 12:12:39,336 - __main__ - DEBUG - Received ticker request: LLY
+2025-09-28 12:12:39,336 - __main__ - INFO - Validating ticker: LLY
+2025-09-28 12:12:39,336 - __main__ - DEBUG - Validating ticker: LLY
+2025-09-28 12:12:39,341 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): finviz.com:443
+2025-09-28 12:12:40,250 - urllib3.connectionpool - DEBUG - https://finviz.com:443 "GET /quote.ashx?t=LLY HTTP/1.1" 200 None
+2025-09-28 12:12:40,280 - __main__ - DEBUG - Ticker LLY validated successfully
+2025-09-28 12:12:40,459 - __main__ - INFO - Successfully added ticker: LLY
+2025-09-28 12:12:40,460 - werkzeug - INFO - 127.0.0.1 - - [28/Sep/2025 12:12:40] "POST /api/tickers HTTP/1.1" 200 -
+2025-09-28 12:12:40,468 - __main__ - DEBUG - Getting tickers list
+2025-09-28 12:12:40,472 - __main__ - DEBUG - Found 10 tickers: ['LLY', 'MA', 'BAC', 'JPM', 'XOM', 'BA', 'BP', 'NVDA', 'TSLA', 'AAP']
+2025-09-28 12:12:40,473 - werkzeug - INFO - 127.0.0.1 - - [28/Sep/2025 12:12:40] "GET /api/tickers HTTP/1.1" 200 -
+2025-09-28 12:12:41,114 - __main__ - DEBUG - Getting summary for LLY
+2025-09-28 12:12:41,116 - __main__ - DEBUG - Executed query for LLY
+2025-09-28 12:12:41,116 - __main__ - DEBUG - Query result for LLY: None
+2025-09-28 12:12:41,116 - __main__ - WARNING - No summary data found for LLY
+2025-09-28 12:12:41,117 - werkzeug - INFO - 127.0.0.1 - - [28/Sep/2025 12:12:41] "GET /api/summary/LLY HTTP/1.1" 200 -
+2025-09-28 12:12:44,438 - __main__ - INFO - Manual refresh requested for LLY
+2025-09-28 12:12:44,439 - __main__ - INFO - === Starting news processing for LLY ===
+2025-09-28 12:12:44,439 - __main__ - DEBUG - Collecting fresh news from all sources
+2025-09-28 12:12:44,440 - __main__ - DEBUG - Starting TradingView scraping for LLY
+2025-09-28 12:12:44,441 - __main__ - DEBUG - Trying URL: https://www.tradingview.com/symbols/LLY/news/
+2025-09-28 12:12:44,445 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): www.tradingview.com:443
+2025-09-28 12:12:46,123 - urllib3.connectionpool - DEBUG - https://www.tradingview.com:443 "GET /symbols/LLY/news/ HTTP/1.1" 301 0
+2025-09-28 12:12:46,479 - urllib3.connectionpool - DEBUG - https://www.tradingview.com:443 "GET /symbols/NYSE-LLY/news/ HTTP/1.1" 200 None
+2025-09-28 12:12:46,579 - __main__ - INFO - TradingView: Found 5 articles for LLY
+2025-09-28 12:12:46,580 - __main__ - DEBUG - Starting Finviz scraping for LLY
+2025-09-28 12:12:46,580 - __main__ - DEBUG - Fetching URL: https://finviz.com/quote.ashx?t=LLY
+2025-09-28 12:12:46,582 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): finviz.com:443
+2025-09-28 12:12:47,599 - urllib3.connectionpool - DEBUG - https://finviz.com:443 "GET /quote.ashx?t=LLY HTTP/1.1" 200 None
+2025-09-28 12:12:47,624 - __main__ - DEBUG - Response status: 200, Content length: 244273
+2025-09-28 12:12:47,787 - __main__ - INFO - Finviz: Found 10 articles for LLY
+2025-09-28 12:12:47,788 - __main__ - DEBUG - Starting Polygon API call for LLY
+2025-09-28 12:12:47,788 - __main__ - DEBUG - API URL: https://api.polygon.io/v2/reference/news, Params: {'ticker': 'LLY', 'limit': 10, 'apikey': 'BQoC8Jp25fffSdoxpLv0mI2gu2d74HT1'}
+2025-09-28 12:12:59,794 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): api.polygon.io:443
+2025-09-28 12:13:01,477 - urllib3.connectionpool - DEBUG - https://api.polygon.io:443 "GET /v2/reference/news?ticker=LLY&limit=10&apikey=BQoC8Jp25fffSdoxpLv0mI2gu2d74HT1 HTTP/1.1" 200 None
+2025-09-28 12:13:01,481 - __main__ - DEBUG - polygon API call #1
+2025-09-28 12:13:01,483 - __main__ - INFO - Polygon: Found 10 articles for LLY
+2025-09-28 12:13:01,484 - __main__ - DEBUG - Starting Alpha Vantage API call for LLY
+2025-09-28 12:13:01,490 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): www.alphavantage.co:443
+2025-09-28 12:13:03,198 - urllib3.connectionpool - DEBUG - https://www.alphavantage.co:443 "GET /query?function=NEWS_SENTIMENT&tickers=LLY&apikey=DO5HF4HW9CY6SUFH&limit=10 HTTP/1.1" 200 None
+2025-09-28 12:13:04,330 - __main__ - INFO - Alpha Vantage: Found 10 articles for LLY
+2025-09-28 12:13:04,331 - __main__ - INFO - Fresh articles collected: 35 (TV:5, FV:10, PG:10, AV:10)
+2025-09-28 12:13:04,332 - __main__ - DEBUG - Cached 35 articles for LLY
+2025-09-28 12:13:04,332 - __main__ - DEBUG - Selecting top articles using AI
+2025-09-28 12:13:04,333 - __main__ - DEBUG - Starting article selection with 35 articles
+2025-09-28 12:13:04,333 - __main__ - DEBUG - Sending prompt to Gemini (length: 9127 chars)
+2025-09-28 12:13:04,334 - __main__ - DEBUG - Using API key: AIzaSyDiWg...
+2025-09-28 12:13:08,335 - google_genai.models - INFO - AFC is enabled with max remote calls: 10.
+2025-09-28 12:13:08,339 - httpcore.connection - DEBUG - connect_tcp.started host='generativelanguage.googleapis.com' port=443 local_address=None timeout=None socket_options=None
+2025-09-28 12:13:08,396 - httpcore.connection - DEBUG - connect_tcp.complete return_value=<httpcore._backends.sync.SyncStream object at 0x000001C9E21E9E80>
+2025-09-28 12:13:08,396 - httpcore.connection - DEBUG - start_tls.started ssl_context=<ssl.SSLContext object at 0x000001C9E1F060D0> server_hostname='generativelanguage.googleapis.com' timeout=None
+2025-09-28 12:13:08,410 - httpcore.connection - DEBUG - start_tls.complete return_value=<httpcore._backends.sync.SyncStream object at 0x000001C9E21BE850>
+2025-09-28 12:13:08,411 - httpcore.http11 - DEBUG - send_request_headers.started request=<Request [b'POST']>
+2025-09-28 12:13:08,412 - httpcore.http11 - DEBUG - send_request_headers.complete
+2025-09-28 12:13:08,412 - httpcore.http11 - DEBUG - send_request_body.started request=<Request [b'POST']>
+2025-09-28 12:13:08,413 - httpcore.http11 - DEBUG - send_request_body.complete
+2025-09-28 12:13:08,414 - httpcore.http11 - DEBUG - receive_response_headers.started request=<Request [b'POST']>
+2025-09-28 12:13:38,775 - httpcore.http11 - DEBUG - receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Content-Type', b'application/json; charset=UTF-8'), (b'Vary', b'Origin'), (b'Vary', b'X-Origin'), (b'Vary', b'Referer'), (b'Content-Encoding', b'gzip'), (b'Date', b'Sun, 28 Sep 2025 06:43:38 GMT'), (b'Server', b'scaffolding on HTTPServer2'), (b'X-XSS-Protection', b'0'), (b'X-Frame-Options', b'SAMEORIGIN'), (b'X-Content-Type-Options', b'nosniff'), (b'Server-Timing', b'gfet4t7; dur=30351'), (b'Alt-Svc', b'h3=":443"; ma=2592000,h3-29=":443"; ma=2592000'), (b'Transfer-Encoding', b'chunked')])
+2025-09-28 12:13:38,779 - httpx - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent "HTTP/1.1 200 OK"
+2025-09-28 12:13:38,780 - httpcore.http11 - DEBUG - receive_response_body.started request=<Request [b'POST']>
+2025-09-28 12:13:38,783 - httpcore.http11 - DEBUG - receive_response_body.complete
+2025-09-28 12:13:38,785 - httpcore.http11 - DEBUG - response_closed.started
+2025-09-28 12:13:38,786 - httpcore.http11 - DEBUG - response_closed.complete
+2025-09-28 12:13:38,797 - __main__ - DEBUG - gemini API call #1
+2025-09-28 12:13:38,797 - __main__ - DEBUG - Gemini response: 6,16,20,22,24,30...
+2025-09-28 12:13:38,798 - __main__ - DEBUG - Selected article indices: [5, 15, 19, 21, 23, 29]
+2025-09-28 12:13:38,799 - __main__ - INFO - Selected 6 articles for summary
+2025-09-28 12:13:38,800 - __main__ - DEBUG - Generating fresh AI summary
+2025-09-28 12:13:38,801 - __main__ - DEBUG - Starting summary generation for LLY
+2025-09-28 12:13:38,801 - __main__ - DEBUG - Sending summary prompt to Gemini (length: 2911 chars)
+2025-09-28 12:13:42,802 - google_genai.models - INFO - AFC is enabled with max remote calls: 10.
+2025-09-28 12:13:42,807 - httpcore.http11 - DEBUG - send_request_headers.started request=<Request [b'POST']>
+2025-09-28 12:13:42,809 - httpcore.http11 - DEBUG - send_request_headers.complete
+2025-09-28 12:13:42,810 - httpcore.http11 - DEBUG - send_request_body.started request=<Request [b'POST']>
+2025-09-28 12:13:42,812 - httpcore.http11 - DEBUG - send_request_body.complete
+2025-09-28 12:13:42,813 - httpcore.http11 - DEBUG - receive_response_headers.started request=<Request [b'POST']>
+2025-09-28 12:14:26,467 - httpcore.http11 - DEBUG - receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Content-Type', b'application/json; charset=UTF-8'), (b'Vary', b'Origin'), (b'Vary', b'X-Origin'), (b'Vary', b'Referer'), (b'Content-Encoding', b'gzip'), (b'Date', b'Sun, 28 Sep 2025 06:44:26 GMT'), (b'Server', b'scaffolding on HTTPServer2'), (b'X-XSS-Protection', b'0'), (b'X-Frame-Options', b'SAMEORIGIN'), (b'X-Content-Type-Options', b'nosniff'), (b'Server-Timing', b'gfet4t7; dur=43650'), (b'Alt-Svc', b'h3=":443"; ma=2592000,h3-29=":443"; ma=2592000'), (b'Transfer-Encoding', b'chunked')])
+2025-09-28 12:14:26,468 - httpx - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent "HTTP/1.1 200 OK"
+2025-09-28 12:14:26,469 - httpcore.http11 - DEBUG - receive_response_body.started request=<Request [b'POST']>
+2025-09-28 12:14:26,470 - httpcore.http11 - DEBUG - receive_response_body.complete
+2025-09-28 12:14:26,471 - httpcore.http11 - DEBUG - response_closed.started
+2025-09-28 12:14:26,471 - httpcore.http11 - DEBUG - response_closed.complete
+2025-09-28 12:14:26,473 - __main__ - DEBUG - gemini API call #2
+2025-09-28 12:14:26,474 - __main__ - DEBUG - Gemini summary response received: 4037 chars
+2025-09-28 12:14:26,474 - __main__ - DEBUG - Response preview: Here is a professional investment summary analyzing LLY based on today's news.
+
+**EXECUTIVE SUMMARY**
+
+Eli Lilly (LLY) saw significant positive pipeline developments today with key drug approvals in A...
+2025-09-28 12:14:26,475 - __main__ - DEBUG - Extracted what_changed: New Political Headwind: The specific proposal of a 100% tariff on pharmaceuticals is a new, material...
+2025-09-28 12:14:26,475 - __main__ - DEBUG - Final what_changed content: 'New Political Headwind: The specific proposal of a 100% tariff on pharmaceuticals is a new, material risk that was not a major market focus in the prior week. Pipeline De-risking: The EU and FDA approvals are concrete events that have occurred today, converting pipeline assets (Kisunla, Inluriyo) into commercially approved products and providing tangible evidence of portfolio diversification. Competitive Threat Escalation: Pfizer's $4.9 billion acquisition is a new, definitive action that significantly raises the competitive stakes in the GLP-1 market, moving the threat from potential to committed capital investment.'
+2025-09-28 12:14:26,476 - __main__ - INFO - Generated fresh summary for LLY (length: 4037 chars)
+2025-09-28 12:14:26,476 - __main__ - DEBUG - Cached summary for LLY
+2025-09-28 12:14:26,477 - __main__ - DEBUG - Saving summary to database for LLY on 2025-09-28
+2025-09-28 12:14:26,477 - __main__ - DEBUG - Summary length: 4037 chars
+2025-09-28 12:14:26,478 - __main__ - DEBUG - What changed: New Political Headwind: The specific proposal of a 100% tariff on pharmaceuticals is a new, material...
+2025-09-28 12:14:26,511 - __main__ - DEBUG - Database save completed for LLY
+2025-09-28 12:14:26,573 - __main__ - INFO - === Completed processing for LLY ===
+2025-09-28 12:14:26,575 - werkzeug - INFO - 127.0.0.1 - - [28/Sep/2025 12:14:26] "GET /api/refresh/LLY HTTP/1.1" 200 -
+2025-09-28 12:14:29,599 - __main__ - DEBUG - Getting summary for LLY
+2025-09-28 12:14:29,603 - __main__ - DEBUG - Executed query for LLY
+2025-09-28 12:14:29,604 - __main__ - DEBUG - Query result for LLY: Found
+2025-09-28 12:14:29,604 - __main__ - DEBUG - Summary data found: date=2025-09-28, summary_len=4037, what_changed_len=624
+2025-09-28 12:14:29,605 - werkzeug - INFO - 127.0.0.1 - - [28/Sep/2025 12:14:29] "GET /api/summary/LLY HTTP/1.1" 200 -
+2025-09-28 12:18:40,287 - __main__ - INFO - Gemini API Key loaded: Yes
+2025-09-28 12:18:40,287 - __main__ - INFO - Polygon API Key loaded: Yes
+2025-09-28 12:18:41,323 - tzlocal - DEBUG - Looking up time zone info from registry
+2025-09-28 12:18:41,332 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-09-28 12:18:41,334 - apscheduler.scheduler - INFO - Added job "daily_update" to job store "default"
+2025-09-28 12:18:41,334 - apscheduler.scheduler - INFO - Scheduler started
+2025-09-28 12:18:41,335 - apscheduler.scheduler - DEBUG - Looking for jobs to run
+2025-09-28 12:18:41,336 - apscheduler.scheduler - DEBUG - Next wakeup is due at 2025-09-29 08:00:00+05:30 (in 70878.663895 seconds)
+2025-09-28 12:18:41,352 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:10000
+ * Running on http://192.168.1.6:10000
+2025-09-28 12:18:41,353 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2025-09-28 12:18:49,908 - werkzeug - INFO - 127.0.0.1 - - [28/Sep/2025 12:18:49] "GET / HTTP/1.1" 200 -
+2025-09-28 12:18:50,269 - werkzeug - INFO - 127.0.0.1 - - [28/Sep/2025 12:18:50] "[36mGET /static/style.css HTTP/1.1[0m" 304 -
+2025-09-28 12:18:50,347 - werkzeug - INFO - 127.0.0.1 - - [28/Sep/2025 12:18:50] "GET /static/script.js HTTP/1.1" 200 -
+2025-09-28 12:18:50,670 - __main__ - DEBUG - Getting tickers list
+2025-09-28 12:18:50,677 - __main__ - DEBUG - Found 10 tickers: ['LLY', 'MA', 'BAC', 'JPM', 'XOM', 'BA', 'BP', 'NVDA', 'TSLA', 'AAP']
+2025-09-28 12:18:50,681 - werkzeug - INFO - 127.0.0.1 - - [28/Sep/2025 12:18:50] "GET /api/tickers HTTP/1.1" 200 -
+2025-09-28 12:19:00,927 - __main__ - DEBUG - Received ticker request: KO
+2025-09-28 12:19:00,928 - __main__ - INFO - Validating ticker: KO
+2025-09-28 12:19:00,928 - __main__ - DEBUG - Validating ticker: KO
+2025-09-28 12:19:00,931 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): finviz.com:443
+2025-09-28 12:19:01,868 - urllib3.connectionpool - DEBUG - https://finviz.com:443 "GET /quote.ashx?t=KO HTTP/1.1" 200 None
+2025-09-28 12:19:01,901 - __main__ - DEBUG - Ticker KO validated successfully
+2025-09-28 12:19:01,969 - __main__ - INFO - Successfully added ticker: KO
+2025-09-28 12:19:01,970 - werkzeug - INFO - 127.0.0.1 - - [28/Sep/2025 12:19:01] "POST /api/tickers HTTP/1.1" 200 -
+2025-09-28 12:19:01,981 - __main__ - DEBUG - Getting tickers list
+2025-09-28 12:19:01,983 - __main__ - DEBUG - Found 11 tickers: ['KO', 'LLY', 'MA', 'BAC', 'JPM', 'XOM', 'BA', 'BP', 'NVDA', 'TSLA', 'AAP']
+2025-09-28 12:19:01,984 - werkzeug - INFO - 127.0.0.1 - - [28/Sep/2025 12:19:01] "GET /api/tickers HTTP/1.1" 200 -
+2025-09-28 12:19:02,644 - __main__ - DEBUG - Getting summary for KO
+2025-09-28 12:19:02,646 - __main__ - DEBUG - Executed query for KO
+2025-09-28 12:19:02,646 - __main__ - DEBUG - Query result for KO: None
+2025-09-28 12:19:02,647 - __main__ - WARNING - No summary data found for KO
+2025-09-28 12:19:02,648 - werkzeug - INFO - 127.0.0.1 - - [28/Sep/2025 12:19:02] "GET /api/summary/KO HTTP/1.1" 200 -
+2025-09-28 12:19:03,767 - __main__ - INFO - Manual refresh requested for KO
+2025-09-28 12:19:03,768 - __main__ - INFO - === Starting news processing for KO ===
+2025-09-28 12:19:03,769 - __main__ - DEBUG - Collecting fresh news from all sources
+2025-09-28 12:19:03,770 - __main__ - DEBUG - Starting TradingView scraping for KO
+2025-09-28 12:19:03,775 - __main__ - DEBUG - Trying URL: https://www.tradingview.com/symbols/KO/news/
+2025-09-28 12:19:03,777 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): www.tradingview.com:443
+2025-09-28 12:19:04,912 - urllib3.connectionpool - DEBUG - https://www.tradingview.com:443 "GET /symbols/KO/news/ HTTP/1.1" 301 0
+2025-09-28 12:19:05,226 - urllib3.connectionpool - DEBUG - https://www.tradingview.com:443 "GET /symbols/NYSE-KO/news/ HTTP/1.1" 200 None
+2025-09-28 12:19:05,492 - __main__ - INFO - TradingView: Found 5 articles for KO
+2025-09-28 12:19:05,492 - __main__ - DEBUG - Starting Finviz scraping for KO
+2025-09-28 12:19:05,493 - __main__ - DEBUG - Fetching URL: https://finviz.com/quote.ashx?t=KO
+2025-09-28 12:19:05,494 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): finviz.com:443
+2025-09-28 12:19:06,394 - urllib3.connectionpool - DEBUG - https://finviz.com:443 "GET /quote.ashx?t=KO HTTP/1.1" 200 None
+2025-09-28 12:19:06,414 - __main__ - DEBUG - Response status: 200, Content length: 230458
+2025-09-28 12:19:06,520 - __main__ - INFO - Finviz: Found 10 articles for KO
+2025-09-28 12:19:06,520 - __main__ - DEBUG - Starting Polygon API call for KO
+2025-09-28 12:19:06,520 - __main__ - DEBUG - API URL: https://api.polygon.io/v2/reference/news, Params: {'ticker': 'KO', 'limit': 10, 'apikey': 'BQoC8Jp25fffSdoxpLv0mI2gu2d74HT1'}
+2025-09-28 12:19:18,524 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): api.polygon.io:443
+2025-09-28 12:19:20,192 - urllib3.connectionpool - DEBUG - https://api.polygon.io:443 "GET /v2/reference/news?ticker=KO&limit=10&apikey=BQoC8Jp25fffSdoxpLv0mI2gu2d74HT1 HTTP/1.1" 200 None
+2025-09-28 12:19:20,195 - __main__ - DEBUG - polygon API call #1
+2025-09-28 12:19:20,197 - __main__ - INFO - Polygon: Found 10 articles for KO
+2025-09-28 12:19:20,198 - __main__ - DEBUG - Starting Alpha Vantage API call for KO
+2025-09-28 12:19:20,214 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): www.alphavantage.co:443
+2025-09-28 12:19:21,982 - urllib3.connectionpool - DEBUG - https://www.alphavantage.co:443 "GET /query?function=NEWS_SENTIMENT&tickers=KO&apikey=DO5HF4HW9CY6SUFH&limit=10 HTTP/1.1" 200 None
+2025-09-28 12:19:23,149 - __main__ - INFO - Alpha Vantage: Found 10 articles for KO
+2025-09-28 12:19:23,150 - __main__ - INFO - Fresh articles collected: 35 (TV:5, FV:10, PG:10, AV:10)
+2025-09-28 12:19:23,150 - __main__ - DEBUG - Cached 35 articles for KO
+2025-09-28 12:19:23,151 - __main__ - DEBUG - Selecting top articles using AI
+2025-09-28 12:19:23,152 - __main__ - DEBUG - Starting article selection with 35 articles
+2025-09-28 12:19:23,153 - __main__ - DEBUG - Sending prompt to Gemini (length: 8530 chars)
+2025-09-28 12:19:23,153 - __main__ - DEBUG - Using API key: AIzaSyDiWg...
+2025-09-28 12:19:27,155 - google_genai.models - INFO - AFC is enabled with max remote calls: 10.
+2025-09-28 12:19:27,159 - httpcore.connection - DEBUG - connect_tcp.started host='generativelanguage.googleapis.com' port=443 local_address=None timeout=None socket_options=None
+2025-09-28 12:19:27,178 - httpcore.connection - DEBUG - connect_tcp.complete return_value=<httpcore._backends.sync.SyncStream object at 0x0000024106929940>
+2025-09-28 12:19:27,179 - httpcore.connection - DEBUG - start_tls.started ssl_context=<ssl.SSLContext object at 0x000002410662E0D0> server_hostname='generativelanguage.googleapis.com' timeout=None
+2025-09-28 12:19:27,193 - httpcore.connection - DEBUG - start_tls.complete return_value=<httpcore._backends.sync.SyncStream object at 0x00000241068FF390>
+2025-09-28 12:19:27,193 - httpcore.http11 - DEBUG - send_request_headers.started request=<Request [b'POST']>
+2025-09-28 12:19:27,195 - httpcore.http11 - DEBUG - send_request_headers.complete
+2025-09-28 12:19:27,195 - httpcore.http11 - DEBUG - send_request_body.started request=<Request [b'POST']>
+2025-09-28 12:19:27,196 - httpcore.http11 - DEBUG - send_request_body.complete
+2025-09-28 12:19:27,197 - httpcore.http11 - DEBUG - receive_response_headers.started request=<Request [b'POST']>
+2025-09-28 12:20:07,404 - httpcore.http11 - DEBUG - receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Content-Type', b'application/json; charset=UTF-8'), (b'Vary', b'Origin'), (b'Vary', b'X-Origin'), (b'Vary', b'Referer'), (b'Content-Encoding', b'gzip'), (b'Date', b'Sun, 28 Sep 2025 06:50:07 GMT'), (b'Server', b'scaffolding on HTTPServer2'), (b'X-XSS-Protection', b'0'), (b'X-Frame-Options', b'SAMEORIGIN'), (b'X-Content-Type-Options', b'nosniff'), (b'Server-Timing', b'gfet4t7; dur=40199'), (b'Alt-Svc', b'h3=":443"; ma=2592000,h3-29=":443"; ma=2592000'), (b'Transfer-Encoding', b'chunked')])
+2025-09-28 12:20:07,406 - httpx - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent "HTTP/1.1 200 OK"
+2025-09-28 12:20:07,406 - httpcore.http11 - DEBUG - receive_response_body.started request=<Request [b'POST']>
+2025-09-28 12:20:07,407 - httpcore.http11 - DEBUG - receive_response_body.complete
+2025-09-28 12:20:07,407 - httpcore.http11 - DEBUG - response_closed.started
+2025-09-28 12:20:07,408 - httpcore.http11 - DEBUG - response_closed.complete
+2025-09-28 12:20:07,409 - __main__ - DEBUG - gemini API call #1
+2025-09-28 12:20:07,410 - __main__ - DEBUG - Gemini response: 5,11,14,15,20,33...
+2025-09-28 12:20:07,410 - __main__ - DEBUG - Selected article indices: [4, 10, 13, 14, 19, 32]
+2025-09-28 12:20:07,410 - __main__ - INFO - Selected 6 articles for summary
+2025-09-28 12:20:07,411 - __main__ - DEBUG - Generating fresh AI summary
+2025-09-28 12:20:07,412 - __main__ - DEBUG - Starting summary generation for KO
+2025-09-28 12:20:07,412 - __main__ - DEBUG - Sending summary prompt to Gemini (length: 2196 chars)
+2025-09-28 12:20:11,413 - google_genai.models - INFO - AFC is enabled with max remote calls: 10.
+2025-09-28 12:20:11,415 - httpcore.http11 - DEBUG - send_request_headers.started request=<Request [b'POST']>
+2025-09-28 12:20:11,416 - httpcore.http11 - DEBUG - send_request_headers.complete
+2025-09-28 12:20:11,417 - httpcore.http11 - DEBUG - send_request_body.started request=<Request [b'POST']>
+2025-09-28 12:20:11,418 - httpcore.http11 - DEBUG - send_request_body.complete
+2025-09-28 12:20:11,418 - httpcore.http11 - DEBUG - receive_response_headers.started request=<Request [b'POST']>
+2025-09-28 12:20:38,146 - httpcore.http11 - DEBUG - receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Content-Type', b'application/json; charset=UTF-8'), (b'Vary', b'Origin'), (b'Vary', b'X-Origin'), (b'Vary', b'Referer'), (b'Content-Encoding', b'gzip'), (b'Date', b'Sun, 28 Sep 2025 06:50:37 GMT'), (b'Server', b'scaffolding on HTTPServer2'), (b'X-XSS-Protection', b'0'), (b'X-Frame-Options', b'SAMEORIGIN'), (b'X-Content-Type-Options', b'nosniff'), (b'Server-Timing', b'gfet4t7; dur=26723'), (b'Alt-Svc', b'h3=":443"; ma=2592000,h3-29=":443"; ma=2592000'), (b'Transfer-Encoding', b'chunked')])
+2025-09-28 12:20:38,148 - httpx - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent "HTTP/1.1 200 OK"
+2025-09-28 12:20:38,150 - httpcore.http11 - DEBUG - receive_response_body.started request=<Request [b'POST']>
+2025-09-28 12:20:38,152 - httpcore.http11 - DEBUG - receive_response_body.complete
+2025-09-28 12:20:38,153 - httpcore.http11 - DEBUG - response_closed.started
+2025-09-28 12:20:38,154 - httpcore.http11 - DEBUG - response_closed.complete
+2025-09-28 12:20:38,156 - __main__ - DEBUG - gemini API call #2
+2025-09-28 12:20:38,156 - __main__ - DEBUG - Gemini summary response received: 3312 chars
+2025-09-28 12:20:38,156 - __main__ - DEBUG - Response preview: **EXECUTIVE SUMMARY**
+Today's news flow paints a stable-to-positive picture for The Coca-Cola Company (KO), contrasting its steady operational progress with significant strategic pressure on its prima...
+2025-09-28 12:20:38,156 - __main__ - DEBUG - Extracted what_changed: Compared to the context of the past seven days, the following developments are new: Confirmation of ...
+2025-09-28 12:20:38,156 - __main__ - DEBUG - Final what_changed content: 'Compared to the context of the past seven days, the following developments are new: Confirmation of Sustainability Progress: The specific report of an increase in recyclable packaging is a new, tangible data point supporting KO's ESG narrative. Heightened Visibility on Competitor Weakness: Today's news brings the strategic challenges at PepsiCo into sharp focus, particularly the influence of activist investors and persistent stock underperformance. This provides a fresh, comparative data point that highlights KO’s relative stability. Active Peer-to-Peer Debate: The presence of articles directly comparing investment cases for Coca-Cola versus peers like Monster Beverage indicates an active re-evaluation of the stock's role in portfolios is occurring in the market today.'
+2025-09-28 12:20:38,158 - __main__ - INFO - Generated fresh summary for KO (length: 3312 chars)
+2025-09-28 12:20:38,159 - __main__ - DEBUG - Cached summary for KO
+2025-09-28 12:20:38,159 - __main__ - DEBUG - Saving summary to database for KO on 2025-09-28
+2025-09-28 12:20:38,159 - __main__ - DEBUG - Summary length: 3312 chars
+2025-09-28 12:20:38,159 - __main__ - DEBUG - What changed: Compared to the context of the past seven days, the following developments are new: Confirmation of ...
+2025-09-28 12:20:38,161 - __main__ - DEBUG - Database save completed for KO
+2025-09-28 12:20:38,337 - __main__ - INFO - === Completed processing for KO ===
+2025-09-28 12:20:38,338 - werkzeug - INFO - 127.0.0.1 - - [28/Sep/2025 12:20:38] "GET /api/refresh/KO HTTP/1.1" 200 -
+2025-09-28 12:20:41,355 - __main__ - DEBUG - Getting summary for KO
+2025-09-28 12:20:41,360 - __main__ - DEBUG - Executed query for KO
+2025-09-28 12:20:41,361 - __main__ - DEBUG - Query result for KO: Found
+2025-09-28 12:20:41,361 - __main__ - DEBUG - Summary data found: date=2025-09-28, summary_len=3312, what_changed_len=779
+2025-09-28 12:20:41,367 - werkzeug - INFO - 127.0.0.1 - - [28/Sep/2025 12:20:41] "GET /api/summary/KO HTTP/1.1" 200 -
+2025-09-28 12:23:20,718 - __main__ - INFO - Gemini API Key loaded: Yes
+2025-09-28 12:23:20,718 - __main__ - INFO - Polygon API Key loaded: Yes
+2025-09-28 12:23:21,905 - tzlocal - DEBUG - Looking up time zone info from registry
+2025-09-28 12:23:21,918 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-09-28 12:23:21,920 - apscheduler.scheduler - INFO - Added job "daily_update" to job store "default"
+2025-09-28 12:23:21,921 - apscheduler.scheduler - INFO - Scheduler started
+2025-09-28 12:23:21,922 - apscheduler.scheduler - DEBUG - Looking for jobs to run
+2025-09-28 12:23:21,923 - apscheduler.scheduler - DEBUG - Next wakeup is due at 2025-09-29 08:00:00+05:30 (in 70598.076605 seconds)
+2025-09-28 12:23:21,961 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:10000
+ * Running on http://192.168.1.6:10000
+2025-09-28 12:23:21,962 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2025-09-28 12:23:29,146 - werkzeug - INFO - 127.0.0.1 - - [28/Sep/2025 12:23:29] "GET / HTTP/1.1" 200 -
+2025-09-28 12:23:29,464 - werkzeug - INFO - 127.0.0.1 - - [28/Sep/2025 12:23:29] "[36mGET /static/style.css HTTP/1.1[0m" 304 -
+2025-09-28 12:23:29,529 - werkzeug - INFO - 127.0.0.1 - - [28/Sep/2025 12:23:29] "GET /static/script.js HTTP/1.1" 200 -
+2025-09-28 12:23:29,858 - __main__ - DEBUG - Getting tickers list
+2025-09-28 12:23:29,881 - __main__ - DEBUG - Found 11 tickers: ['KO', 'LLY', 'MA', 'BAC', 'JPM', 'XOM', 'BA', 'BP', 'NVDA', 'TSLA', 'AAP']
+2025-09-28 12:23:30,012 - werkzeug - INFO - 127.0.0.1 - - [28/Sep/2025 12:23:30] "GET /api/tickers HTTP/1.1" 200 -
+2025-09-28 12:23:41,396 - __main__ - DEBUG - Received ticker request: PFE
+2025-09-28 12:23:41,397 - __main__ - INFO - Validating ticker: PFE
+2025-09-28 12:23:41,397 - __main__ - DEBUG - Validating ticker: PFE
+2025-09-28 12:23:41,401 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): finviz.com:443
+2025-09-28 12:23:42,405 - urllib3.connectionpool - DEBUG - https://finviz.com:443 "GET /quote.ashx?t=PFE HTTP/1.1" 200 None
+2025-09-28 12:23:42,691 - __main__ - DEBUG - Ticker PFE validated successfully
+2025-09-28 12:23:42,861 - __main__ - INFO - Successfully added ticker: PFE
+2025-09-28 12:23:42,863 - werkzeug - INFO - 127.0.0.1 - - [28/Sep/2025 12:23:42] "POST /api/tickers HTTP/1.1" 200 -
+2025-09-28 12:23:42,871 - __main__ - DEBUG - Getting tickers list
+2025-09-28 12:23:42,876 - __main__ - DEBUG - Found 12 tickers: ['PFE', 'KO', 'LLY', 'MA', 'BAC', 'JPM', 'XOM', 'BA', 'BP', 'NVDA', 'TSLA', 'AAP']
+2025-09-28 12:23:42,878 - werkzeug - INFO - 127.0.0.1 - - [28/Sep/2025 12:23:42] "GET /api/tickers HTTP/1.1" 200 -
+2025-09-28 12:23:43,461 - __main__ - DEBUG - Getting summary for PFE
+2025-09-28 12:23:43,463 - __main__ - DEBUG - Executed query for PFE
+2025-09-28 12:23:43,464 - __main__ - DEBUG - Query result for PFE: None
+2025-09-28 12:23:43,464 - __main__ - WARNING - No summary data found for PFE
+2025-09-28 12:23:43,466 - werkzeug - INFO - 127.0.0.1 - - [28/Sep/2025 12:23:43] "GET /api/summary/PFE HTTP/1.1" 200 -
+2025-09-28 12:23:44,517 - __main__ - INFO - Manual refresh requested for PFE
+2025-09-28 12:23:44,517 - __main__ - INFO - === Starting news processing for PFE ===
+2025-09-28 12:23:44,518 - __main__ - DEBUG - Collecting fresh news from all sources
+2025-09-28 12:23:44,518 - __main__ - DEBUG - Starting TradingView scraping for PFE
+2025-09-28 12:23:44,519 - __main__ - DEBUG - Trying URL: https://www.tradingview.com/symbols/PFE/news/
+2025-09-28 12:23:44,524 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): www.tradingview.com:443
+2025-09-28 12:23:45,693 - urllib3.connectionpool - DEBUG - https://www.tradingview.com:443 "GET /symbols/PFE/news/ HTTP/1.1" 301 0
+2025-09-28 12:23:46,069 - urllib3.connectionpool - DEBUG - https://www.tradingview.com:443 "GET /symbols/NYSE-PFE/news/ HTTP/1.1" 200 None
+2025-09-28 12:23:46,358 - __main__ - INFO - TradingView: Found 5 articles for PFE
+2025-09-28 12:23:46,358 - __main__ - DEBUG - Starting Finviz scraping for PFE
+2025-09-28 12:23:46,359 - __main__ - DEBUG - Fetching URL: https://finviz.com/quote.ashx?t=PFE
+2025-09-28 12:23:46,360 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): finviz.com:443
+2025-09-28 12:23:47,169 - urllib3.connectionpool - DEBUG - https://finviz.com:443 "GET /quote.ashx?t=PFE HTTP/1.1" 200 None
+2025-09-28 12:23:47,188 - __main__ - DEBUG - Response status: 200, Content length: 219164
+2025-09-28 12:23:47,290 - __main__ - INFO - Finviz: Found 10 articles for PFE
+2025-09-28 12:23:47,290 - __main__ - DEBUG - Starting Polygon API call for PFE
+2025-09-28 12:23:47,291 - __main__ - DEBUG - API URL: https://api.polygon.io/v2/reference/news, Params: {'ticker': 'PFE', 'limit': 10, 'apikey': 'BQoC8Jp25fffSdoxpLv0mI2gu2d74HT1'}
+2025-09-28 12:23:59,292 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): api.polygon.io:443
+2025-09-28 12:24:01,015 - urllib3.connectionpool - DEBUG - https://api.polygon.io:443 "GET /v2/reference/news?ticker=PFE&limit=10&apikey=BQoC8Jp25fffSdoxpLv0mI2gu2d74HT1 HTTP/1.1" 200 None
+2025-09-28 12:24:01,016 - __main__ - DEBUG - polygon API call #1
+2025-09-28 12:24:01,017 - __main__ - INFO - Polygon: Found 10 articles for PFE
+2025-09-28 12:24:01,017 - __main__ - DEBUG - Starting Alpha Vantage API call for PFE
+2025-09-28 12:24:01,019 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): www.alphavantage.co:443
+2025-09-28 12:24:03,008 - urllib3.connectionpool - DEBUG - https://www.alphavantage.co:443 "GET /query?function=NEWS_SENTIMENT&tickers=PFE&apikey=DO5HF4HW9CY6SUFH&limit=10 HTTP/1.1" 200 None
+2025-09-28 12:24:04,194 - __main__ - INFO - Alpha Vantage: Found 10 articles for PFE
+2025-09-28 12:24:04,195 - __main__ - INFO - Fresh articles collected: 35 (TV:5, FV:10, PG:10, AV:10)
+2025-09-28 12:24:04,196 - __main__ - DEBUG - Cached 35 articles for PFE
+2025-09-28 12:24:04,196 - __main__ - DEBUG - Selecting top articles using AI
+2025-09-28 12:24:04,197 - __main__ - DEBUG - Starting article selection with 35 articles
+2025-09-28 12:24:04,197 - __main__ - DEBUG - Sending prompt to Gemini (length: 8814 chars)
+2025-09-28 12:24:04,198 - __main__ - DEBUG - Using API key: AIzaSyDiWg...
+2025-09-28 12:24:08,199 - google_genai.models - INFO - AFC is enabled with max remote calls: 10.
+2025-09-28 12:24:08,200 - httpcore.connection - DEBUG - connect_tcp.started host='generativelanguage.googleapis.com' port=443 local_address=None timeout=None socket_options=None
+2025-09-28 12:24:08,216 - httpcore.connection - DEBUG - connect_tcp.complete return_value=<httpcore._backends.sync.SyncStream object at 0x00000163D3339BE0>
+2025-09-28 12:24:08,217 - httpcore.connection - DEBUG - start_tls.started ssl_context=<ssl.SSLContext object at 0x00000163D30520D0> server_hostname='generativelanguage.googleapis.com' timeout=None
+2025-09-28 12:24:08,240 - httpcore.connection - DEBUG - start_tls.complete return_value=<httpcore._backends.sync.SyncStream object at 0x00000163D330F4D0>
+2025-09-28 12:24:08,241 - httpcore.http11 - DEBUG - send_request_headers.started request=<Request [b'POST']>
+2025-09-28 12:24:08,242 - httpcore.http11 - DEBUG - send_request_headers.complete
+2025-09-28 12:24:08,242 - httpcore.http11 - DEBUG - send_request_body.started request=<Request [b'POST']>
+2025-09-28 12:24:08,242 - httpcore.http11 - DEBUG - send_request_body.complete
+2025-09-28 12:24:08,243 - httpcore.http11 - DEBUG - receive_response_headers.started request=<Request [b'POST']>
+2025-09-28 12:24:42,987 - httpcore.http11 - DEBUG - receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Content-Type', b'application/json; charset=UTF-8'), (b'Vary', b'Origin'), (b'Vary', b'X-Origin'), (b'Vary', b'Referer'), (b'Content-Encoding', b'gzip'), (b'Date', b'Sun, 28 Sep 2025 06:54:42 GMT'), (b'Server', b'scaffolding on HTTPServer2'), (b'X-XSS-Protection', b'0'), (b'X-Frame-Options', b'SAMEORIGIN'), (b'X-Content-Type-Options', b'nosniff'), (b'Server-Timing', b'gfet4t7; dur=34733'), (b'Alt-Svc', b'h3=":443"; ma=2592000,h3-29=":443"; ma=2592000'), (b'Transfer-Encoding', b'chunked')])
+2025-09-28 12:24:42,989 - httpx - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent "HTTP/1.1 200 OK"
+2025-09-28 12:24:42,990 - httpcore.http11 - DEBUG - receive_response_body.started request=<Request [b'POST']>
+2025-09-28 12:24:42,993 - httpcore.http11 - DEBUG - receive_response_body.complete
+2025-09-28 12:24:42,994 - httpcore.http11 - DEBUG - response_closed.started
+2025-09-28 12:24:42,995 - httpcore.http11 - DEBUG - response_closed.complete
+2025-09-28 12:24:42,998 - __main__ - DEBUG - gemini API call #1
+2025-09-28 12:24:42,999 - __main__ - DEBUG - Gemini response: 8,15,20,23,28,29,35...
+2025-09-28 12:24:43,000 - __main__ - DEBUG - Selected article indices: [7, 14, 19, 22, 27, 28, 34]
+2025-09-28 12:24:43,001 - __main__ - INFO - Selected 7 articles for summary
+2025-09-28 12:24:43,004 - __main__ - DEBUG - Generating fresh AI summary
+2025-09-28 12:24:43,005 - __main__ - DEBUG - Starting summary generation for PFE
+2025-09-28 12:24:43,006 - __main__ - DEBUG - Sending summary prompt to Gemini (length: 3514 chars)
+2025-09-28 12:24:47,007 - google_genai.models - INFO - AFC is enabled with max remote calls: 10.
+2025-09-28 12:24:47,009 - httpcore.http11 - DEBUG - send_request_headers.started request=<Request [b'POST']>
+2025-09-28 12:24:47,009 - httpcore.http11 - DEBUG - send_request_headers.complete
+2025-09-28 12:24:47,010 - httpcore.http11 - DEBUG - send_request_body.started request=<Request [b'POST']>
+2025-09-28 12:24:47,010 - httpcore.http11 - DEBUG - send_request_body.complete
+2025-09-28 12:24:47,010 - httpcore.http11 - DEBUG - receive_response_headers.started request=<Request [b'POST']>
+2025-09-28 12:25:17,992 - httpcore.http11 - DEBUG - receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Content-Type', b'application/json; charset=UTF-8'), (b'Vary', b'Origin'), (b'Vary', b'X-Origin'), (b'Vary', b'Referer'), (b'Content-Encoding', b'gzip'), (b'Date', b'Sun, 28 Sep 2025 06:55:17 GMT'), (b'Server', b'scaffolding on HTTPServer2'), (b'X-XSS-Protection', b'0'), (b'X-Frame-Options', b'SAMEORIGIN'), (b'X-Content-Type-Options', b'nosniff'), (b'Server-Timing', b'gfet4t7; dur=30972'), (b'Alt-Svc', b'h3=":443"; ma=2592000,h3-29=":443"; ma=2592000'), (b'Transfer-Encoding', b'chunked')])
+2025-09-28 12:25:17,993 - httpx - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent "HTTP/1.1 200 OK"
+2025-09-28 12:25:17,993 - httpcore.http11 - DEBUG - receive_response_body.started request=<Request [b'POST']>
+2025-09-28 12:25:17,994 - httpcore.http11 - DEBUG - receive_response_body.complete
+2025-09-28 12:25:17,994 - httpcore.http11 - DEBUG - response_closed.started
+2025-09-28 12:25:17,995 - httpcore.http11 - DEBUG - response_closed.complete
+2025-09-28 12:25:17,996 - __main__ - DEBUG - gemini API call #2
+2025-09-28 12:25:17,996 - __main__ - DEBUG - Gemini summary response received: 3507 chars
+2025-09-28 12:25:17,996 - __main__ - DEBUG - Response preview: **EXECUTIVE SUMMARY**
+
+Pfizer (PFE) today executed a significant strategic pivot into the high-growth obesity drug market with a multi-billion dollar acquisition of Metsera. This move is a decisive, a...
+2025-09-28 12:25:17,997 - __main__ - DEBUG - Extracted what_changed: Confirmation of Strategic Pivot: While speculation about Pfizer's interest in the obesity market has...
+2025-09-28 12:25:17,997 - __main__ - DEBUG - Final what_changed content: 'Confirmation of Strategic Pivot: While speculation about Pfizer's interest in the obesity market has existed, today's announcement of the Metsera acquisition provides concrete financial details and a timeline, confirming it as the company's core new growth strategy. New Legal Timeline: The identification of a "late September" court date for the Depo-Provera litigation provides a specific, near-term event for a known legal risk. Macroeconomic Tailwinds: The stock's positive reaction to proposed pharma tariffs introduces a new, macro-driven factor influencing its valuation today.'
+2025-09-28 12:25:17,998 - __main__ - INFO - Generated fresh summary for PFE (length: 3507 chars)
+2025-09-28 12:25:17,998 - __main__ - DEBUG - Cached summary for PFE
+2025-09-28 12:25:17,999 - __main__ - DEBUG - Saving summary to database for PFE on 2025-09-28
+2025-09-28 12:25:17,999 - __main__ - DEBUG - Summary length: 3507 chars
+2025-09-28 12:25:17,999 - __main__ - DEBUG - What changed: Confirmation of Strategic Pivot: While speculation about Pfizer's interest in the obesity market has...
+2025-09-28 12:25:18,002 - __main__ - DEBUG - Database save completed for PFE
+2025-09-28 12:25:18,152 - __main__ - INFO - === Completed processing for PFE ===
+2025-09-28 12:25:18,153 - werkzeug - INFO - 127.0.0.1 - - [28/Sep/2025 12:25:18] "GET /api/refresh/PFE HTTP/1.1" 200 -
+2025-09-28 12:25:21,180 - __main__ - DEBUG - Getting summary for PFE
+2025-09-28 12:25:21,184 - __main__ - DEBUG - Executed query for PFE
+2025-09-28 12:25:21,185 - __main__ - DEBUG - Query result for PFE: Found
+2025-09-28 12:25:21,185 - __main__ - DEBUG - Summary data found: date=2025-09-28, summary_len=3507, what_changed_len=584
+2025-09-28 12:25:21,187 - werkzeug - INFO - 127.0.0.1 - - [28/Sep/2025 12:25:21] "GET /api/summary/PFE HTTP/1.1" 200 -
