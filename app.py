@@ -94,6 +94,23 @@ def cache_summary(ticker, summary_data):
     }
     logger.debug(f"Cached summary for {ticker}")
 
+def cleanup_expired_cache():
+    """Remove expired cache entries to free memory"""
+    # Clean news cache (4 hour expiry)
+    expired_news = [ticker for ticker, data in news_cache.items() 
+                   if not is_cache_valid(data['timestamp'], CACHE_DURATION)]
+    for ticker in expired_news:
+        del news_cache[ticker]
+    
+    # Clean summary cache (2 hour expiry)  
+    expired_summaries = [ticker for ticker, data in summary_cache.items()
+                        if not is_cache_valid(data['timestamp'], 2 * 3600)]
+    for ticker in expired_summaries:
+        del summary_cache[ticker]
+    
+    if expired_news or expired_summaries:
+        logger.info(f"Cleaned {len(expired_news)} news + {len(expired_summaries)} summary cache entries")
+
 # Daily Limits (conservative)
 DAILY_LIMITS = {
     'gemini': 800,  # ~15 RPM * 60 * 16 hours (conservative)
@@ -119,6 +136,12 @@ def increment_api_usage(service):
     logger.debug(f"{service} API call #{api_usage[service]['calls']}")
 
 client = genai.Client(api_key=GEMINI_API_KEY)
+
+# Initialize scheduler for cache cleanup
+scheduler = BackgroundScheduler()
+scheduler.add_job(cleanup_expired_cache, 'interval', hours=1)
+scheduler.start()
+logger.info("Cache cleanup scheduler started (runs every hour)")
 
 # Database setup
 def init_db():
