@@ -6,7 +6,7 @@ A professional-grade financial news aggregation and AI analysis platform that de
 
 - **Multi-Source Intelligence**: Aggregates news from 4 sources: Alpha Vantage, Finviz, Polygon, and TradingView
 - **Professional AI Analysis**: Uses Gemini 2.5 Pro for institutional-grade summaries
-- **Intelligent Caching**: 4-hour news cache reduces API calls by 60%
+- **Intelligent Caching**: 2-hour news cache reduces API calls by 60%
 - **Graceful Rate Limiting**: Handles API quotas with automatic fallbacks
 - **Investment-Grade Reports**: Executive summaries, market implications, and risk analysis
 - **Cost-Optimized**: Operates on $0/month using free API tiers
