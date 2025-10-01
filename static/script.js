@@ -272,9 +272,21 @@ class StockNewsApp {
     async refreshTicker(ticker) {
         const refreshBtn = document.getElementById('refresh-btn');
         const originalText = refreshBtn.textContent;
+        const summaryContent = document.getElementById('summary-content');
 
-        refreshBtn.textContent = '⏳ Generating...';
+        // Show loading animation
+        refreshBtn.innerHTML = '<span class="spinner"></span> Generating...';
         refreshBtn.disabled = true;
+        refreshBtn.classList.add('loading');
+        
+        // Show loading in summary area
+        summaryContent.innerHTML = `
+            <div class="loading-container">
+                <div class="loading-spinner"></div>
+                <div class="loading-text">Generating AI summary...</div>
+                <div class="loading-subtext">This may take 30-60 seconds</div>
+            </div>
+        `;
 
         try {
             const response = await fetch(`/api/refresh/${ticker}`);
@@ -285,16 +297,19 @@ class StockNewsApp {
                 // Reload the summary after processing completes
                 setTimeout(() => {
                     this.selectTicker(ticker);
-                }, 3000);
+                }, 2000);
             } else {
                 this.showMessage(result.error || 'Failed to refresh', 'error');
+                summaryContent.innerHTML = `<div class="error-message">Failed to generate summary: ${result.error}</div>`;
             }
         } catch (error) {
             console.error('Error refreshing ticker:', error);
             this.showMessage('Failed to generate summary', 'error');
+            summaryContent.innerHTML = '<div class="error-message">Failed to generate summary</div>';
         } finally {
-            refreshBtn.textContent = originalText;
+            refreshBtn.innerHTML = originalText;
             refreshBtn.disabled = false;
+            refreshBtn.classList.remove('loading');
         }
     }
 
@@ -466,6 +481,53 @@ style.textContent = `
         color: #7f8c8d;
         font-style: italic;
         padding: 20px;
+    }
+    
+    .spinner {
+        display: inline-block;
+        width: 12px;
+        height: 12px;
+        border: 2px solid #ffffff;
+        border-radius: 50%;
+        border-top-color: transparent;
+        animation: spin 1s ease-in-out infinite;
+    }
+    
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+    
+    .loading-container {
+        text-align: center;
+        padding: 40px 20px;
+        color: #7f8c8d;
+    }
+    
+    .loading-spinner {
+        width: 40px;
+        height: 40px;
+        border: 4px solid #ecf0f1;
+        border-top: 4px solid #3498db;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 20px;
+    }
+    
+    .loading-text {
+        font-size: 18px;
+        font-weight: 600;
+        margin-bottom: 8px;
+        color: #2c3e50;
+    }
+    
+    .loading-subtext {
+        font-size: 14px;
+        color: #95a5a6;
+    }
+    
+    #refresh-btn.loading {
+        background: #95a5a6;
+        cursor: not-allowed;
     }
 `;
 document.head.appendChild(style);

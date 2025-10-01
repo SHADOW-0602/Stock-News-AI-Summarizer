@@ -5,7 +5,10 @@ from bs4 import BeautifulSoup
 import json
 import os
 from datetime import datetime
-import sqlite3
+from supabase import create_client, Client
+import requests
+import json
+import base64
 import google.genai as genai
 from apscheduler.schedulers.background import BackgroundScheduler
 import time
@@ -40,6 +43,69 @@ logger = logging.getLogger(__name__)
 GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
 POLYGON_API_KEY = os.getenv('POLYGON_API_KEY')
 ALPHA_VANTAGE_API_KEY = os.getenv('ALPHA_VANTAGE_API_KEY')
+SUPABASE_URL = os.getenv('SUPABASE_URL')
+SUPABASE_KEY = os.getenv('SUPABASE_ANON_KEY')
+
+# Initialize Supabase client
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+# Initialize Upstash Redis REST client
+UPSTASH_REDIS_REST_URL = os.getenv('UPSTASH_REDIS_REST_URL')
+UPSTASH_REDIS_REST_TOKEN = os.getenv('UPSTASH_REDIS_REST_TOKEN')
+
+class UpstashRedis:
+    def __init__(self, url, token):
+        self.url = url
+        self.headers = {'Authorization': f'Bearer {token}'}
+    
+    def get(self, key):
+        try:
+            response = requests.get(f'{self.url}/get/{key}', headers=self.headers)
+            if response.status_code == 200:
+                result = response.json().get('result')
+                if result:
+                    return base64.b64decode(result)
+            return None
+        except:
+            return None
+    
+    def setex(self, key, seconds, value):
+        try:
+            encoded_value = base64.b64encode(value).decode('utf-8')
+            data = {'value': encoded_value, 'ex': seconds}
+            response = requests.post(f'{self.url}/set/{key}', headers=self.headers, json=data)
+            return response.status_code == 200
+        except:
+            return False
+    
+    def delete(self, *keys):
+        try:
+            for key in keys:
+                requests.post(f'{self.url}/del/{key}', headers=self.headers)
+            return True
+        except:
+            return False
+    
+    def exists(self, key):
+        try:
+            response = requests.get(f'{self.url}/exists/{key}', headers=self.headers)
+            return response.status_code == 200 and response.json().get('result', 0) == 1
+        except:
+            return False
+
+# Initialize Redis client
+try:
+    if UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN:
+        redis_client = UpstashRedis(UPSTASH_REDIS_REST_URL, UPSTASH_REDIS_REST_TOKEN)
+        # Test connection
+        redis_client.setex('test', 10, b'test')
+        logger.info("Upstash Redis connection successful")
+    else:
+        redis_client = None
+        logger.warning("Upstash Redis credentials not found")
+except Exception as e:
+    logger.warning(f"Upstash Redis connection failed: {e}. Using fallback cache.")
+    redis_client = None
 
 logger.info(f"Gemini API Key loaded: {'Yes' if GEMINI_API_KEY != 'your-gemini-api-key' else 'No'}")
 logger.info(f"Polygon API Key loaded: {'Yes' if POLYGON_API_KEY != 'your-polygon-api-key' else 'No'}")
@@ -52,64 +118,116 @@ api_usage = {
 
 # Caching System
 CACHE_DURATION = 4 * 3600  # 4 hours in seconds
-news_cache = {}  # {ticker: {'data': articles, 'timestamp': datetime, 'sources': []}}
-summary_cache = {}  # {ticker: {'summary': data, 'timestamp': datetime}}
+SUMMARY_CACHE_DURATION = 2 * 3600  # 2 hours in seconds
 
-def is_cache_valid(timestamp, duration=CACHE_DURATION):
-    """Check if cached data is still valid"""
-    return (datetime.now() - timestamp).total_seconds() < duration
+# Fallback in-memory cache if Redis unavailable
+fallback_news_cache = {}
+fallback_summary_cache = {}
 
 def get_cached_news(ticker):
     """Get cached news if valid"""
-    if ticker in news_cache:
-        cache_entry = news_cache[ticker]
-        if is_cache_valid(cache_entry['timestamp']):
-            logger.debug(f"Using cached news for {ticker}")
-            return cache_entry['data'], cache_entry['sources']
+    try:
+        if redis_client:
+            cached_data = redis_client.get(f"news:{ticker}")
+            if cached_data:
+                cache_entry = json.loads(cached_data.decode('utf-8'))
+                logger.debug(f"Using Upstash cached news for {ticker}")
+                return cache_entry['data'], cache_entry['sources']
+        else:
+            # Fallback to in-memory cache
+            if ticker in fallback_news_cache:
+                cache_entry = fallback_news_cache[ticker]
+                if (datetime.now() - cache_entry['timestamp']).total_seconds() < CACHE_DURATION:
+                    logger.debug(f"Using fallback cached news for {ticker}")
+                    return cache_entry['data'], cache_entry['sources']
+    except Exception as e:
+        logger.debug(f"Cache read error for {ticker}: {e}")
     return None, None
 
 def cache_news(ticker, articles, sources):
     """Cache news articles"""
-    news_cache[ticker] = {
-        'data': articles,
-        'timestamp': datetime.now(),
-        'sources': sources
-    }
-    logger.debug(f"Cached {len(articles)} articles for {ticker}")
+    try:
+        cache_data = {
+            'data': articles,
+            'timestamp': datetime.now().isoformat(),
+            'sources': sources
+        }
+        
+        if redis_client:
+            redis_client.setex(f"news:{ticker}", CACHE_DURATION, json.dumps(cache_data).encode('utf-8'))
+            logger.debug(f"Cached {len(articles)} articles for {ticker} in Upstash")
+        else:
+            # Fallback to in-memory cache
+            fallback_news_cache[ticker] = {
+                'data': articles,
+                'timestamp': datetime.now(),
+                'sources': sources
+            }
+            logger.debug(f"Cached {len(articles)} articles for {ticker} in memory")
+    except Exception as e:
+        logger.debug(f"Cache write error for {ticker}: {e}")
 
 def get_cached_summary(ticker):
-    """Get cached summary if valid (shorter cache for summaries)"""
-    if ticker in summary_cache:
-        cache_entry = summary_cache[ticker]
-        if is_cache_valid(cache_entry['timestamp'], 2 * 3600):  # 2 hours for summaries
-            logger.debug(f"Using cached summary for {ticker}")
-            return cache_entry['summary']
+    """Get cached summary if valid"""
+    try:
+        if redis_client:
+            cached_data = redis_client.get(f"summary:{ticker}")
+            if cached_data:
+                cache_entry = json.loads(cached_data.decode('utf-8'))
+                logger.debug(f"Using Upstash cached summary for {ticker}")
+                return cache_entry['summary']
+        else:
+            # Fallback to in-memory cache
+            if ticker in fallback_summary_cache:
+                cache_entry = fallback_summary_cache[ticker]
+                if (datetime.now() - cache_entry['timestamp']).total_seconds() < SUMMARY_CACHE_DURATION:
+                    logger.debug(f"Using fallback cached summary for {ticker}")
+                    return cache_entry['summary']
+    except Exception as e:
+        logger.debug(f"Summary cache read error for {ticker}: {e}")
     return None
 
 def cache_summary(ticker, summary_data):
     """Cache summary data"""
-    summary_cache[ticker] = {
-        'summary': summary_data,
-        'timestamp': datetime.now()
-    }
-    logger.debug(f"Cached summary for {ticker}")
+    try:
+        cache_data = {
+            'summary': summary_data,
+            'timestamp': datetime.now().isoformat()
+        }
+        
+        if redis_client:
+            redis_client.setex(f"summary:{ticker}", SUMMARY_CACHE_DURATION, json.dumps(cache_data).encode('utf-8'))
+            logger.debug(f"Cached summary for {ticker} in Upstash")
+        else:
+            # Fallback to in-memory cache
+            fallback_summary_cache[ticker] = {
+                'summary': summary_data,
+                'timestamp': datetime.now()
+            }
+            logger.debug(f"Cached summary for {ticker} in memory")
+    except Exception as e:
+        logger.debug(f"Summary cache write error for {ticker}: {e}")
 
 def cleanup_expired_cache():
-    """Remove expired cache entries to free memory"""
-    # Clean news cache (4 hour expiry)
-    expired_news = [ticker for ticker, data in news_cache.items() 
-                   if not is_cache_valid(data['timestamp'], CACHE_DURATION)]
-    for ticker in expired_news:
-        del news_cache[ticker]
-    
-    # Clean summary cache (2 hour expiry)  
-    expired_summaries = [ticker for ticker, data in summary_cache.items()
-                        if not is_cache_valid(data['timestamp'], 2 * 3600)]
-    for ticker in expired_summaries:
-        del summary_cache[ticker]
-    
-    if expired_news or expired_summaries:
-        logger.info(f"Cleaned {len(expired_news)} news + {len(expired_summaries)} summary cache entries")
+    """Redis handles expiry automatically, clean fallback cache only"""
+    if not redis_client:
+        # Clean fallback caches
+        current_time = datetime.now()
+        
+        expired_news = [ticker for ticker, data in fallback_news_cache.items() 
+                       if (current_time - data['timestamp']).total_seconds() > CACHE_DURATION]
+        for ticker in expired_news:
+            del fallback_news_cache[ticker]
+        
+        expired_summaries = [ticker for ticker, data in fallback_summary_cache.items()
+                            if (current_time - data['timestamp']).total_seconds() > SUMMARY_CACHE_DURATION]
+        for ticker in expired_summaries:
+            del fallback_summary_cache[ticker]
+        
+        if expired_news or expired_summaries:
+            logger.info(f"Cleaned {len(expired_news)} news + {len(expired_summaries)} fallback cache entries")
+    else:
+        logger.debug("Redis handles cache expiry automatically")
 
 # Daily Limits (conservative)
 DAILY_LIMITS = {
@@ -145,18 +263,15 @@ logger.info("Cache cleanup scheduler started (runs every hour)")
 
 # Database setup
 def init_db():
-    conn = sqlite3.connect('news_data.db')
-    c = conn.cursor()
-    c.execute('''CREATE TABLE IF NOT EXISTS tickers
-                 (id INTEGER PRIMARY KEY, symbol TEXT UNIQUE, added_date TEXT)''')
-    c.execute('''CREATE TABLE IF NOT EXISTS news_articles
-                 (id INTEGER PRIMARY KEY, ticker TEXT, title TEXT, url TEXT, 
-                  source TEXT, content TEXT, date TEXT, relevance_score REAL)''')
-    c.execute('''CREATE TABLE IF NOT EXISTS daily_summaries
-                 (id INTEGER PRIMARY KEY, ticker TEXT, date TEXT, summary TEXT, 
-                  articles_used TEXT, what_changed TEXT)''')
-    conn.commit()
-    conn.close()
+    """Supabase tables are created via SQL migrations in dashboard"""
+    try:
+        # Test connection with a simple query
+        result = supabase.table('tickers').select('*').limit(1).execute()
+        logger.info("Supabase connection and tables verified")
+    except Exception as e:
+        logger.warning(f"Supabase tables not found: {e}")
+        logger.info("Please create tables using supabase_migration.sql in your Supabase dashboard")
+        # Don't raise error - let app start but warn user
 
 class NewsCollector:
     def __init__(self):
@@ -601,14 +716,8 @@ def index():
 def get_tickers():
     try:
         logger.debug("Getting tickers list")
-        # Ensure database exists
-        init_db()
-        
-        conn = sqlite3.connect('news_data.db')
-        c = conn.cursor()
-        c.execute('SELECT symbol FROM tickers ORDER BY added_date DESC')
-        tickers = [row[0] for row in c.fetchall()]
-        conn.close()
+        result = supabase.table('tickers').select('symbol').order('added_date', desc=True).execute()
+        tickers = [row['symbol'] for row in result.data]
         logger.debug(f"Found {len(tickers)} tickers: {tickers}")
         return jsonify(tickers)
     except Exception as e:
@@ -667,21 +776,19 @@ def add_ticker():
     if not validate_ticker(ticker):
         return jsonify({'error': f'Ticker {ticker} not found or invalid'}), 400
     
-    conn = sqlite3.connect('news_data.db')
-    c = conn.cursor()
     try:
-        c.execute('INSERT INTO tickers (symbol, added_date) VALUES (?, ?)',
-                 (ticker, datetime.now().isoformat()))
-        conn.commit()
+        result = supabase.table('tickers').insert({
+            'symbol': ticker,
+            'added_date': datetime.now().isoformat()
+        }).execute()
         logger.info(f"Successfully added ticker: {ticker}")
         return jsonify({'success': True})
-    except sqlite3.IntegrityError:
-        return jsonify({'error': 'Ticker already exists'}), 400
     except Exception as e:
+        error_msg = str(e)
+        if 'duplicate' in error_msg.lower() or 'unique' in error_msg.lower():
+            return jsonify({'error': 'Ticker already exists'}), 400
         logger.error(f"Error adding ticker {ticker}: {e}")
         return jsonify({'error': 'Internal server error'}), 500
-    finally:
-        conn.close()
 
 @app.route('/api/tickers/<ticker>', methods=['DELETE'])
 def remove_ticker(ticker):
@@ -690,28 +797,27 @@ def remove_ticker(ticker):
         ticker = ticker.upper().strip()
         logger.info(f"Remove ticker requested: {ticker}")
         
-        conn = sqlite3.connect('news_data.db')
-        c = conn.cursor()
-        
         # Check if ticker exists
-        c.execute('SELECT symbol FROM tickers WHERE symbol = ?', (ticker,))
-        if not c.fetchone():
-            conn.close()
+        result = supabase.table('tickers').select('symbol').eq('symbol', ticker).execute()
+        if not result.data:
             return jsonify({'error': 'Ticker not found'}), 404
         
         # Remove ticker and related data
-        c.execute('DELETE FROM tickers WHERE symbol = ?', (ticker,))
-        c.execute('DELETE FROM daily_summaries WHERE ticker = ?', (ticker,))
-        c.execute('DELETE FROM news_articles WHERE ticker = ?', (ticker,))
+        supabase.table('tickers').delete().eq('symbol', ticker).execute()
+        supabase.table('daily_summaries').delete().eq('ticker', ticker).execute()
+        supabase.table('news_articles').delete().eq('ticker', ticker).execute()
         
         # Clear cache
-        if ticker in news_cache:
-            del news_cache[ticker]
-        if ticker in summary_cache:
-            del summary_cache[ticker]
-        
-        conn.commit()
-        conn.close()
+        try:
+            if redis_client:
+                redis_client.delete(f"news:{ticker}", f"summary:{ticker}")
+            else:
+                if ticker in fallback_news_cache:
+                    del fallback_news_cache[ticker]
+                if ticker in fallback_summary_cache:
+                    del fallback_summary_cache[ticker]
+        except Exception as e:
+            logger.debug(f"Cache clear error for {ticker}: {e}")
         
         logger.info(f"Successfully removed ticker: {ticker}")
         return jsonify({'success': True})
@@ -729,49 +835,29 @@ def get_summary(ticker):
         if not ticker or len(ticker) > 10:
             return jsonify({'error': 'Invalid ticker format'}), 400
         
-        conn = sqlite3.connect('news_data.db')
-        c = conn.cursor()
-    
-        # Get latest summary - handle missing columns gracefully
-        try:
-            c.execute('''SELECT date, summary, articles_used, what_changed, risk_factors 
-                         FROM daily_summaries 
-                         WHERE ticker = ? 
-                         ORDER BY date DESC LIMIT 1''', (ticker,))
-        except sqlite3.OperationalError:
-            # Fallback for old schema without risk_factors
-            c.execute('''SELECT date, summary, articles_used, what_changed 
-                         FROM daily_summaries 
-                         WHERE ticker = ? 
-                         ORDER BY date DESC LIMIT 1''', (ticker,))
+        # Get latest summary
+        result = supabase.table('daily_summaries').select('date, summary, articles_used, what_changed, risk_factors').eq('ticker', ticker).order('date', desc=True).limit(1).execute()
         
         logger.debug(f"Executed query for {ticker}")
+        logger.debug(f"Query result for {ticker}: {'Found' if result.data else 'None'}")
         
-        result = c.fetchone()
-        logger.debug(f"Query result for {ticker}: {'Found' if result else 'None'}")
-        
-        if result:
-            logger.debug(f"Summary data found: date={result[0]}, summary_len={len(result[1])}, what_changed_len={len(result[3]) if len(result) > 3 else 0}")
+        if result.data:
+            row = result.data[0]
+            logger.debug(f"Summary data found: date={row['date']}, summary_len={len(row['summary'])}, what_changed_len={len(row.get('what_changed', ''))}") 
             summary_data = {
-                'date': result[0],
-                'summary': result[1],
-                'articles_used': json.loads(result[2]),
-                'what_changed': result[3] if len(result) > 3 else '',
-                'risk_factors': result[4] if len(result) > 4 else ''
+                'date': row['date'],
+                'summary': row['summary'],
+                'articles_used': json.loads(row['articles_used']),
+                'what_changed': row.get('what_changed', ''),
+                'risk_factors': row.get('risk_factors', '')
             }
         else:
             logger.warning(f"No summary data found for {ticker}")
             summary_data = None
         
         # Get 7-day history
-        c.execute('''SELECT date, what_changed 
-                     FROM daily_summaries 
-                     WHERE ticker = ? 
-                     ORDER BY date DESC LIMIT 7''', (ticker,))
-        
-        history = [{'date': row[0], 'what_changed': row[1]} for row in c.fetchall()]
-        
-        conn.close()
+        history_result = supabase.table('daily_summaries').select('date, what_changed').eq('ticker', ticker).order('date', desc=True).limit(7).execute()
+        history = [{'date': row['date'], 'what_changed': row['what_changed']} for row in history_result.data]
         
         return jsonify({
             'current_summary': summary_data,
@@ -782,9 +868,10 @@ def get_summary(ticker):
                 'quota_reset': 'Daily at midnight'
             },
             'cache_status': {
-                'news_cached': ticker in news_cache,
-                'summary_cached': ticker in summary_cache,
-                'cache_duration': f'{CACHE_DURATION // 3600} hours'
+                'news_cached': redis_client.exists(f"news:{ticker}") if redis_client else ticker in fallback_news_cache,
+                'summary_cached': redis_client.exists(f"summary:{ticker}") if redis_client else ticker in fallback_summary_cache,
+                'cache_duration': f'{CACHE_DURATION // 3600} hours',
+                'cache_type': 'Upstash' if redis_client else 'Memory'
             }
         })
     except Exception as e:
@@ -831,12 +918,8 @@ def process_ticker_news(ticker):
     logger.info(f"Selected {len(selected_articles)} articles for summary")
     
     # Get historical summaries
-    conn = sqlite3.connect('news_data.db')
-    c = conn.cursor()
-    c.execute('''SELECT summary, what_changed FROM daily_summaries 
-                 WHERE ticker = ? ORDER BY date DESC LIMIT 7''', (ticker,))
-    historical_summaries = [{'summary': row[0], 'what_changed': row[1]} 
-                           for row in c.fetchall()]
+    result = supabase.table('daily_summaries').select('summary, what_changed').eq('ticker', ticker).order('date', desc=True).limit(7).execute()
+    historical_summaries = [{'summary': row['summary'], 'what_changed': row['what_changed']} for row in result.data]
     
     # Check for cached summary first
     cached_summary = get_cached_summary(ticker)
@@ -852,8 +935,24 @@ def process_ticker_news(ticker):
         # Cache the summary
         cache_summary(ticker, summary_result)
     
-    # Save to database
+    # Save articles to database
     today = datetime.now().date().isoformat()
+    
+    # Save all collected articles
+    for article in all_articles:
+        try:
+            supabase.table('news_articles').insert({
+                'ticker': ticker,
+                'title': article['title'],
+                'url': article['url'],
+                'source': article['source'],
+                'content': article['content'],
+                'date': article['date']
+            }).execute()
+        except Exception as e:
+            logger.debug(f"Article already exists or error: {e}")
+    
+    # Save summary
     articles_used = json.dumps([{
         'title': art['title'],
         'url': art['url'],
@@ -864,16 +963,17 @@ def process_ticker_news(ticker):
     logger.debug(f"Summary length: {len(summary_result['summary'])} chars")
     logger.debug(f"What changed: {summary_result['what_changed'][:100]}...")
     
-    c.execute('''INSERT OR REPLACE INTO daily_summaries 
-                 (ticker, date, summary, articles_used, what_changed)
-                 VALUES (?, ?, ?, ?, ?)''',
-             (ticker, today, summary_result['summary'], 
-              articles_used, summary_result['what_changed']))
+    # Upsert (insert or update)
+    supabase.table('daily_summaries').upsert({
+        'ticker': ticker,
+        'date': today,
+        'summary': summary_result['summary'],
+        'articles_used': articles_used,
+        'what_changed': summary_result['what_changed']
+    }).execute()
     
+    logger.info(f"Saved {len(all_articles)} articles and summary for {ticker}")
     logger.debug(f"Database save completed for {ticker}")
-    
-    conn.commit()
-    conn.close()
     
     logger.info(f"=== Completed processing for {ticker} ===")
 
@@ -888,12 +988,18 @@ def refresh_ticker(ticker):
             return jsonify({'error': 'Invalid ticker format'}), 400
         
         # Clear cache for fresh data
-        if ticker in news_cache:
-            del news_cache[ticker]
-            logger.debug(f"Cleared news cache for {ticker}")
-        if ticker in summary_cache:
-            del summary_cache[ticker]
-            logger.debug(f"Cleared summary cache for {ticker}")
+        try:
+            if redis_client:
+                redis_client.delete(f"news:{ticker}", f"summary:{ticker}")
+                logger.debug(f"Cleared Redis cache for {ticker}")
+            else:
+                if ticker in fallback_news_cache:
+                    del fallback_news_cache[ticker]
+                if ticker in fallback_summary_cache:
+                    del fallback_summary_cache[ticker]
+                logger.debug(f"Cleared fallback cache for {ticker}")
+        except Exception as e:
+            logger.debug(f"Cache clear error for {ticker}: {e}")
         
         process_ticker_news(ticker)
         return jsonify({'success': True})
@@ -905,11 +1011,8 @@ def daily_update():
     """Daily update job - runs at 8 AM IST"""
     logger.info("Starting daily update")
     
-    conn = sqlite3.connect('news_data.db')
-    c = conn.cursor()
-    c.execute('SELECT symbol FROM tickers')
-    tickers = [row[0] for row in c.fetchall()]
-    conn.close()
+    result = supabase.table('tickers').select('symbol').execute()
+    tickers = [row['symbol'] for row in result.data]
     
     for ticker in tickers:
         try:
