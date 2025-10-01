@@ -578,8 +578,14 @@ style.textContent = `
     }
     
     #refresh-btn.loading {
-        background: #95a5a6;
+        background: #95a5a6 !important;
         cursor: not-allowed;
+    }
+    
+    #refresh-btn:disabled {
+        background: #95a5a6 !important;
+        cursor: not-allowed;
+        opacity: 0.7;
     }
 `;
 document.head.appendChild(style);

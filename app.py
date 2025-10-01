@@ -536,19 +536,22 @@ class AIProcessor:
             ])
             
             prompt = f"""
-            You are a senior financial analyst. Evaluate these news articles for {ticker} and select the 5-7 most impactful ones for institutional investors:
+            You are a senior equity research analyst at a top-tier investment bank. Select the 5-7 most market-moving articles for {ticker} that professional traders need to know:
             
-            SELECTION CRITERIA:
-            • Market-moving potential and trading implications
-            • Credible sources (avoid promotional content)
-            • Quantifiable business impact (earnings, revenue, partnerships)
-            • Regulatory or competitive developments
-            • Management changes or strategic shifts
+            PRIORITY CRITERIA (rank by importance):
+            1. EARNINGS/FINANCIAL RESULTS - Revenue beats/misses, guidance changes, margin impacts
+            2. REGULATORY/LEGAL - FDA approvals, antitrust, compliance issues, lawsuits
+            3. STRATEGIC MOVES - M&A, partnerships, market expansion, product launches
+            4. MANAGEMENT CHANGES - CEO/CFO changes, insider trading, leadership shifts
+            5. COMPETITIVE THREATS - Market share loss, new competitors, pricing pressure
+            6. MACROECONOMIC IMPACT - Interest rate sensitivity, inflation effects, sector rotation
+            
+            EXCLUDE: General market commentary, analyst upgrades/downgrades without new data, promotional content
             
             Articles:
             {articles_text}
             
-            Return only article numbers (1,2,3,etc.) separated by commas. Focus on actionable intelligence.
+            Return only article numbers (1,2,3,etc.) separated by commas. Prioritize immediate trading catalysts.
             """
             
             logger.debug(f"Sending prompt to Gemini (length: {len(prompt)} chars)")
@@ -593,7 +596,7 @@ class AIProcessor:
             ])
             
             prompt = f"""
-            Analyze {ticker} based on today's news and provide a professional investment summary.
+            You are a senior equity research analyst providing a trading desk briefing for {ticker}. Write for professional traders and portfolio managers.
             
             TODAY'S NEWS:
             {articles_text}
@@ -601,33 +604,44 @@ class AIProcessor:
             HISTORICAL CONTEXT (Past 7 Days):
             {history_text}
             
-            PROVIDE:
+            IMPORTANT: Do NOT include memo headers like TO:, FROM:, SUBJECT:, or similar formatting. Start directly with content.
             
-            **EXECUTIVE SUMMARY**
-            Brief market impact assessment and key takeaway (2-3 sentences).
+            REQUIRED FORMAT:
             
-            **KEY DEVELOPMENTS**
-            • Quantify impact where possible (revenue, margins, market share)
-            • Focus on material business changes, not speculation
-            • Include regulatory, competitive, or operational updates
+            **TRADING THESIS** (2-3 sentences)
+            Bull/bear case with specific price catalysts and timeframe.
             
-            **MARKET IMPLICATIONS**
-            • Price catalysts and trading considerations
-            • Investment opportunities and upside potential
-            • Sector/peer comparison context
+            **MATERIAL DEVELOPMENTS**
+            • QUANTIFY financial impact: Revenue/EPS/margin changes with specific numbers
+            • REGULATORY updates: FDA approvals, legal settlements, compliance costs
+            • COMPETITIVE position: Market share gains/losses, pricing power changes
+            • MANAGEMENT actions: Buybacks, dividends, guidance revisions, insider activity
+            
+            **RISK/REWARD ANALYSIS**
+            • UPSIDE catalysts: Specific events, earnings beats, product launches (with timeline)
+            • DOWNSIDE risks: Regulatory threats, competitive pressure, execution risks
+            • TECHNICAL levels: Support/resistance if mentioned in news
+            
+            **SECTOR CONTEXT**
+            • Peer comparison: How {ticker} compares to competitors on key metrics
+            • Sector rotation implications: Growth vs value, cyclical positioning
             
             **WHAT CHANGED TODAY**
-            Compare to previous 7 days - highlight NEW developments only.
+            NEW information only - compare to past 7 days. Focus on material changes to investment thesis.
             
-            IMPORTANT: Do not include section headers with empty bullet points. Only include sections that have actual substantive content.
-            Keep it professional, data-driven, and concise. Focus on material business impact.
-            Length: 400-500 words maximum.
+            CRITICAL REQUIREMENTS:
+            - Include specific numbers (revenue, margins, market cap impact)
+            - Mention timeframes for catalysts (Q1 earnings, FDA decision by March, etc.)
+            - Use trading terminology (support, resistance, breakout, momentum)
+            - Focus on actionable intelligence for position sizing
+            - Maximum 500 words, minimum 300 words
+            - No fluff or general market commentary
             """
             
             logger.debug(f"Sending summary prompt to Gemini (length: {len(prompt)} chars)")
             fallback_summary = {
-                'summary': f"Summary temporarily unavailable for {ticker} due to API limits. Key articles collected from multiple sources.",
-                'what_changed': "API quota exceeded - manual review recommended."
+                'summary': f"**TRADING ALERT: {ticker}** - API quota exceeded. Manual review required for today's developments. Key articles collected from multiple sources indicate potential market-moving news. Recommend checking primary sources for earnings, regulatory updates, or management announcements that may impact trading position.",
+                'what_changed': "API quota exceeded - check for earnings releases, FDA approvals, or management guidance changes that may affect trading thesis."
             }
             
             response = self._call_gemini_with_fallback(prompt, fallback_summary)
@@ -700,8 +714,8 @@ class AIProcessor:
             logger.error(f"API Key being used: {GEMINI_API_KEY[:10]}...{GEMINI_API_KEY[-5:]}")
             logger.error(f"Full error details: {repr(e)}")
             return {
-                'summary': f"API Error: {error_msg[:200]}",
-                'what_changed': "Unable to determine changes due to API error."
+                'summary': f"**TRADING ALERT: {ticker}** - Technical error in analysis. Raw data collected but AI processing failed. Error: {error_msg[:100]}. Recommend manual review of collected articles for potential trading catalysts.",
+                'what_changed': "Technical error - manual review required for trading-relevant developments."
             }
 
 # Initialize components
