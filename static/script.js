@@ -114,7 +114,13 @@ class StockNewsApp {
 
         this.currentTicker = ticker;
         document.getElementById('current-ticker').textContent = `${ticker} - Daily Summary`;
-        document.getElementById('refresh-btn').style.display = 'block';
+        
+        const refreshBtn = document.getElementById('refresh-btn');
+        refreshBtn.style.display = 'block';
+        // Reset button state if it was in loading state
+        refreshBtn.innerHTML = '🤖 Generate';
+        refreshBtn.disabled = false;
+        refreshBtn.classList.remove('loading');
 
         // Show loading
         document.getElementById('summary-content').innerHTML =
@@ -297,9 +303,7 @@ class StockNewsApp {
             if (response.ok) {
                 this.showMessage('Summary generated successfully!', 'success');
                 // Reload the summary after processing completes
-                setTimeout(() => {
-                    this.selectTicker(ticker);
-                }, 2000);
+                this.selectTicker(ticker);
             } else {
                 this.showMessage(result.error || 'Failed to refresh', 'error');
                 summaryContent.innerHTML = `<div class="error-message">Failed to generate summary: ${result.error}</div>`;
@@ -309,9 +313,13 @@ class StockNewsApp {
             this.showMessage('Failed to generate summary', 'error');
             summaryContent.innerHTML = '<div class="error-message">Failed to generate summary</div>';
         } finally {
-            refreshBtn.innerHTML = originalText;
-            refreshBtn.disabled = false;
-            refreshBtn.classList.remove('loading');
+            // Only reset button if there was an error
+            // Success case resets via selectTicker
+            if (!response || !response.ok) {
+                refreshBtn.innerHTML = originalText;
+                refreshBtn.disabled = false;
+                refreshBtn.classList.remove('loading');
+            }
         }
     }
 

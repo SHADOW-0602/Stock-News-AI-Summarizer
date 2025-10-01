@@ -1045,14 +1045,14 @@ def process_ticker_news(ticker):
     logger.debug(f"Summary length: {len(summary_result['summary'])} chars")
     logger.debug(f"What changed: {summary_result['what_changed'][:100]}...")
     
-    # Upsert (insert or update)
+    # Upsert (insert or update) with conflict resolution
     supabase.table('daily_summaries').upsert({
         'ticker': ticker,
         'date': today,
         'summary': summary_result['summary'],
         'articles_used': articles_used,
         'what_changed': summary_result['what_changed']
-    }).execute()
+    }, on_conflict='ticker,date').execute()
     
     logger.info(f"Saved {len(all_articles)} articles and summary for {ticker}")
     logger.debug(f"Database save completed for {ticker}")
@@ -1119,5 +1119,5 @@ if __name__ == '__main__':
     )
     scheduler.start()
     
-    port = int(os.environ.get('PORT', 10000))
+    port = int(os.environ.get('PORT'))
     app.run(host='0.0.0.0', port=port, debug=False)
