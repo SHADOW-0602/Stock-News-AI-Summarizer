@@ -8,7 +8,6 @@ from datetime import datetime
 from supabase import create_client, Client
 import requests
 import json
-import base64
 import google.genai as genai
 from apscheduler.schedulers.background import BackgroundScheduler
 import time
@@ -64,15 +63,17 @@ class UpstashRedis:
             if response.status_code == 200:
                 result = response.json().get('result')
                 if result:
-                    return base64.b64decode(result)
+                    # Upstash returns string directly, not base64
+                    return result.encode('utf-8')
             return None
         except:
             return None
     
     def setex(self, key, seconds, value):
         try:
-            encoded_value = base64.b64encode(value).decode('utf-8')
-            data = {'value': encoded_value, 'ex': seconds}
+            # Upstash expects string value directly
+            string_value = value.decode('utf-8') if isinstance(value, bytes) else value
+            data = {'value': string_value, 'ex': seconds}
             response = requests.post(f'{self.url}/set/{key}', headers=self.headers, json=data)
             return response.status_code == 200
         except:
@@ -154,7 +155,7 @@ def cache_news(ticker, articles, sources):
         }
         
         if redis_client:
-            redis_client.setex(f"news:{ticker}", CACHE_DURATION, json.dumps(cache_data).encode('utf-8'))
+            redis_client.setex(f"news:{ticker}", CACHE_DURATION, json.dumps(cache_data))
             logger.debug(f"Cached {len(articles)} articles for {ticker} in Upstash")
         else:
             # Fallback to in-memory cache
@@ -196,7 +197,7 @@ def cache_summary(ticker, summary_data):
         }
         
         if redis_client:
-            redis_client.setex(f"summary:{ticker}", SUMMARY_CACHE_DURATION, json.dumps(cache_data).encode('utf-8'))
+            redis_client.setex(f"summary:{ticker}", SUMMARY_CACHE_DURATION, json.dumps(cache_data))
             logger.debug(f"Cached summary for {ticker} in Upstash")
         else:
             # Fallback to in-memory cache
@@ -711,6 +712,73 @@ ai_processor = AIProcessor()
 @app.route('/')
 def index():
     return render_template('index.html')
+
+@app.route('/api/cache-status')
+def cache_status():
+    """Check cache functionality and status"""
+    try:
+        status = {
+            'cache_type': 'Upstash' if redis_client else 'Memory',
+            'upstash_configured': bool(UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN),
+            'connection_test': False,
+            'cache_keys': [],
+            'test_result': None
+        }
+        
+        if redis_client:
+            # Test Redis connection
+            try:
+                test_key = 'cache_test'
+                test_value = {'test': 'data', 'timestamp': datetime.now().isoformat()}
+                
+                # Test write
+                write_success = redis_client.setex(test_key, 60, json.dumps(test_value))
+                
+                # Test read
+                read_data = redis_client.get(test_key)
+                read_success = read_data is not None
+                
+                if read_success:
+                    read_value = json.loads(read_data.decode('utf-8'))
+                    status['test_result'] = 'SUCCESS: Write and read operations working'
+                else:
+                    status['test_result'] = 'FAILED: Could not read test data'
+                
+                status['connection_test'] = write_success and read_success
+                
+                # Clean up test
+                redis_client.delete(test_key)
+                
+            except Exception as e:
+                status['test_result'] = f'ERROR: {str(e)}'
+                status['connection_test'] = False
+        else:
+            status['test_result'] = 'Using fallback memory cache'
+            status['connection_test'] = True
+        
+        # Get current cache info and durations
+        status['cache_durations'] = {
+            'news_cache': f'{CACHE_DURATION // 3600} hours ({CACHE_DURATION} seconds)',
+            'summary_cache': f'{SUMMARY_CACHE_DURATION // 3600} hours ({SUMMARY_CACHE_DURATION} seconds)'
+        }
+        
+        if redis_client:
+            # Can't easily list keys in Upstash REST, so show configured status
+            status['cache_info'] = 'Upstash Redis REST API configured'
+        else:
+            status['cache_keys'] = {
+                'news_cache': list(fallback_news_cache.keys()),
+                'summary_cache': list(fallback_summary_cache.keys())
+            }
+        
+        return jsonify(status)
+        
+    except Exception as e:
+        return jsonify({
+            'error': str(e),
+            'cache_type': 'Error',
+            'connection_test': False
+        }), 500
 
 @app.route('/api/tickers', methods=['GET'])
 def get_tickers():

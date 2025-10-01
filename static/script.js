@@ -27,6 +27,8 @@ class StockNewsApp {
                 this.refreshTicker(this.currentTicker);
             }
         });
+        
+
     }
 
     async loadTickers() {
@@ -339,6 +341,56 @@ class StockNewsApp {
                 document.body.removeChild(messageDiv);
             }, 300);
         }, 3000);
+    }
+
+    async checkCacheStatus() {
+        const checkBtn = document.getElementById('check-cache-btn');
+        const statusContent = document.getElementById('cache-status-content');
+        
+        checkBtn.textContent = 'Checking...';
+        checkBtn.disabled = true;
+        
+        try {
+            const response = await fetch('/api/cache-status');
+            const status = await response.json();
+            
+            let statusHtml = `
+                <div class="cache-info">
+                    <div class="cache-item">
+                        <strong>Cache Type:</strong> ${status.cache_type}
+                    </div>
+                    <div class="cache-item">
+                        <strong>Connection:</strong> 
+                        <span class="status-${status.connection_test ? 'success' : 'error'}">
+                            ${status.connection_test ? '✅ Working' : '❌ Failed'}
+                        </span>
+                    </div>
+                    <div class="cache-item">
+                        <strong>Test Result:</strong> ${status.test_result || 'N/A'}
+                    </div>
+                    ${status.upstash_configured ? 
+                        '<div class="cache-item"><strong>Upstash:</strong> <span class="status-success">✅ Configured</span></div>' : 
+                        '<div class="cache-item"><strong>Upstash:</strong> <span class="status-error">❌ Not configured</span></div>'
+                    }
+                    ${status.cache_durations ? `
+                        <div class="cache-item">
+                            <strong>News Cache TTL:</strong> ${status.cache_durations.news_cache}
+                        </div>
+                        <div class="cache-item">
+                            <strong>Summary Cache TTL:</strong> ${status.cache_durations.summary_cache}
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+            
+            statusContent.innerHTML = statusHtml;
+            
+        } catch (error) {
+            statusContent.innerHTML = `<div class="cache-error">Error checking cache: ${error.message}</div>`;
+        } finally {
+            checkBtn.textContent = 'Check';
+            checkBtn.disabled = false;
+        }
     }
 
     async removeTicker(ticker) {

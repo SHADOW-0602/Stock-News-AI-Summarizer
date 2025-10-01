@@ -11,9 +11,20 @@
 
 <body>
     <div class="container">
-        <header>
-            <h1>📈 Stock News AI Summarizer</h1>
-            <p>AI-powered financial news analysis for smart trading decisions</p>
+        <header class="professional-header">
+            <div class="header-content">
+                <div class="logo-section">
+                    <img src="{{ url_for('static', filename='favicon.svg') }}" alt="Stock News AI" class="header-logo-icon">
+                    <div class="logo-text">
+                        <h1>Stock News AI Summarizer</h1>
+                        <p class="tagline">Professional Market Intelligence Platform</p>
+                    </div>
+                </div>
+                <div class="market-status">
+                    <div class="status-indicator live"></div>
+                    <span>Live Market Data</span>
+                </div>
+            </div>
         </header>
 
         <div class="main-content">
@@ -27,14 +38,40 @@
 
                     <div id="summary-content" class="summary-content">
                         <div class="welcome-message">
-                            <h3>Welcome to Stock News AI Summarizer</h3>
-                            <p>Add stock tickers from the sidebar to get started with AI-powered news analysis.</p>
-                            <ul>
-                                <li>📊 Real-time news from 4 sources: Alpha Vantage, Finviz, Polygon, TradingView</li>
-                                <li>🤖 AI-curated top articles using Gemini Pro</li>
-                                <li>📝 Daily summaries with "What Changed Today" insights</li>
-                                <li>📅 7-day historical tracking</li>
-                            </ul>
+                            <div class="trading-dashboard">
+                                <div class="dashboard-header">
+                                    <h3>🏛️ Professional Trading Dashboard</h3>
+                                    <p>Institutional-grade market intelligence powered by AI</p>
+                                </div>
+                                
+                                <div class="feature-grid">
+                                    <div class="feature-card">
+                                        <div class="feature-icon">📈</div>
+                                        <h4>Multi-Source Intelligence</h4>
+                                        <p>Alpha Vantage • Finviz • Polygon • TradingView</p>
+                                    </div>
+                                    
+                                    <div class="feature-card">
+                                        <div class="feature-icon">🤖</div>
+                                        <h4>AI-Powered Analysis</h4>
+                                        <p>Gemini Pro curates top market-moving news</p>
+                                    </div>
+                                    
+                                    <div class="feature-card">
+                                        <div class="feature-icon">⚡</div>
+                                        <h4>Real-Time Insights</h4>
+                                        <p>Daily summaries with change detection</p>
+                                    </div>
+                                    
+                                    <div class="feature-card">
+                                        <div class="feature-icon">📊</div>
+                                        <h4>Historical Tracking</h4>
+                                        <p>7-day trend analysis and comparisons</p>
+                                    </div>
+                                </div>
+                                
+
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -65,14 +102,41 @@
                     </div>
                 </div>
 
-                <div class="info-section">
-                    <h4>ℹ️ How it works</h4>
-                    <ol>
-                        <li>Add stock tickers you want to track</li>
-                        <li>AI analyzes news from multiple sources</li>
-                        <li>Get daily summaries at 8 AM IST</li>
-                        <li>Track changes over 7 days</li>
-                    </ol>
+                <div class="info-section professional-info">
+                    <div class="info-header">
+                        <div class="info-icon">💼</div>
+                        <h4>Professional Workflow</h4>
+                    </div>
+                    <div class="workflow-steps">
+                        <div class="step">
+                            <div class="step-number">1</div>
+                            <div class="step-content">
+                                <strong>Portfolio Setup</strong>
+                                <p>Add tickers to your watchlist</p>
+                            </div>
+                        </div>
+                        <div class="step">
+                            <div class="step-number">2</div>
+                            <div class="step-content">
+                                <strong>AI Analysis</strong>
+                                <p>Multi-source news aggregation</p>
+                            </div>
+                        </div>
+                        <div class="step">
+                            <div class="step-number">3</div>
+                            <div class="step-content">
+                                <strong>Daily Reports</strong>
+                                <p>8 AM IST automated updates</p>
+                            </div>
+                        </div>
+                        <div class="step">
+                            <div class="step-number">4</div>
+                            <div class="step-content">
+                                <strong>Trend Analysis</strong>
+                                <p>Historical performance tracking</p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
