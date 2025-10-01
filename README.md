@@ -6,9 +6,9 @@ A professional-grade financial news aggregation and AI analysis platform that de
 
 - **Multi-Source Intelligence**: Aggregates news from 4 sources: Alpha Vantage, Finviz, Polygon, and TradingView
 - **Professional AI Analysis**: Uses Gemini 2.5 Pro for institutional-grade summaries
-- **Intelligent Caching**: 4-hour news cache reduces API calls by 60%
+- **Upstash Redis Caching**: 4-hour news cache, 2-hour summary cache reduces API calls by 60%
 - **Graceful Rate Limiting**: Handles API quotas with automatic fallbacks
-- **Investment-Grade Reports**: Executive summaries, market implications, and risk analysis
+- **Trading-Focused Reports**: Risk/reward analysis, sector context, and specific trading catalysts
 - **Cost-Optimized**: Operates on $0/month using free API tiers
 - **Ticker Validation**: Prevents invalid symbols with real-time verification
 
@@ -34,7 +34,21 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-### 2. API Configuration
+### 2. Database & Cache Setup
+
+#### Supabase Database (Required)
+1. Sign up at [Supabase](https://supabase.com)
+2. Create new project
+3. Get Project URL and anon key from Settings → API
+4. Run SQL from `create_tables.sql` in SQL Editor
+
+#### Upstash Redis Cache (Required)
+1. Sign up at [Upstash](https://upstash.com)
+2. Create Redis database
+3. Get REST URL and token from dashboard
+4. Provides 4-hour news cache, 2-hour summary cache
+
+### 3. API Configuration
 
 #### Gemini API (Required)
 1. Visit [Google AI Studio](https://makersuite.google.com/app/apikey)
@@ -51,7 +65,7 @@ pip install -r requirements.txt
 2. Get free API key (5 calls/minute, 500 calls/day)
 3. Provides news sentiment analysis and financial data
 
-### 3. Environment Setup
+### 4. Environment Setup
 ```bash
 # Copy environment template
 cp .env.example .env
@@ -60,10 +74,14 @@ cp .env.example .env
 GEMINI_API_KEY=your_gemini_api_key_here
 POLYGON_API_KEY=your_polygon_api_key_here
 ALPHA_VANTAGE_API_KEY=your_alpha_vantage_api_key_here
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_ANON_KEY=your_supabase_anon_key
+UPSTASH_REDIS_REST_URL=https://your-redis.upstash.io
+UPSTASH_REDIS_REST_TOKEN=your_upstash_token
 PORT=5000
 ```
 
-### 4. Launch Application
+### 5. Launch Application
 ```bash
 # Start the server
 python app.py
@@ -230,9 +248,11 @@ python usage_monitor.py
 ### Technology Stack
 ```
 Frontend: HTML5 + CSS3 + Vanilla JavaScript
-Backend: Python 3.8+ + Flask + SQLite
+Backend: Python 3.8+ + Flask
+Database: Supabase (PostgreSQL) - Cloud-native with real-time capabilities
+Cache: Upstash Redis - Serverless Redis with REST API
 AI/ML: Google Gemini 2.5 Pro API
-Data Sources: TradingView, Finviz, Polygon API
+Data Sources: TradingView, Finviz, Polygon API, Alpha Vantage
 Hosting: Railway/Render (Cloud)
 Scheduling: APScheduler (Background jobs)
 ```
