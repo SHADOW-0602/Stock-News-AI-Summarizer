@@ -4,7 +4,9 @@ import requests
 from bs4 import BeautifulSoup
 import json
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
+from chart_generator import ChartGenerator
+from realtime_data import RealtimeDataProvider
 from supabase import create_client, Client
 import requests
 import json
@@ -42,6 +44,10 @@ logger = logging.getLogger(__name__)
 GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
 POLYGON_API_KEY = os.getenv('POLYGON_API_KEY')
 ALPHA_VANTAGE_API_KEY = os.getenv('ALPHA_VANTAGE_API_KEY')
+TWELVE_DATA_API_KEY = os.getenv('TWELVE_DATA_API_KEY')
+FINNHUB_API_KEY = os.getenv('FINNHUB_API_KEY')
+ALPACA_API_KEY = os.getenv('ALPACA_API_KEY')
+ALPACA_SECRET_KEY = os.getenv('ALPACA_SECRET_KEY')
 SUPABASE_URL = os.getenv('SUPABASE_URL')
 SUPABASE_KEY = os.getenv('SUPABASE_ANON_KEY')
 
@@ -110,11 +116,16 @@ except Exception as e:
 
 logger.info(f"Gemini API Key loaded: {'Yes' if GEMINI_API_KEY != 'your-gemini-api-key' else 'No'}")
 logger.info(f"Polygon API Key loaded: {'Yes' if POLYGON_API_KEY != 'your-polygon-api-key' else 'No'}")
+logger.info(f"Twelve Data API Key loaded: {'Yes' if TWELVE_DATA_API_KEY else 'No'}")
+logger.info(f"Finnhub API Key loaded: {'Yes' if FINNHUB_API_KEY else 'No'}")
+logger.info(f"Alpaca API Key loaded: {'Yes' if ALPACA_API_KEY else 'No'}")
 
 # API Usage Tracking
 api_usage = {
     'gemini': {'calls': 0, 'last_reset': datetime.now().date()},
-    'polygon': {'calls': 0, 'last_reset': datetime.now().date()}
+    'polygon': {'calls': 0, 'last_reset': datetime.now().date()},
+    'alpha_vantage_realtime': {'calls': 0, 'last_reset': datetime.now().date()},
+    'twelve_data_realtime': {'calls': 0, 'last_reset': datetime.now().date()}
 }
 
 # Caching System
@@ -233,7 +244,9 @@ def cleanup_expired_cache():
 # Daily Limits (conservative)
 DAILY_LIMITS = {
     'gemini': 800,  # ~15 RPM * 60 * 16 hours (conservative)
-    'polygon': 7200  # ~5 RPM * 60 * 24 hours
+    'polygon': 7200,  # ~5 RPM * 60 * 24 hours
+    'alpha_vantage_realtime': 400,  # 500/day limit, keep 100 buffer
+    'twelve_data_realtime': 600  # 800/day limit, keep 200 buffer
 }
 
 def check_api_quota(service):
@@ -495,6 +508,107 @@ class NewsCollector:
         except Exception as e:
             logger.error(f"Alpha Vantage API error for {ticker}: {e}")
             return []
+    
+    def get_twelve_data_news(self, ticker):
+        """Get news from Twelve Data API"""
+        logger.debug(f"Starting Twelve Data API call for {ticker}")
+        try:
+            url = "https://api.twelvedata.com/news"
+            params = {
+                'symbol': ticker,
+                'apikey': TWELVE_DATA_API_KEY,
+                'limit': 10
+            }
+            
+            logger.debug(f"Twelve Data API call: {url} with params: {params}")
+            response = self.session.get(url, params=params, timeout=15)
+            logger.debug(f"Twelve Data response status: {response.status_code}")
+            
+            if response.status_code != 200:
+                logger.error(f"Twelve Data returned status {response.status_code}, response: {response.text[:200]}")
+                return []
+            
+            data = response.json()
+            logger.debug(f"Twelve Data response keys: {list(data.keys()) if isinstance(data, dict) else 'Not a dict'}")
+            
+            articles = []
+            if 'data' in data:
+                for item in data['data'][:10]:
+                    try:
+                        title = item.get('title', '')
+                        url = item.get('url', '')
+                        summary = item.get('summary', '')
+                        
+                        if title and len(title) > 15:
+                            articles.append({
+                                'title': title,
+                                'url': url,
+                                'source': 'Twelve Data',
+                                'content': summary or title,
+                                'date': item.get('datetime', datetime.now().isoformat())
+                            })
+                    except Exception as item_error:
+                        logger.debug(f"Error processing Twelve Data item: {item_error}")
+                        continue
+            
+            logger.info(f"Twelve Data: Found {len(articles)} articles for {ticker}")
+            return articles
+            
+        except Exception as e:
+            logger.error(f"Twelve Data API error for {ticker}: {e}")
+            logger.debug(f"Twelve Data full error: {repr(e)}")
+            return []
+    
+    def get_finnhub_news(self, ticker):
+        """Get news from Finnhub API"""
+        logger.debug(f"Starting Finnhub API call for {ticker}")
+        try:
+            url = "https://finnhub.io/api/v1/company-news"
+            params = {
+                'symbol': ticker,
+                'token': FINNHUB_API_KEY,
+                'from': (datetime.now() - timedelta(days=7)).strftime('%Y-%m-%d'),
+                'to': datetime.now().strftime('%Y-%m-%d')
+            }
+            
+            logger.debug(f"Finnhub API call: {url} with params: {params}")
+            response = self.session.get(url, params=params, timeout=15)
+            logger.debug(f"Finnhub response status: {response.status_code}")
+            
+            if response.status_code != 200:
+                logger.error(f"Finnhub returned status {response.status_code}, response: {response.text[:200]}")
+                return []
+            
+            data = response.json()
+            logger.debug(f"Finnhub response type: {type(data)}, length: {len(data) if isinstance(data, list) else 'N/A'}")
+            
+            articles = []
+            if isinstance(data, list):
+                for item in data[:10]:
+                    try:
+                        title = item.get('headline', '')
+                        url = item.get('url', '')
+                        summary = item.get('summary', '')
+                        
+                        if title and len(title) > 15:
+                            articles.append({
+                                'title': title,
+                                'url': url,
+                                'source': 'Finnhub',
+                                'content': summary or title,
+                                'date': datetime.fromtimestamp(item.get('datetime', 0)).isoformat()
+                            })
+                    except Exception as item_error:
+                        logger.debug(f"Error processing Finnhub item: {item_error}")
+                        continue
+            
+            logger.info(f"Finnhub: Found {len(articles)} articles for {ticker}")
+            return articles
+            
+        except Exception as e:
+            logger.error(f"Finnhub API error for {ticker}: {e}")
+            logger.debug(f"Finnhub full error: {repr(e)}")
+            return []
 
 class AIProcessor:
     def __init__(self):
@@ -575,9 +689,26 @@ class AIProcessor:
             logger.error(f"Full error details: {repr(e)}")
             return articles[:5]  # Fallback to first 5
     
-    def generate_summary(self, ticker, selected_articles, historical_summaries):
+    def generate_summary(self, ticker, selected_articles, historical_summaries, realtime_quote=None, market_data=None):
         """Generate comprehensive summary with 'What changed today' section"""
         logger.debug(f"Starting summary generation for {ticker}")
+        
+        # Add real-time context if available
+        realtime_context = ""
+        if realtime_quote or market_data:
+            realtime_context = "\n\nCURRENT MARKET DATA:\n"
+            
+            if realtime_quote:
+                realtime_context += f"Price: ${realtime_quote['price']:.2f}\n"
+                realtime_context += f"Change: {realtime_quote['change']:+.2f} ({realtime_quote['change_percent']:+}%)\n"
+                if 'bid' in realtime_quote:
+                    realtime_context += f"Bid/Ask: ${realtime_quote['bid']:.2f}/${realtime_quote['ask']:.2f} (Spread: ${realtime_quote['spread']:.2f})\n"
+            
+            if market_data:
+                realtime_context += f"OHLC: ${market_data['open']:.2f}/${market_data['high']:.2f}/${market_data['low']:.2f}/${market_data['close']:.2f}\n"
+                realtime_context += f"Volume: {market_data['volume']:,}\n"
+                if market_data.get('vwap'):
+                    realtime_context += f"VWAP: ${market_data['vwap']:.2f}\n"
         try:
             if GEMINI_API_KEY == 'your-gemini-api-key':
                 logger.error("Gemini API key not configured")
@@ -602,14 +733,14 @@ class AIProcessor:
             {articles_text}
             
             HISTORICAL CONTEXT (Past 7 Days):
-            {history_text}
+            {history_text}{realtime_context}
             
             IMPORTANT: Do NOT include memo headers like TO:, FROM:, SUBJECT:, or similar formatting. Start directly with content.
             
             REQUIRED FORMAT:
             
             **TRADING THESIS** (2-3 sentences)
-            Bull/bear case with specific price catalysts and timeframe.
+            Bull/bear case with specific price catalysts and timeframe. Reference current price levels and technical context.
             
             **MATERIAL DEVELOPMENTS**
             • QUANTIFY financial impact: Revenue/EPS/margin changes with specific numbers
@@ -620,7 +751,7 @@ class AIProcessor:
             **RISK/REWARD ANALYSIS**
             • UPSIDE catalysts: Specific events, earnings beats, product launches (with timeline)
             • DOWNSIDE risks: Regulatory threats, competitive pressure, execution risks
-            • TECHNICAL levels: Support/resistance if mentioned in news
+            • TECHNICAL levels: Current price vs OHLC range, volume analysis, bid-ask spread insights
             
             **SECTOR CONTEXT**
             • Peer comparison: How {ticker} compares to competitors on key metrics
@@ -631,8 +762,10 @@ class AIProcessor:
             
             CRITICAL REQUIREMENTS:
             - Include specific numbers (revenue, margins, market cap impact)
+            - Reference current market data (price, volume, OHLC, bid-ask spread)
             - Mention timeframes for catalysts (Q1 earnings, FDA decision by March, etc.)
-            - Use trading terminology (support, resistance, breakout, momentum)
+            - Use trading terminology (support, resistance, breakout, momentum, VWAP)
+            - Analyze volume patterns and price action context
             - Focus on actionable intelligence for position sizing
             - Maximum 500 words, minimum 300 words
             - No fluff or general market commentary
@@ -721,11 +854,92 @@ class AIProcessor:
 # Initialize components
 collector = NewsCollector()
 ai_processor = AIProcessor()
+chart_generator = ChartGenerator()
+realtime_provider = RealtimeDataProvider()
 
 
 @app.route('/')
 def index():
     return render_template('index.html')
+
+@app.route('/api/quotes')
+def get_realtime_quotes():
+    """Get real-time quotes for all tickers"""
+    try:
+        result = supabase.table('tickers').select('symbol').execute()
+        tickers = [row['symbol'] for row in result.data]
+        
+        if not tickers:
+            return jsonify({})
+        
+        quotes = realtime_provider.get_multiple_quotes(tickers)
+        return jsonify(quotes if quotes else {})
+        
+    except Exception as e:
+        logger.error(f"Realtime quotes error: {e}")
+        return jsonify({})
+
+@app.route('/api/chart/<ticker>')
+@app.route('/api/chart/<ticker>/<period>')
+def get_chart_data(ticker, period='30d'):
+    """Get chart configuration for ticker with period"""
+    try:
+        ticker = ticker.upper().strip()
+        if not ticker or len(ticker) > 10:
+            return jsonify({'error': 'Invalid ticker format'}), 400
+        
+        chart_config = chart_generator.generate_chart_config(ticker, period)
+        if chart_config is None:
+            return jsonify({'error': 'Chart data unavailable'}), 404
+        return jsonify(chart_config)
+        
+    except Exception as e:
+        logger.error(f"Chart data error for {ticker}: {e}")
+        return jsonify({'error': 'Chart data unavailable'}), 404
+
+@app.route('/api/debug/alpaca/<ticker>')
+def debug_alpaca(ticker):
+    """Debug Alpaca API for specific ticker"""
+    try:
+        ticker = ticker.upper().strip()
+        
+        # Test Alpaca quote
+        quote = realtime_provider.get_realtime_quote(ticker)
+        market_data = realtime_provider.get_alpaca_market_data(ticker)
+        
+        return jsonify({
+            'ticker': ticker,
+            'alpaca_configured': bool(ALPACA_API_KEY and ALPACA_SECRET_KEY),
+            'quote_data': quote,
+            'market_data': market_data,
+            'api_key_length': len(ALPACA_API_KEY) if ALPACA_API_KEY else 0
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/debug/apis')
+def debug_apis():
+    """Debug endpoint to check API status"""
+    try:
+        status = {
+            'apis': {
+                'gemini': {'configured': bool(GEMINI_API_KEY and GEMINI_API_KEY != 'your-gemini-api-key')},
+                'polygon': {'configured': bool(POLYGON_API_KEY and POLYGON_API_KEY != 'your-polygon-api-key')},
+                'alpha_vantage': {'configured': bool(ALPHA_VANTAGE_API_KEY and ALPHA_VANTAGE_API_KEY != 'your-alpha-vantage-api-key')},
+                'twelve_data': {'configured': bool(TWELVE_DATA_API_KEY)},
+                'finnhub': {'configured': bool(FINNHUB_API_KEY)},
+                'alpaca': {'configured': bool(ALPACA_API_KEY and ALPACA_SECRET_KEY)}
+            },
+            'usage': api_usage,
+            'limits': DAILY_LIMITS,
+            'quota_status': {
+                'alpha_vantage_realtime': f"{api_usage.get('alpha_vantage_realtime', {}).get('calls', 0)}/{DAILY_LIMITS.get('alpha_vantage_realtime', 0)}",
+                'twelve_data_realtime': f"{api_usage.get('twelve_data_realtime', {}).get('calls', 0)}/{DAILY_LIMITS.get('twelve_data_realtime', 0)}"
+            }
+        }
+        return jsonify(status)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/cache-status')
 def cache_status():
@@ -799,7 +1013,7 @@ def get_tickers():
     try:
         logger.debug("Getting tickers list")
         result = supabase.table('tickers').select('symbol').order('added_date', desc=True).execute()
-        tickers = [row['symbol'] for row in result.data]
+        tickers = [row['symbol'] for row in result.data] if result.data else []
         logger.debug(f"Found {len(tickers)} tickers: {tickers}")
         return jsonify(tickers)
     except Exception as e:
@@ -810,24 +1024,10 @@ def validate_ticker(ticker):
     """Validate if ticker exists by checking multiple sources"""
     try:
         logger.debug(f"Validating ticker: {ticker}")
-        # Check Finviz first (fastest)
-        url = f"https://finviz.com/quote.ashx?t={ticker}"
-        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
-        response = requests.get(url, headers=headers, timeout=5)
-        
-        if response.status_code != 200:
-            logger.debug(f"Finviz returned status {response.status_code} for {ticker}")
-            return False
-        
-        if "not found" in response.text.lower() or "invalid" in response.text.lower():
-            logger.debug(f"Ticker {ticker} not found on Finviz")
-            return False
-        
-        # Check if page has stock data
-        if "quote.ashx" in response.url and response.status_code == 200:
-            logger.debug(f"Ticker {ticker} validated successfully")
+        # Simple validation - just check format for now
+        if len(ticker) <= 5 and ticker.isalpha():
+            logger.debug(f"Ticker {ticker} format validated")
             return True
-            
         return False
     except Exception as e:
         logger.error(f"Ticker validation error for {ticker}: {e}")
@@ -964,6 +1164,15 @@ def process_ticker_news(ticker):
     """Process news for a single ticker with caching"""
     logger.info(f"=== Starting news processing for {ticker} ===")
     
+    # Get real-time quote data for context
+    realtime_quote = realtime_provider.get_realtime_quote(ticker)
+    market_data = realtime_provider.get_alpaca_market_data(ticker)
+    
+    if realtime_quote:
+        logger.info(f"Real-time data for {ticker}: ${realtime_quote['price']:.2f} ({realtime_quote['change']:+.2f}, {realtime_quote['change_percent']:+}%)")
+    if market_data:
+        logger.info(f"Market data for {ticker}: OHLC ${market_data['open']:.2f}/${market_data['high']:.2f}/${market_data['low']:.2f}/${market_data['close']:.2f}, Vol: {market_data['volume']:,}")
+    
     # Check for cached news first
     cached_articles, cached_sources = get_cached_news(ticker)
     if cached_articles:
@@ -982,9 +1191,13 @@ def process_ticker_news(ticker):
         all_articles.extend(pg_articles)
         av_articles = collector.get_alphavantage_news(ticker)
         all_articles.extend(av_articles)
+        td_articles = collector.get_twelve_data_news(ticker)
+        all_articles.extend(td_articles)
+        fh_articles = collector.get_finnhub_news(ticker)
+        all_articles.extend(fh_articles)
         
-        source_counts = {'TV': len(tv_articles), 'FV': len(fv_articles), 'PG': len(pg_articles), 'AV': len(av_articles)}
-        logger.info(f"Fresh articles collected: {len(all_articles)} (TV:{len(tv_articles)}, FV:{len(fv_articles)}, PG:{len(pg_articles)}, AV:{len(av_articles)})")
+        source_counts = {'TV': len(tv_articles), 'FV': len(fv_articles), 'PG': len(pg_articles), 'AV': len(av_articles), 'TD': len(td_articles), 'FH': len(fh_articles)}
+        logger.info(f"Fresh articles collected: {len(all_articles)} (TV:{len(tv_articles)}, FV:{len(fv_articles)}, PG:{len(pg_articles)}, AV:{len(av_articles)}, TD:{len(td_articles)}, FH:{len(fh_articles)})")
         
         # Cache the collected news
         if all_articles:
@@ -1009,9 +1222,9 @@ def process_ticker_news(ticker):
         logger.info(f"Using cached summary for {ticker}")
         summary_result = cached_summary
     else:
-        # Generate fresh summary
+        # Generate fresh summary with real-time context
         logger.debug("Generating fresh AI summary")
-        summary_result = ai_processor.generate_summary(ticker, selected_articles, historical_summaries)
+        summary_result = ai_processor.generate_summary(ticker, selected_articles, historical_summaries, realtime_quote, market_data)
         logger.info(f"Generated fresh summary for {ticker} (length: {len(summary_result['summary'])} chars)")
         
         # Cache the summary

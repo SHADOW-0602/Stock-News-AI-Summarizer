@@ -7,6 +7,9 @@
     <title>Stock News AI Summarizer</title>
     <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='chart.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='realtime.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
 <body>
@@ -14,7 +17,8 @@
         <header class="professional-header">
             <div class="header-content">
                 <div class="logo-section">
-                    <img src="{{ url_for('static', filename='favicon.svg') }}" alt="Stock News AI" class="header-logo-icon">
+                    <img src="{{ url_for('static', filename='favicon.svg') }}" alt="Stock News AI"
+                        class="header-logo-icon">
                     <div class="logo-text">
                         <h1>Stock News AI Summarizer</h1>
                         <p class="tagline">Professional Market Intelligence Platform</p>
@@ -27,13 +31,41 @@
             </div>
         </header>
 
+        <div class="ticker-wrapper" id="realtime-ticker" style="display: none;">
+            <ul class="ticker" id="ticker-scroll">
+                <li class="loading-ticker">Loading real-time data...</li>
+            </ul>
+        </div>
+
         <div class="main-content">
             <!-- Left Side: News Sources & Summary -->
             <div class="left-panel">
                 <div class="summary-section">
                     <div class="summary-header">
                         <h2 id="current-ticker">Select a ticker to view summary</h2>
-                        <button id="refresh-btn" class="refresh-btn" style="display: none;">🤖 Generate</button>
+                        <div class="header-buttons">
+                            <button id="chart-toggle-btn" class="chart-toggle-btn" style="display: none;" title="Toggle chart">📊 Chart</button>
+                            <button id="refresh-btn" class="refresh-btn" style="display: none;">🤖 Generate</button>
+                        </div>
+                    </div>
+
+                    <div class="chart-container" id="chart-container" style="display: none;">
+                        <div class="chart-header">
+                            <h3 id="chart-title">Loading Chart...</h3>
+                            <div class="chart-controls">
+                                <div class="period-selector">
+                                    <button class="period-btn active" data-period="7d">7D</button>
+                                    <button class="period-btn" data-period="30d">30D</button>
+                                    <button class="period-btn" data-period="90d">90D</button>
+                                    <button class="period-btn" data-period="1y">1Y</button>
+                                    <button class="period-btn" data-period="2y">2Y</button>
+                                </div>
+                                <div class="chart-stats" id="chart-stats"></div>
+                            </div>
+                        </div>
+                        <div class="chart-wrapper">
+                            <canvas id="price-chart"></canvas>
+                        </div>
                     </div>
 
                     <div id="summary-content" class="summary-content">
@@ -43,33 +75,33 @@
                                     <h3>🏛️ Professional Trading Dashboard</h3>
                                     <p>Institutional-grade market intelligence powered by AI</p>
                                 </div>
-                                
+
                                 <div class="feature-grid">
                                     <div class="feature-card">
                                         <div class="feature-icon">📈</div>
                                         <h4>Multi-Source Intelligence</h4>
-                                        <p>Alpha Vantage • Finviz • Polygon • TradingView</p>
+                                        <p>Alpha Vantage • Finviz • Polygon • TradingView • Twelve Data • Finnhub</p>
                                     </div>
-                                    
+
                                     <div class="feature-card">
                                         <div class="feature-icon">🤖</div>
                                         <h4>AI-Powered Analysis</h4>
                                         <p>Gemini Pro curates top market-moving news</p>
                                     </div>
-                                    
+
                                     <div class="feature-card">
                                         <div class="feature-icon">⚡</div>
                                         <h4>Real-Time Insights</h4>
                                         <p>Daily summaries with change detection</p>
                                     </div>
-                                    
+
                                     <div class="feature-card">
                                         <div class="feature-icon">📊</div>
                                         <h4>Historical Tracking</h4>
                                         <p>7-day trend analysis and comparisons</p>
                                     </div>
                                 </div>
-                                
+
 
                             </div>
                         </div>

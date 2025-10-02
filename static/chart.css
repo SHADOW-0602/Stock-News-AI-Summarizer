@@ -1,0 +1,132 @@
+.chart-container {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 25px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+    border: 1px solid rgba(52, 152, 219, 0.1);
+}
+
+.chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #f0f0f0;
+}
+
+.chart-controls {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.period-selector {
+    display: flex;
+    gap: 5px;
+    background: #f8f9fa;
+    padding: 4px;
+    border-radius: 8px;
+}
+
+.period-btn {
+    background: transparent;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #7f8c8d;
+    transition: all 0.2s ease;
+}
+
+.period-btn:hover {
+    background: #e9ecef;
+    color: #2c3e50;
+}
+
+.period-btn.active {
+    background: #3498db;
+    color: white;
+    box-shadow: 0 2px 4px rgba(52, 152, 219, 0.3);
+}
+
+.chart-header h3 {
+    color: #2c3e50;
+    font-size: 1.3rem;
+    margin: 0;
+}
+
+.chart-stats {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.price-stat {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.current-price {
+    font-size: 1.4rem;
+    font-weight: bold;
+    color: #2c3e50;
+}
+
+.price-change {
+    font-size: 1.1rem;
+    font-weight: 600;
+    padding: 4px 8px;
+    border-radius: 6px;
+}
+
+.price-change.positive {
+    color: #27ae60;
+    background: rgba(39, 174, 96, 0.1);
+}
+
+.price-change.negative {
+    color: #e74c3c;
+    background: rgba(231, 76, 60, 0.1);
+}
+
+.chart-wrapper {
+    position: relative;
+    height: 300px;
+    width: 100%;
+}
+
+.loading-stats {
+    color: #7f8c8d;
+    font-style: italic;
+}
+
+.error-stats {
+    color: #e74c3c;
+    font-style: italic;
+}
+
+@media (max-width: 768px) {
+    .chart-header {
+        flex-direction: column;
+        gap: 15px;
+        text-align: center;
+    }
+    
+    .chart-controls {
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .period-selector {
+        justify-content: center;
+    }
+    
+    .chart-wrapper {
+        height: 250px;
+    }
+}

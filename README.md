@@ -4,13 +4,14 @@ A professional-grade financial news aggregation and AI analysis platform that de
 
 ## 🚀 Key Features
 
-- **Multi-Source Intelligence**: Aggregates news from 4 sources: Alpha Vantage, Finviz, Polygon, and TradingView
+- **Multi-Source Intelligence**: Aggregates news from 6 sources: Alpha Vantage, Finviz, Polygon, TradingView, Twelve Data, and Finnhub
 - **Professional AI Analysis**: Uses Gemini 2.5 Pro for institutional-grade summaries
+- **Real-Time Market Data**: Continuous scrolling ticker with live quotes, bid/ask spreads, and OHLCV data
+- **Interactive Price Charts**: Toggle charts with multiple timeframes (7D, 30D, 90D, 1Y, 2Y)
 - **Upstash Redis Caching**: 4-hour news cache, 2-hour summary cache reduces API calls by 60%
-- **Graceful Rate Limiting**: Handles API quotas with automatic fallbacks
+- **Smart Rate Limiting**: 7-minute realtime updates, conservative API quota management
 - **Trading-Focused Reports**: Risk/reward analysis, sector context, and specific trading catalysts
 - **Cost-Optimized**: Operates on $0/month using free API tiers
-- **Ticker Validation**: Prevents invalid symbols with real-time verification
 
 ## 🛠️ Complete Setup Guide
 
@@ -63,7 +64,23 @@ pip install -r requirements.txt
 #### Alpha Vantage API (Optional but Recommended)
 1. Sign up at [Alpha Vantage](https://www.alphavantage.co/support/#api-key)
 2. Get free API key (5 calls/minute, 500 calls/day)
-3. Provides news sentiment analysis and financial data
+3. Provides news sentiment analysis
+
+#### Twelve Data API (Optional but Recommended)
+1. Sign up at [Twelve Data](https://twelvedata.com/)
+2. Get free API key (800 requests/day)
+3. Provides company news and financial data
+
+#### Finnhub API (Optional but Recommended)
+1. Sign up at [Finnhub](https://finnhub.io/)
+2. Get free API key (60 calls/minute)
+3. Provides real-time company news and market data
+
+#### Alpaca Markets API (Primary Real-Time Source)
+1. Sign up at [Alpaca Markets](https://alpaca.markets/)
+2. Get API key and secret from dashboard
+3. Provides unlimited real-time quotes, OHLCV data, and market microstructure
+4. Free tier includes real-time data for US equities - **Recommended primary source**
 
 ### 4. Environment Setup
 ```bash
@@ -78,6 +95,10 @@ SUPABASE_URL=https://your-project.supabase.co
 SUPABASE_ANON_KEY=your_supabase_anon_key
 UPSTASH_REDIS_REST_URL=https://your-redis.upstash.io
 UPSTASH_REDIS_REST_TOKEN=your_upstash_token
+TWELVE_DATA_API_KEY=your_twelve_data_api_key
+FINNHUB_API_KEY=your_finnhub_api_key
+ALPACA_API_KEY=your_alpaca_api_key
+ALPACA_SECRET_KEY=your_alpaca_secret_key
 PORT=5000
 ```
 
@@ -132,26 +153,27 @@ git push heroku main
 
 ### Getting Started
 1. **Add Tickers**: Enter stock symbols (AAPL, TSLA, MSFT) in sidebar
-2. **Ticker Validation**: System verifies ticker exists before adding
+2. **Real-Time Ticker**: Continuous scrolling display with live prices and changes
 3. **View Analysis**: Click ticker to see professional AI summary
-4. **Track Changes**: Monitor "What Changed Today" for new developments
-5. **Historical Context**: Review 7-day trend analysis
-6. **Manual Updates**: Use generate button for real-time processing
+4. **Interactive Charts**: Use chart button to toggle price charts with multiple timeframes
+5. **Track Changes**: Monitor "What Changed Today" for new developments
+6. **Manual Updates**: Use generate button for fresh AI analysis
 
 ### Professional Features
-- **Executive Summaries**: Portfolio manager-focused insights
+- **Real-Time Market Data**: Live quotes with bid/ask spreads, OHLCV data, and VWAP
+- **Interactive Price Charts**: Multiple timeframes with professional Chart.js integration
+- **Executive Summaries**: Portfolio manager-focused insights with real-time context
 - **Market Implications**: Trading considerations and risk factors
 - **Quantified Impact**: Revenue, margin, and market share analysis
 - **Sector Context**: Peer comparison and competitive positioning
-- **Material Changes**: Focus on business-impacting developments only
 
 ### Best Practices
 - **Add 5-10 tickers** for optimal performance and caching efficiency
+- **Real-time updates** - ticker refreshes every 7 minutes automatically
+- **Chart interaction** - hover over ticker to pause scrolling, use chart toggle for analysis
 - **Review summaries daily** - cached data provides instant access
 - **Use manual refresh sparingly** - clears cache and uses fresh API calls
-- **Monitor cache status** - check API responses for cache hit rates
-- **Check usage weekly** - monitor API quota consumption
-- **Peak hours awareness** - cache provides faster responses during high usage
+- **Monitor quota usage** - conservative limits prevent API exhaustion
 
 ## 💰 Comprehensive Cost Analysis
 
@@ -170,11 +192,11 @@ git push heroku main
 ### Scaling Cost Projections
 | Tickers | Monthly Requests | Estimated Cost | Optimization |
 |---------|------------------|----------------|-------------|
-| 10 | 1,500 | $0 | Current setup |
-| 25 | 3,750 | $0 | Stay on free tiers |
-| 50 | 7,500 | $0-2 | Monitor usage |
-| 100 | 15,000 | $5-10 | Upgrade Polygon |
-| 500+ | 75,000+ | $20-50 | Enterprise APIs |
+| 10 | 1,200 | $0 | Current setup (7min intervals) |
+| 25 | 3,000 | $0 | Stay on free tiers |
+| 50 | 6,000 | $0-2 | Monitor usage |
+| 100 | 12,000 | $5-10 | Upgrade APIs |
+| 500+ | 60,000+ | $20-50 | Enterprise APIs |
 
 ### Cost Optimization Strategies
 
@@ -185,6 +207,9 @@ NEWS_CACHE_DURATION = 4 * 3600  # Reduces scraping by 60%
 
 # AI summaries cached for 2 hours  
 SUMMARY_CACHE_DURATION = 2 * 3600  # Reduces Gemini calls by 70%
+
+# Realtime quotes update every 7 minutes
+REALTIME_UPDATE_INTERVAL = 7 * 60  # Reduces API calls by 75%
 
 # Automatic cache validation and cleanup
 def is_cache_valid(timestamp, duration):
@@ -206,6 +231,7 @@ def check_api_quota(service):
 # Rate limiting delays
 GEMINI_DELAY = 4    # seconds (15 RPM)
 POLYGON_DELAY = 12  # seconds (5 RPM)
+REALTIME_DELAY = 420 # seconds (7 minutes)
 ```
 
 #### 3. Efficient Processing
@@ -252,7 +278,7 @@ Backend: Python 3.8+ + Flask
 Database: Supabase (PostgreSQL) - Cloud-native with real-time capabilities
 Cache: Upstash Redis - Serverless Redis with REST API
 AI/ML: Google Gemini 2.5 Pro API
-Data Sources: TradingView, Finviz, Polygon API, Alpha Vantage
+Data Sources: TradingView, Finviz, Polygon API, Alpha Vantage, Twelve Data, Finnhub
 Hosting: Railway/Render (Cloud)
 Scheduling: APScheduler (Background jobs)
 ```

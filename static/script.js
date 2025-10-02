@@ -7,6 +7,7 @@ class StockNewsApp {
     init() {
         this.bindEvents();
         this.loadTickers();
+        this.startRealtimeTicker();
     }
 
     bindEvents() {
@@ -28,6 +29,15 @@ class StockNewsApp {
             }
         });
         
+        // Chart toggle button
+        document.getElementById('chart-toggle-btn').addEventListener('click', () => {
+            if (this.currentTicker) {
+                this.toggleChart(this.currentTicker);
+            }
+        });
+        
+
+        
 
     }
 
@@ -37,17 +47,18 @@ class StockNewsApp {
             const response = await fetch('/api/tickers');
             console.log('Response status:', response.status);
             
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}`);
-            }
-            
             const tickers = await response.json();
             console.log('Tickers received:', tickers);
-            this.displayTickers(tickers);
+            
+            if (Array.isArray(tickers)) {
+                this.displayTickers(tickers);
+            } else {
+                console.error('Invalid tickers response:', tickers);
+                this.displayTickers([]);
+            }
         } catch (error) {
             console.error('Error loading tickers:', error);
-            document.getElementById('ticker-list').innerHTML =
-                `<div class="error-message">Error: ${error.message}</div>`;
+            this.displayTickers([]);
         }
     }
 
@@ -56,6 +67,8 @@ class StockNewsApp {
 
         if (!tickers || tickers.length === 0) {
             tickerList.innerHTML = '<div class="no-tickers">No tickers added yet</div>';
+            // Hide realtime ticker when no tickers
+            document.getElementById('realtime-ticker').style.display = 'none';
             return;
         }
 
@@ -95,6 +108,8 @@ class StockNewsApp {
             if (response.ok) {
                 input.value = '';
                 this.loadTickers();
+                // Refresh realtime quotes immediately for new ticker
+                setTimeout(() => this.updateRealtimeQuotes(), 1000);
                 this.showMessage(`${ticker} added successfully!`, 'success');
             } else {
                 this.showMessage(result.error || 'Failed to add ticker', 'error');
@@ -116,7 +131,9 @@ class StockNewsApp {
         document.getElementById('current-ticker').textContent = `${ticker} - Daily Summary`;
         
         const refreshBtn = document.getElementById('refresh-btn');
+        const chartBtn = document.getElementById('chart-toggle-btn');
         refreshBtn.style.display = 'block';
+        chartBtn.style.display = 'block';
         // Reset button state if it was in loading state
         refreshBtn.innerHTML = '🤖 Generate';
         refreshBtn.disabled = false;
@@ -287,7 +304,7 @@ class StockNewsApp {
         refreshBtn.disabled = true;
         refreshBtn.classList.add('loading');
         
-        // Show loading in summary area
+        // Show loading in summary area and load chart
         summaryContent.innerHTML = `
             <div class="loading-container">
                 <div class="loading-spinner"></div>
@@ -295,6 +312,9 @@ class StockNewsApp {
                 <div class="loading-subtext">This may take 30-60 seconds</div>
             </div>
         `;
+        
+        // Load and show chart during generation
+        this.loadChart(ticker);
 
         try {
             const response = await fetch(`/api/refresh/${ticker}`);
@@ -401,6 +421,162 @@ class StockNewsApp {
         }
     }
 
+    async loadChart(ticker, period = '30d') {
+        try {
+            const chartContainer = document.getElementById('chart-container');
+            const chartTitle = document.getElementById('chart-title');
+            const chartStats = document.getElementById('chart-stats');
+            
+            chartContainer.style.display = 'block';
+            
+            // Update period buttons
+            document.querySelectorAll('.period-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.dataset.period === period) {
+                    btn.classList.add('active');
+                }
+            });
+            
+            // Set up period button listeners
+            document.querySelectorAll('.period-btn').forEach(btn => {
+                btn.onclick = () => this.loadChart(ticker, btn.dataset.period);
+            });
+            
+            const periodLabels = {'7d': '7 Day', '30d': '30 Day', '90d': '90 Day', '1y': '1 Year', '2y': '2 Year'};
+            chartTitle.textContent = `${ticker} - ${periodLabels[period]} Trend`;
+            chartStats.innerHTML = '<div class="loading-stats">Loading price data...</div>';
+            
+            const response = await fetch(`/api/chart/${ticker}/${period}`);
+            
+            if (!response.ok) {
+                // Hide chart if no data available
+                chartContainer.style.display = 'none';
+                return;
+            }
+            
+            const chartConfig = await response.json();
+            
+            if (chartConfig.data) {
+                // Update stats
+                const stats = chartConfig.stats;
+                const changeClass = stats.change_percent >= 0 ? 'positive' : 'negative';
+                chartStats.innerHTML = `
+                    <div class="price-stat">
+                        <span class="current-price">$${stats.current_price.toFixed(2)}</span>
+                        <span class="price-change ${changeClass}">
+                            ${stats.change_percent >= 0 ? '+' : ''}${stats.change_percent.toFixed(2)}%
+                        </span>
+                    </div>
+                `;
+                
+                // Create chart
+                const ctx = document.getElementById('price-chart').getContext('2d');
+                
+                // Destroy existing chart if it exists
+                if (window.stockChart) {
+                    window.stockChart.destroy();
+                }
+                
+                // Fix callback function for Chart.js
+                chartConfig.options.scales.y.ticks.callback = function(value) {
+                    return '$' + value.toFixed(2);
+                };
+                
+                window.stockChart = new Chart(ctx, chartConfig);
+            } else {
+                chartContainer.style.display = 'none';
+            }
+        } catch (error) {
+            console.error('Chart loading error:', error);
+            document.getElementById('chart-container').style.display = 'none';
+        }
+    }
+
+    hideChart() {
+        document.getElementById('chart-container').style.display = 'none';
+        if (window.stockChart) {
+            window.stockChart.destroy();
+            window.stockChart = null;
+        }
+    }
+
+    toggleChart(ticker) {
+        const chartContainer = document.getElementById('chart-container');
+        const isVisible = chartContainer.style.display !== 'none';
+        
+        if (isVisible) {
+            this.hideChart();
+        } else {
+            this.loadChart(ticker);
+        }
+    }
+
+    async startRealtimeTicker() {
+        // Load initial quotes
+        await this.updateRealtimeQuotes();
+        
+        // Update every 7 minutes to conserve API quota
+        this.quoteInterval = setInterval(() => {
+            this.updateRealtimeQuotes();
+        }, 420000);
+    }
+
+    async updateRealtimeQuotes() {
+        try {
+            // Check if we have tickers first
+            const tickersResponse = await fetch('/api/tickers');
+            const tickers = await tickersResponse.json();
+            
+            if (!tickers || tickers.length === 0) {
+                document.getElementById('realtime-ticker').style.display = 'none';
+                return;
+            }
+            
+            const response = await fetch('/api/quotes');
+            const quotes = await response.json();
+            
+            if (quotes && Object.keys(quotes).length > 0) {
+                this.displayRealtimeTicker(quotes);
+            } else {
+                document.getElementById('realtime-ticker').style.display = 'none';
+            }
+        } catch (error) {
+            console.error('Realtime quotes error:', error);
+            document.getElementById('realtime-ticker').style.display = 'none';
+        }
+    }
+
+    displayRealtimeTicker(quotes) {
+        const tickerContainer = document.getElementById('realtime-ticker');
+        const tickerScroll = document.getElementById('ticker-scroll');
+        
+        if (Object.keys(quotes).length === 0) {
+            tickerContainer.style.display = 'none';
+            return;
+        }
+        
+        let tickerHTML = '';
+        
+        // Create ticker items
+        Object.values(quotes).forEach(quote => {
+            const changeClass = quote.change >= 0 ? 'plus' : 'minus';
+            const changePercent = parseFloat(quote.change_percent).toFixed(2);
+            
+            tickerHTML += `
+                <li>
+                    <span class="symbol">${quote.symbol}</span>
+                    <span class="price">$${quote.price.toFixed(2)}</span>
+                    <span class="change ${changeClass}">${changePercent}%</span>
+                </li>
+            `;
+        });
+        
+        // Duplicate for seamless scroll
+        const duplicatedHTML = tickerHTML.replace(/<li>/g, '<li aria-hidden="true">');
+        tickerScroll.innerHTML = tickerHTML + duplicatedHTML;
+        tickerContainer.style.display = 'block';
+    }
+
     async removeTicker(ticker) {
         if (!confirm(`Remove ${ticker} from watchlist?`)) {
             return;
@@ -416,6 +592,8 @@ class StockNewsApp {
             if (response.ok) {
                 this.showMessage(`${ticker} removed successfully!`, 'success');
                 this.loadTickers();
+                // Refresh realtime quotes immediately after removal
+                setTimeout(() => this.updateRealtimeQuotes(), 500);
 
                 // Clear summary if this ticker was selected
                 if (this.currentTicker === ticker) {
@@ -423,8 +601,10 @@ class StockNewsApp {
                         '<div class="welcome-message"><h3>Select a ticker to view summary</h3></div>';
                     document.getElementById('current-ticker').textContent = 'Select a ticker to view summary';
                     document.getElementById('refresh-btn').style.display = 'none';
+                    document.getElementById('chart-toggle-btn').style.display = 'none';
                     document.getElementById('sources-section').style.display = 'none';
                     document.getElementById('history-section').style.display = 'none';
+                    this.hideChart();
                     this.currentTicker = null;
                 }
             } else {
@@ -434,6 +614,46 @@ class StockNewsApp {
             console.error('Error removing ticker:', error);
             this.showMessage('Failed to remove ticker', 'error');
         }
+    }
+    
+    async loadUsageStats() {
+        try {
+            const response = await fetch('/api/debug/apis');
+            const data = await response.json();
+            this.displayUsageStats(data);
+        } catch (error) {
+            console.error('Usage stats error:', error);
+            document.getElementById('usage-content').innerHTML = '<div class="error">Failed to load usage</div>';
+        }
+    }
+    
+    displayUsageStats(data) {
+        const usageContent = document.getElementById('usage-content');
+        
+        let html = '<div class="usage-stats">';
+        
+        if (data.usage) {
+            html += '<div class="usage-category"><strong>API Usage:</strong></div>';
+            Object.entries(data.usage).forEach(([api, info]) => {
+                if (api !== 'alpha_vantage_realtime' && api !== 'twelve_data_realtime') {
+                    const limit = data.limits[api] || 1000;
+                    const used = info.calls || 0;
+                    const percentage = Math.round((used / limit) * 100);
+                    const statusClass = percentage > 80 ? 'danger' : percentage > 60 ? 'warning' : 'safe';
+                    
+                    html += `
+                        <div class="usage-item ${statusClass}">
+                            <span class="api-name">${api}</span>
+                            <div class="usage-bar"><div class="usage-fill" style="width: ${percentage}%"></div></div>
+                            <span class="usage-text">${used}/${limit}</span>
+                        </div>
+                    `;
+                }
+            });
+        }
+        
+        html += '</div>';
+        usageContent.innerHTML = html;
     }
 }
 
@@ -527,6 +747,32 @@ style.textContent = `
         padding-right: 30px;
     }
     
+    .header-buttons {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+    }
+    
+    .chart-toggle-btn {
+        background: #3498db;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        padding: 8px 12px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 500;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+    
+    .chart-toggle-btn:hover {
+        background: #2980b9;
+        transform: scale(1.05);
+    }
+    
     .summary-date {
         background: #ecf0f1;
         padding: 8px 12px;
@@ -594,6 +840,142 @@ style.textContent = `
         background: #95a5a6 !important;
         cursor: not-allowed;
         opacity: 0.7;
+    }
+    
+    .ticker-wrapper {
+        overflow: hidden;
+        border-top: 2px solid #3498db;
+        border-bottom: 2px solid #3498db;
+        padding: 1rem 0;
+        margin: 20px 0;
+        user-select: none;
+        background: #2c3e50;
+        color: white;
+    }
+    
+    .ticker {
+        display: flex;
+        gap: 2rem;
+        animation: scroll 30s linear infinite;
+        min-width: max-content;
+        list-style: none;
+        margin: 0;
+        padding: 0;
+    }
+    
+    .ticker-wrapper:hover .ticker {
+        animation-play-state: paused;
+    }
+    
+    .ticker li {
+        display: flex;
+        align-items: center;
+        font-weight: bold;
+        white-space: nowrap;
+    }
+    
+    .symbol {
+        margin-right: 0.5rem;
+        color: #ecf0f1;
+        font-size: 14px;
+    }
+    
+    .price {
+        margin: 0 0.5rem;
+        color: #f39c12;
+        font-size: 14px;
+    }
+    
+    .change.plus {
+        color: #27ae60;
+    }
+    
+    .change.minus {
+        color: #e74c3c;
+    }
+    
+    .change.plus::before {
+        content: "▲ ";
+    }
+    
+    .change.minus::before {
+        content: "▼ ";
+    }
+    
+    @keyframes scroll {
+        0% {
+            transform: translateX(0);
+        }
+        100% {
+            transform: translateX(calc(-50% - 2rem));
+        }
+    }
+    
+    .usage-section {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 20px;
+    }
+    
+    .usage-refresh-btn {
+        background: #3498db;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        padding: 4px 8px;
+        cursor: pointer;
+        font-size: 12px;
+        margin-left: 10px;
+    }
+    
+    .usage-category {
+        margin: 10px 0 5px 0;
+        color: #2c3e50;
+        font-size: 14px;
+    }
+    
+    .usage-item {
+        display: flex;
+        align-items: center;
+        margin: 8px 0;
+        padding: 5px;
+        border-radius: 4px;
+    }
+    
+    .usage-item.safe { background: #d5f4e6; }
+    .usage-item.warning { background: #fef9e7; }
+    .usage-item.danger { background: #fadbd8; }
+    
+    .api-name {
+        width: 120px;
+        font-size: 12px;
+        font-weight: 500;
+    }
+    
+    .usage-bar {
+        flex: 1;
+        height: 8px;
+        background: #ecf0f1;
+        border-radius: 4px;
+        margin: 0 10px;
+        overflow: hidden;
+    }
+    
+    .usage-fill {
+        height: 100%;
+        background: #3498db;
+        transition: width 0.3s ease;
+    }
+    
+    .usage-item.warning .usage-fill { background: #f39c12; }
+    .usage-item.danger .usage-fill { background: #e74c3c; }
+    
+    .usage-text {
+        font-size: 11px;
+        color: #7f8c8d;
+        min-width: 60px;
+        text-align: right;
     }
 `;
 document.head.appendChild(style);
