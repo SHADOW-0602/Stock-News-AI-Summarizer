@@ -161,6 +161,8 @@ git push heroku main
 ### Professional Features
 - **Market Status Widget**: Live market open/closed indicator in header
 - **Interactive Price Charts**: Multiple timeframes with professional Chart.js integration
+- **ML Price Predictions**: Multi-model forecasting with confidence scores
+- **Sentiment Analysis**: Real-time NLP sentiment from news aggregation
 - **Executive Summaries**: Portfolio manager-focused insights with Alpaca market context
 - **Market Implications**: Trading considerations and risk factors
 - **Quantified Impact**: Revenue, margin, and market share analysis

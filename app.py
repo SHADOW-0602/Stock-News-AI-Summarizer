@@ -6,7 +6,7 @@ import json
 import os
 from datetime import datetime, timedelta
 from chart_generator import ChartGenerator
-
+from ml_analysis import MLAnalyzer
 from supabase import create_client, Client
 import requests
 import json
@@ -878,6 +878,7 @@ class AIProcessor:
 collector = NewsCollector()
 ai_processor = AIProcessor()
 chart_generator = ChartGenerator()
+ml_analyzer = MLAnalyzer()
 
 
 
@@ -1225,9 +1226,20 @@ def get_summary(ticker):
         history_result = supabase.table('daily_summaries').select('date, what_changed').eq('ticker', ticker).order('date', desc=True).limit(7).execute()
         history = [{'date': row['date'], 'what_changed': row['what_changed']} for row in history_result.data]
         
+        # Get ML analysis
+        price_forecast = ml_analyzer.get_price_forecast(ticker)
+        
+        # Get recent articles for sentiment
+        recent_articles = supabase.table('news_articles').select('title, content').eq('ticker', ticker).order('date', desc=True).limit(10).execute()
+        sentiment_analysis = ml_analyzer.analyze_sentiment(recent_articles.data if recent_articles.data else [])
+        
         return jsonify({
             'current_summary': summary_data,
             'history': history,
+            'ml_analysis': {
+                'price_forecast': price_forecast,
+                'sentiment': sentiment_analysis
+            },
             'api_status': {
                 'gemini_remaining': max(0, DAILY_LIMITS['gemini'] - api_usage['gemini']['calls']) if isinstance(DAILY_LIMITS['gemini'], int) else 'unlimited',
                 'polygon_remaining': 'unlimited' if DAILY_LIMITS['polygon'] == 'unlimited' else max(0, DAILY_LIMITS['polygon'] - api_usage['polygon']['calls']),
