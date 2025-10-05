@@ -1390,9 +1390,21 @@ def process_ticker_news(ticker):
     # Save articles to database
     today = datetime.now().date().isoformat()
     
-    # Save all collected articles
+    # Save all collected articles with duplicate prevention
+    articles_saved = 0
+    articles_skipped = 0
+    
     for article in all_articles:
         try:
+            # Check if article already exists (by ticker, title, and source)
+            existing = supabase.table('news_articles').select('id').eq('ticker', ticker).eq('title', article['title']).eq('source', article['source']).limit(1).execute()
+            
+            if existing.data:
+                articles_skipped += 1
+                logger.debug(f"Skipping duplicate article: {article['title'][:50]}...")
+                continue
+            
+            # Insert new article
             supabase.table('news_articles').insert({
                 'ticker': ticker,
                 'title': article['title'],
@@ -1401,8 +1413,13 @@ def process_ticker_news(ticker):
                 'content': article['content'],
                 'date': article['date']
             }).execute()
+            articles_saved += 1
+            
         except Exception as e:
-            logger.debug(f"Article already exists or error: {e}")
+            logger.error(f"Error saving article '{article['title'][:50]}...': {e}")
+            articles_skipped += 1
+    
+    logger.info(f"Articles saved: {articles_saved}, skipped: {articles_skipped}")
     
     # Save summary
     articles_used = json.dumps([{
@@ -1424,7 +1441,7 @@ def process_ticker_news(ticker):
         'what_changed': summary_result['what_changed']
     }, on_conflict='ticker,date').execute()
     
-    logger.info(f"Saved {len(all_articles)} articles and summary for {ticker}")
+    logger.info(f"Processed {len(all_articles)} articles ({articles_saved} saved, {articles_skipped} skipped) and summary for {ticker}")
     logger.debug(f"Database save completed for {ticker}")
     
     logger.info(f"=== Completed processing for {ticker} ===")

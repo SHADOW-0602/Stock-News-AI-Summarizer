@@ -4,9 +4,9 @@ A professional-grade financial news aggregation and AI analysis platform that de
 
 ## 🚀 Key Features
 
-- **Multi-Source Intelligence**: Aggregates news from 7 sources: Alpha Vantage, Finviz, Polygon, TradingView, Twelve Data, Finnhub, and Alpaca Markets
-- **Professional AI Analysis**: Uses Gemini 2.5 Pro for institutional-grade summaries
-- **Professional AI Analysis**: Uses Gemini 2.5 Pro with Alpaca market context for institutional-grade summaries
+- **Multi-Source Intelligence**: Aggregates news from 7 sources: TradingView, Finviz, Polygon, Alpha Vantage, Twelve Data, Finnhub, and Alpaca Markets
+- **AI-Powered Analysis**: Uses Gemini 2.5 Pro with real-time market context for institutional-grade summaries
+- **Smart Article Selection**: AI selects 5-7 most trading-relevant articles from 30-70 collected articles
 - **Interactive Price Charts**: Toggle charts with multiple timeframes (7D, 30D, 90D, 1Y, 2Y)
 - **Upstash Redis Caching**: 4-hour news cache, 2-hour summary cache reduces API calls by 60%
 - **Smart Rate Limiting**: Conservative API quota management with intelligent caching
@@ -182,10 +182,13 @@ git push heroku main
 | Railway | Free | $0 | 500 hours/month | Sufficient | N/A |
 | Render | Free | $0 | 750 hours/month | Alternative | N/A |
 | **APIs** |
-| Gemini 2.5 Pro | Free | $0 | 240 requests/month | 21,600 available | 60% reduction |
-| Polygon API | Free | $0 | 360 requests/month | 216,000 available | 60% reduction |
-| Alpha Vantage API | Free | $0 | 300 requests/month | 15,000 available | 60% reduction |
-| **Total** | | **$0** | | **97%+ headroom** | **Major savings** |
+| Gemini 2.5 Pro | Free | $0 | ~600 requests/month | 45,000 available | 60% reduction |
+| Polygon API | Free | $0 | ~900 requests/month | Unlimited (5 RPM) | 60% reduction |
+| Alpha Vantage API | Free | $0 | ~750 requests/month | 750 available | Critical caching |
+| Twelve Data API | Free | $0 | ~2,400 requests/month | 24,000 available | 60% reduction |
+| Finnhub API | Free | $0 | ~3,600 requests/month | 2.6M available | Minimal impact |
+| Alpaca Markets | Free | $0 | Unlimited | Real-time data | N/A |
+| **Total** | | **$0** | | **95%+ headroom** | **Major savings** |
 
 ### Scaling Cost Projections
 | Tickers | Monthly Requests | Estimated Cost | Optimization |
@@ -216,14 +219,14 @@ def is_cache_valid(timestamp, duration):
 
 #### 2. Intelligent Rate Limiting
 ```python
-# Official free tier limits
+# Actual API limits and usage patterns
 DAILY_LIMITS = {
-    'gemini': 1500,        # 15 RPM, 1M tokens/month
-    'polygon': 'unlimited', # 5 RPM, unlimited monthly
-    'alpha_vantage': 25,   # 25 requests/day
-    'twelve_data': 800,    # 800 requests/day
-    'finnhub': 60,         # 60 calls/minute
-    'alpaca': 'unlimited'  # Unlimited market data
+    'gemini': 1500,        # 15 RPM, 1M tokens/month (daily estimate)
+    'polygon': 'unlimited', # 5 RPM but unlimited monthly calls
+    'alpha_vantage': 25,   # 25 requests/day (critical bottleneck)
+    'twelve_data': 800,    # 800 requests/day (free tier)
+    'finnhub': 7200,       # 60 calls/minute = ~86,400/day theoretical
+    'alpaca': 'unlimited'  # Unlimited real-time market data
 }
 
 # Automatic quota checking
@@ -285,32 +288,35 @@ Hosting: Railway/Render (Cloud)
 Scheduling: APScheduler (Background jobs)
 ```
 
-### Data Flow Architecture
+### Summary Generation Process
 ```
-1. News Collection (Multi-source)
-   ├── TradingView (Web scraping)
-   ├── Finviz (Quote page extraction)
-   ├── Polygon API (Professional feed)
-   ├── Alpha Vantage (News sentiment)
-   ├── Twelve Data (Company news)
-   ├── Finnhub (Market news)
-   └── Alpaca Markets (Professional news)
+1. News Collection (7 Sources - 30-70 articles)
+   ├── TradingView (Web scraping) → 5-8 articles
+   ├── Finviz (Quote page extraction) → 10 articles
+   ├── Polygon API (Professional feed) → 10 articles
+   ├── Alpha Vantage (News sentiment) → 10 articles
+   ├── Twelve Data (Company news) → 10 articles
+   ├── Finnhub (Market news) → 10 articles
+   └── Alpaca Markets (Trading news) → 3 articles
 
-2. AI Processing Pipeline
-   ├── Article Selection (Relevance scoring)
-   ├── Content Analysis (Business impact)
-   ├── Market Context (Alpaca quotes)
-   └── Summary Generation (Professional format)
+2. AI Processing Pipeline (Gemini 2.5 Pro)
+   ├── Article Selection → Top 5-7 most relevant by trading priority
+   ├── Market Context Integration → Real-time price/bid-ask data
+   ├── Historical Analysis → Compare with past 7 days
+   └── Professional Summary → Trading thesis + risk analysis
 
-3. Data Storage & Retrieval
-   ├── Supabase Database (Cloud PostgreSQL)
-   ├── Upstash Redis Cache (4hr news, 2hr summaries)
-   └── 7-day Historical tracking
+3. Data Storage & Caching
+   ├── Supabase Database → All articles + summaries stored
+   ├── Upstash Redis Cache → 4hr news, 2hr summaries (60% API reduction)
+   ├── Duplicate Prevention → Smart deduplication logic
+   └── 7-day Rolling History → Track changes over time
 
-4. User Interface
-   ├── Responsive Web Design
-   ├── Interactive Price Charts
-   └── Professional Dashboard
+4. Output Format
+   ├── Trading Thesis → Bull/bear case with price targets
+   ├── Material Developments → Quantified financial impact
+   ├── Risk/Reward Analysis → Catalysts and threats
+   ├── Sector Context → Peer comparison
+   └── What Changed Today → New vs historical information
 ```
 
 ### Performance Optimizations
@@ -430,32 +436,38 @@ flake8 app.py
 5. **Documentation**: Update README for new features
 6. **Pull Request**: Submit with detailed description
 
-### Performance Monitoring
+### AI Processing Intelligence
 ```python
-# Cache performance tracking
-def monitor_cache_performance():
-    cache_hits = len([t for t in news_cache if is_cache_valid(news_cache[t]['timestamp'])])
-    total_tickers = len(news_cache)
-    hit_rate = (cache_hits / total_tickers * 100) if total_tickers > 0 else 0
-    logger.info(f"Cache hit rate: {hit_rate:.1f}% ({cache_hits}/{total_tickers})")
+# Article Selection Criteria (Gemini 2.5 Pro)
+PRIORITY_CRITERIA = {
+    1: "EARNINGS/FINANCIAL RESULTS",  # Revenue beats/misses, guidance
+    2: "REGULATORY/LEGAL",           # FDA approvals, antitrust, lawsuits
+    3: "STRATEGIC MOVES",            # M&A, partnerships, product launches
+    4: "MANAGEMENT CHANGES",         # CEO/CFO changes, insider trading
+    5: "COMPETITIVE THREATS",        # Market share loss, pricing pressure
+    6: "MACROECONOMIC IMPACT"        # Interest rates, sector rotation
+}
 
-# API usage tracking
-def monitor_api_usage():
-    for service in api_usage:
-        usage = api_usage[service]['calls']
-        limit = DAILY_LIMITS[service]
-        percentage = (usage / limit * 100) if limit > 0 else 0
-        logger.info(f"{service} usage: {usage}/{limit} ({percentage:.1f}%)")
+# Summary Generation Process
+def generate_trading_summary():
+    # Collect 30-70 articles from 7 sources
+    # AI selects top 5-7 by trading relevance
+    # Integrate real-time market data (price, bid/ask)
+    # Generate professional trading analysis
+    # Extract "What Changed Today" vs historical
+    # Cache for 2 hours, store in database
 ```
 
 ## 🔒 Security & Compliance
 
-### Data Protection
+### Data Protection & Storage
 - **API Keys**: Environment variable encryption
-- **Input Validation**: SQL injection prevention
+- **Input Validation**: SQL injection prevention  
 - **Rate Limiting**: DDoS protection
-- **Error Sanitization**: Information disclosure prevention
-- **Session Management**: Secure HTTP headers
+- **Duplicate Prevention**: Smart article deduplication
+- **Data Persistence**: All articles and summaries stored in Supabase
+- **Cache Strategy**: 4-hour news cache, 2-hour summary cache
+- **Historical Tracking**: 7-day rolling analysis for trend detection
 
 ### Privacy Policy
 - **No Personal Data**: Only ticker symbols stored
