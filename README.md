@@ -4,12 +4,12 @@ A professional-grade financial news aggregation and AI analysis platform that de
 
 ## 🚀 Key Features
 
-- **Multi-Source Intelligence**: Aggregates news from 6 sources: Alpha Vantage, Finviz, Polygon, TradingView, Twelve Data, and Finnhub
+- **Multi-Source Intelligence**: Aggregates news from 7 sources: Alpha Vantage, Finviz, Polygon, TradingView, Twelve Data, Finnhub, and Alpaca Markets
 - **Professional AI Analysis**: Uses Gemini 2.5 Pro for institutional-grade summaries
-- **Real-Time Market Data**: Continuous scrolling ticker with live quotes, bid/ask spreads, and OHLCV data
+- **Professional AI Analysis**: Uses Gemini 2.5 Pro with Alpaca market context for institutional-grade summaries
 - **Interactive Price Charts**: Toggle charts with multiple timeframes (7D, 30D, 90D, 1Y, 2Y)
 - **Upstash Redis Caching**: 4-hour news cache, 2-hour summary cache reduces API calls by 60%
-- **Smart Rate Limiting**: 7-minute realtime updates, conservative API quota management
+- **Smart Rate Limiting**: Conservative API quota management with intelligent caching
 - **Trading-Focused Reports**: Risk/reward analysis, sector context, and specific trading catalysts
 - **Cost-Optimized**: Operates on $0/month using free API tiers
 
@@ -61,26 +61,26 @@ pip install -r requirements.txt
 2. Get free API key (5 calls/minute)
 3. Provides professional news feed with sentiment analysis
 
-#### Alpha Vantage API (Optional but Recommended)
+#### Alpha Vantage API (Chart & News Data)
 1. Sign up at [Alpha Vantage](https://www.alphavantage.co/support/#api-key)
-2. Get free API key (5 calls/minute, 500 calls/day)
-3. Provides news sentiment analysis
+2. Get free API key (25 calls/day)
+3. Provides historical price data and news sentiment
 
-#### Twelve Data API (Optional but Recommended)
+#### Twelve Data API (Chart Data)
 1. Sign up at [Twelve Data](https://twelvedata.com/)
 2. Get free API key (800 requests/day)
-3. Provides company news and financial data
+3. Provides historical price data for charts
 
-#### Finnhub API (Optional but Recommended)
+#### Finnhub API (News Data)
 1. Sign up at [Finnhub](https://finnhub.io/)
-2. Get free API key (60 calls/minute)
-3. Provides real-time company news and market data
+2. Get free API key (60 calls/minute = ~86,400/day)
+3. Provides company news and market data
 
-#### Alpaca Markets API (Primary Real-Time Source)
+#### Alpaca Markets API (Market Context & News)
 1. Sign up at [Alpaca Markets](https://alpaca.markets/)
 2. Get API key and secret from dashboard
-3. Provides unlimited real-time quotes, OHLCV data, and market microstructure
-4. Free tier includes real-time data for US equities - **Recommended primary source**
+3. Provides market status widget and professional news feed
+4. Free tier includes real-time market data for enhanced AI analysis
 
 ### 4. Environment Setup
 ```bash
@@ -153,27 +153,25 @@ git push heroku main
 
 ### Getting Started
 1. **Add Tickers**: Enter stock symbols (AAPL, TSLA, MSFT) in sidebar
-2. **Real-Time Ticker**: Continuous scrolling display with live prices and changes
-3. **View Analysis**: Click ticker to see professional AI summary
-4. **Interactive Charts**: Use chart button to toggle price charts with multiple timeframes
-5. **Track Changes**: Monitor "What Changed Today" for new developments
-6. **Manual Updates**: Use generate button for fresh AI analysis
+2. **View Analysis**: Click ticker to see professional AI summary
+3. **Interactive Charts**: Use chart button to toggle price charts with multiple timeframes
+4. **Track Changes**: Monitor "What Changed Today" for new developments
+5. **Manual Updates**: Use generate button for fresh AI analysis
 
 ### Professional Features
-- **Real-Time Market Data**: Live quotes with bid/ask spreads, OHLCV data, and VWAP
+- **Market Status Widget**: Live market open/closed indicator in header
 - **Interactive Price Charts**: Multiple timeframes with professional Chart.js integration
-- **Executive Summaries**: Portfolio manager-focused insights with real-time context
+- **Executive Summaries**: Portfolio manager-focused insights with Alpaca market context
 - **Market Implications**: Trading considerations and risk factors
 - **Quantified Impact**: Revenue, margin, and market share analysis
 - **Sector Context**: Peer comparison and competitive positioning
 
 ### Best Practices
 - **Add 5-10 tickers** for optimal performance and caching efficiency
-- **Real-time updates** - ticker refreshes every 7 minutes automatically
-- **Chart interaction** - hover over ticker to pause scrolling, use chart toggle for analysis
 - **Review summaries daily** - cached data provides instant access
 - **Use manual refresh sparingly** - clears cache and uses fresh API calls
 - **Monitor quota usage** - conservative limits prevent API exhaustion
+- **Chart analysis** - use chart toggle for price trend analysis
 
 ## 💰 Comprehensive Cost Analysis
 
@@ -208,8 +206,8 @@ NEWS_CACHE_DURATION = 4 * 3600  # Reduces scraping by 60%
 # AI summaries cached for 2 hours  
 SUMMARY_CACHE_DURATION = 2 * 3600  # Reduces Gemini calls by 70%
 
-# Realtime quotes update every 7 minutes
-REALTIME_UPDATE_INTERVAL = 7 * 60  # Reduces API calls by 75%
+# Daily processing at 8 AM IST
+DAILY_UPDATE_SCHEDULE = '08:00 IST'  # Automated news processing
 
 # Automatic cache validation and cleanup
 def is_cache_valid(timestamp, duration):
@@ -218,10 +216,14 @@ def is_cache_valid(timestamp, duration):
 
 #### 2. Intelligent Rate Limiting
 ```python
-# Conservative daily limits
+# Official free tier limits
 DAILY_LIMITS = {
-    'gemini': 800,    # 15 RPM * 60 * 16 hours
-    'polygon': 7200   # 5 RPM * 60 * 24 hours
+    'gemini': 1500,        # 15 RPM, 1M tokens/month
+    'polygon': 'unlimited', # 5 RPM, unlimited monthly
+    'alpha_vantage': 25,   # 25 requests/day
+    'twelve_data': 800,    # 800 requests/day
+    'finnhub': 60,         # 60 calls/minute
+    'alpaca': 'unlimited'  # Unlimited market data
 }
 
 # Automatic quota checking
@@ -288,21 +290,26 @@ Scheduling: APScheduler (Background jobs)
 1. News Collection (Multi-source)
    ├── TradingView (Web scraping)
    ├── Finviz (Quote page extraction)
-   └── Polygon API (Professional feed)
+   ├── Polygon API (Professional feed)
+   ├── Alpha Vantage (News sentiment)
+   ├── Twelve Data (Company news)
+   ├── Finnhub (Market news)
+   └── Alpaca Markets (Professional news)
 
 2. AI Processing Pipeline
    ├── Article Selection (Relevance scoring)
    ├── Content Analysis (Business impact)
+   ├── Market Context (Alpaca quotes)
    └── Summary Generation (Professional format)
 
 3. Data Storage & Retrieval
-   ├── SQLite Database (Local caching)
-   ├── 7-day Historical tracking
-   └── Real-time API responses
+   ├── Supabase Database (Cloud PostgreSQL)
+   ├── Upstash Redis Cache (4hr news, 2hr summaries)
+   └── 7-day Historical tracking
 
 4. User Interface
    ├── Responsive Web Design
-   ├── Real-time Updates
+   ├── Interactive Price Charts
    └── Professional Dashboard
 ```
 
@@ -351,7 +358,8 @@ SCHEDULE = {
     'processing_mode': 'sequential',
     'rate_limiting': '2 seconds between tickers',
     'history_retention': '7 days rolling',
-    'cleanup_frequency': 'daily'
+    'cleanup_frequency': 'daily',
+    'alpaca_context': 'enabled'  # Market data for AI summaries
 }
 ```
 

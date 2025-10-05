@@ -13,14 +13,31 @@ class ChartGenerator:
     def get_stock_data(self, ticker, period='30d'):
         """Get stock price data for chart"""
         try:
+            logger.debug(f"Getting chart data for {ticker} period {period}")
+            logger.debug(f"Twelve Data key: {'SET' if self.twelve_data_key else 'NOT SET'} (length: {len(self.twelve_data_key) if self.twelve_data_key else 0})")
+            logger.debug(f"Alpha Vantage key: {'SET' if self.alpha_vantage_key else 'NOT SET'} (length: {len(self.alpha_vantage_key) if self.alpha_vantage_key else 0})")
+            
             # Try Twelve Data first (more reliable for charts)
-            if self.twelve_data_key:
-                return self._get_twelve_data_prices(ticker, period)
-            elif self.alpha_vantage_key:
-                return self._get_alpha_vantage_prices(ticker, period)
-            else:
-                logger.warning(f"No chart API keys configured, returning None for {ticker}")
-                return None
+            if self.twelve_data_key and self.twelve_data_key != 'your_twelve_data_api_key':
+                logger.debug(f"Trying Twelve Data API for {ticker}")
+                data = self._get_twelve_data_prices(ticker, period)
+                if data:
+                    logger.debug(f"Twelve Data returned data for {ticker}")
+                    return data
+                else:
+                    logger.debug(f"Twelve Data returned no data for {ticker}")
+                    
+            if self.alpha_vantage_key and self.alpha_vantage_key != 'your-alpha-vantage-api-key':
+                logger.debug(f"Trying Alpha Vantage API for {ticker}")
+                data = self._get_alpha_vantage_prices(ticker, period)
+                if data:
+                    logger.debug(f"Alpha Vantage returned data for {ticker}")
+                    return data
+                else:
+                    logger.debug(f"Alpha Vantage returned no data for {ticker}")
+                    
+            logger.warning(f"No valid chart API keys configured for {ticker}")
+            return None
         except Exception as e:
             logger.error(f"Chart data error for {ticker}: {e}")
             return None
@@ -70,6 +87,10 @@ class ChartGenerator:
                 'current_price': prices[-1] if prices else 0,
                 'change': ((prices[-1] - prices[0]) / prices[0] * 100) if len(prices) > 1 else 0
             }
+        elif 'code' in data and data['code'] == 429:
+            logger.warning(f"Twelve Data rate limit exceeded: {data.get('message', '')}")
+        elif 'status' in data and data['status'] == 'error':
+            logger.warning(f"Twelve Data error: {data.get('message', '')}")
         
         return None
     
@@ -112,6 +133,8 @@ class ChartGenerator:
                 'current_price': prices[-1] if prices else 0,
                 'change': ((prices[-1] - prices[0]) / prices[0] * 100) if len(prices) > 1 else 0
             }
+        elif 'Information' in data:
+            logger.warning(f"Alpha Vantage quota/limit: {data['Information']}")
         
         return None
     
@@ -119,10 +142,14 @@ class ChartGenerator:
     
     def generate_chart_config(self, ticker, period='30d'):
         """Generate Chart.js configuration"""
+        logger.debug(f"Generating chart config for {ticker} period {period}")
         data = self.get_stock_data(ticker, period)
         
         if not data:
+            logger.error(f"No stock data returned for {ticker} in generate_chart_config")
             return None
+            
+        logger.debug(f"Stock data found: {len(data.get('dates', []))} data points")
         
         # Determine trend color
         trend_color = '#27ae60' if data['change'] >= 0 else '#e74c3c'

@@ -7,8 +7,38 @@ class StockNewsApp {
     init() {
         this.bindEvents();
         this.loadTickers();
-        this.startRealtimeTicker();
+        this.loadMarketWidget();
+
     }
+
+    async loadMarketWidget() {
+        try {
+            const response = await fetch('/api/market-status');
+            const data = await response.json();
+            
+            const widget = document.getElementById('market-widget');
+            if (data.market) {
+                const statusClass = data.market.is_open ? 'open' : 'closed';
+                const statusText = data.market.is_open ? 'OPEN' : 'CLOSED';
+                
+                let html = `
+                    <div class="market-status ${statusClass}">
+                        <div class="status-indicator"></div>
+                        <span class="status-text">Market ${statusText}</span>
+                    </div>
+                `;
+                
+
+                
+                widget.innerHTML = html;
+            }
+        } catch (error) {
+            console.error('Market widget error:', error);
+            document.getElementById('market-widget').innerHTML = '<div class="market-error">Market data unavailable</div>';
+        }
+    }
+    
+
 
     bindEvents() {
         // Add ticker functionality
@@ -67,8 +97,6 @@ class StockNewsApp {
 
         if (!tickers || tickers.length === 0) {
             tickerList.innerHTML = '<div class="no-tickers">No tickers added yet</div>';
-            // Hide realtime ticker when no tickers
-            document.getElementById('realtime-ticker').style.display = 'none';
             return;
         }
 
@@ -108,8 +136,7 @@ class StockNewsApp {
             if (response.ok) {
                 input.value = '';
                 this.loadTickers();
-                // Refresh realtime quotes immediately for new ticker
-                setTimeout(() => this.updateRealtimeQuotes(), 1000);
+
                 this.showMessage(`${ticker} added successfully!`, 'success');
             } else {
                 this.showMessage(result.error || 'Failed to add ticker', 'error');
@@ -139,6 +166,13 @@ class StockNewsApp {
         refreshBtn.disabled = false;
         refreshBtn.classList.remove('loading');
 
+        // Hide chart when switching tickers
+        this.hideChart();
+        
+        // Hide sources and history sections immediately
+        document.getElementById('sources-section').style.display = 'none';
+        document.getElementById('history-section').style.display = 'none';
+        
         // Show loading
         document.getElementById('summary-content').innerHTML =
             '<div class="loading">Loading summary...</div>';
@@ -511,71 +545,7 @@ class StockNewsApp {
         }
     }
 
-    async startRealtimeTicker() {
-        // Load initial quotes
-        await this.updateRealtimeQuotes();
-        
-        // Update every 7 minutes to conserve API quota
-        this.quoteInterval = setInterval(() => {
-            this.updateRealtimeQuotes();
-        }, 420000);
-    }
 
-    async updateRealtimeQuotes() {
-        try {
-            // Check if we have tickers first
-            const tickersResponse = await fetch('/api/tickers');
-            const tickers = await tickersResponse.json();
-            
-            if (!tickers || tickers.length === 0) {
-                document.getElementById('realtime-ticker').style.display = 'none';
-                return;
-            }
-            
-            const response = await fetch('/api/quotes');
-            const quotes = await response.json();
-            
-            if (quotes && Object.keys(quotes).length > 0) {
-                this.displayRealtimeTicker(quotes);
-            } else {
-                document.getElementById('realtime-ticker').style.display = 'none';
-            }
-        } catch (error) {
-            console.error('Realtime quotes error:', error);
-            document.getElementById('realtime-ticker').style.display = 'none';
-        }
-    }
-
-    displayRealtimeTicker(quotes) {
-        const tickerContainer = document.getElementById('realtime-ticker');
-        const tickerScroll = document.getElementById('ticker-scroll');
-        
-        if (Object.keys(quotes).length === 0) {
-            tickerContainer.style.display = 'none';
-            return;
-        }
-        
-        let tickerHTML = '';
-        
-        // Create ticker items
-        Object.values(quotes).forEach(quote => {
-            const changeClass = quote.change >= 0 ? 'plus' : 'minus';
-            const changePercent = parseFloat(quote.change_percent).toFixed(2);
-            
-            tickerHTML += `
-                <li>
-                    <span class="symbol">${quote.symbol}</span>
-                    <span class="price">$${quote.price.toFixed(2)}</span>
-                    <span class="change ${changeClass}">${changePercent}%</span>
-                </li>
-            `;
-        });
-        
-        // Duplicate for seamless scroll
-        const duplicatedHTML = tickerHTML.replace(/<li>/g, '<li aria-hidden="true">');
-        tickerScroll.innerHTML = tickerHTML + duplicatedHTML;
-        tickerContainer.style.display = 'block';
-    }
 
     async removeTicker(ticker) {
         if (!confirm(`Remove ${ticker} from watchlist?`)) {
@@ -592,8 +562,7 @@ class StockNewsApp {
             if (response.ok) {
                 this.showMessage(`${ticker} removed successfully!`, 'success');
                 this.loadTickers();
-                // Refresh realtime quotes immediately after removal
-                setTimeout(() => this.updateRealtimeQuotes(), 500);
+
 
                 // Clear summary if this ticker was selected
                 if (this.currentTicker === ticker) {
@@ -843,7 +812,7 @@ style.textContent = `
     }
     
     .ticker-wrapper {
-        overflow: hidden;
+        overflow: hidden !important;
         border-top: 2px solid #3498db;
         border-bottom: 2px solid #3498db;
         padding: 1rem 0;
@@ -851,6 +820,12 @@ style.textContent = `
         user-select: none;
         background: #2c3e50;
         color: white;
+        position: relative;
+        z-index: 1000;
+        width: 100%;
+        display: block !important;
+        visibility: visible !important;
+        height: auto !important;
     }
     
     .ticker {
@@ -976,6 +951,49 @@ style.textContent = `
         color: #7f8c8d;
         min-width: 60px;
         text-align: right;
+    }
+    
+    .market-widget {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        font-size: 14px;
+    }
+    
+    .market-status {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .market-status.open .status-indicator {
+        width: 8px;
+        height: 8px;
+        background: #27ae60;
+        border-radius: 50%;
+        animation: pulse 2s infinite;
+    }
+    
+    .market-status.closed .status-indicator {
+        width: 8px;
+        height: 8px;
+        background: #e74c3c;
+        border-radius: 50%;
+    }
+    
+    .status-text {
+        font-weight: 600;
+        color: #2c3e50;
+    }
+    
+
+    
+
+    
+    @keyframes pulse {
+        0% { opacity: 1; }
+        50% { opacity: 0.5; }
+        100% { opacity: 1; }
     }
 `;
 document.head.appendChild(style);

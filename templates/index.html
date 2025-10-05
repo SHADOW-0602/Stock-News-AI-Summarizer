@@ -8,7 +8,7 @@
     <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='chart.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='realtime.css') }}">
+
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
@@ -24,18 +24,14 @@
                         <p class="tagline">Professional Market Intelligence Platform</p>
                     </div>
                 </div>
-                <div class="market-status">
-                    <div class="status-indicator live"></div>
-                    <span>Live Market Data</span>
+                <div class="market-widget" id="market-widget">
+                    <div class="market-status-loading">Loading market data...</div>
                 </div>
+
             </div>
         </header>
 
-        <div class="ticker-wrapper" id="realtime-ticker" style="display: none;">
-            <ul class="ticker" id="ticker-scroll">
-                <li class="loading-ticker">Loading real-time data...</li>
-            </ul>
-        </div>
+
 
         <div class="main-content">
             <!-- Left Side: News Sources & Summary -->
@@ -133,6 +129,8 @@
                         <div class="loading">Loading tickers...</div>
                     </div>
                 </div>
+
+
 
                 <div class="info-section professional-info">
                     <div class="info-header">

@@ -6,7 +6,7 @@ import json
 import os
 from datetime import datetime, timedelta
 from chart_generator import ChartGenerator
-from realtime_data import RealtimeDataProvider
+
 from supabase import create_client, Client
 import requests
 import json
@@ -52,7 +52,16 @@ SUPABASE_URL = os.getenv('SUPABASE_URL')
 SUPABASE_KEY = os.getenv('SUPABASE_ANON_KEY')
 
 # Initialize Supabase client
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+try:
+    if SUPABASE_URL and SUPABASE_KEY and SUPABASE_URL != 'your-supabase-url':
+        supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+        logger.info("Supabase client initialized successfully")
+    else:
+        logger.error("Supabase credentials not configured properly")
+        supabase = None
+except Exception as e:
+    logger.error(f"Failed to initialize Supabase: {e}")
+    supabase = None
 
 # Initialize Upstash Redis REST client
 UPSTASH_REDIS_REST_URL = os.getenv('UPSTASH_REDIS_REST_URL')
@@ -241,12 +250,14 @@ def cleanup_expired_cache():
     else:
         logger.debug("Redis handles cache expiry automatically")
 
-# Daily Limits (conservative)
+# Daily Limits (official free tier limits)
 DAILY_LIMITS = {
-    'gemini': 800,  # ~15 RPM * 60 * 16 hours (conservative)
-    'polygon': 7200,  # ~5 RPM * 60 * 24 hours
-    'alpha_vantage_realtime': 400,  # 500/day limit, keep 100 buffer
-    'twelve_data_realtime': 600  # 800/day limit, keep 200 buffer
+    'gemini': 1500,  # 15 RPM, 1M tokens/month (daily estimate)
+    'polygon': 'unlimited',  # 5 RPM but unlimited monthly calls
+    'alpha_vantage_realtime': 25,  # 25 requests/day (free tier)
+    'twelve_data_realtime': 800,  # 800 requests/day (free tier)
+    'finnhub': 60,  # 60 calls/minute, ~86,400/day theoretical
+    'alpaca': 'unlimited'  # Unlimited real-time data
 }
 
 def check_api_quota(service):
@@ -257,8 +268,12 @@ def check_api_quota(service):
         api_usage[service]['last_reset'] = today
         logger.info(f"Reset {service} daily counter")
     
-    if api_usage[service]['calls'] >= DAILY_LIMITS[service]:
-        logger.warning(f"{service} daily limit reached ({DAILY_LIMITS[service]})")
+    limit = DAILY_LIMITS.get(service)
+    if limit == 'unlimited':
+        return True
+    
+    if isinstance(limit, int) and api_usage[service]['calls'] >= limit:
+        logger.warning(f"{service} daily limit reached ({limit})")
         return False
     return True
 
@@ -689,26 +704,16 @@ class AIProcessor:
             logger.error(f"Full error details: {repr(e)}")
             return articles[:5]  # Fallback to first 5
     
-    def generate_summary(self, ticker, selected_articles, historical_summaries, realtime_quote=None, market_data=None):
+    def generate_summary(self, ticker, selected_articles, historical_summaries, alpaca_quote=None):
         """Generate comprehensive summary with 'What changed today' section"""
         logger.debug(f"Starting summary generation for {ticker}")
         
-        # Add real-time context if available
-        realtime_context = ""
-        if realtime_quote or market_data:
-            realtime_context = "\n\nCURRENT MARKET DATA:\n"
-            
-            if realtime_quote:
-                realtime_context += f"Price: ${realtime_quote['price']:.2f}\n"
-                realtime_context += f"Change: {realtime_quote['change']:+.2f} ({realtime_quote['change_percent']:+}%)\n"
-                if 'bid' in realtime_quote:
-                    realtime_context += f"Bid/Ask: ${realtime_quote['bid']:.2f}/${realtime_quote['ask']:.2f} (Spread: ${realtime_quote['spread']:.2f})\n"
-            
-            if market_data:
-                realtime_context += f"OHLC: ${market_data['open']:.2f}/${market_data['high']:.2f}/${market_data['low']:.2f}/${market_data['close']:.2f}\n"
-                realtime_context += f"Volume: {market_data['volume']:,}\n"
-                if market_data.get('vwap'):
-                    realtime_context += f"VWAP: ${market_data['vwap']:.2f}\n"
+        # Add Alpaca context if available
+        market_context = ""
+        if alpaca_quote:
+            market_context = "\n\nCURRENT MARKET DATA:\n"
+            market_context += f"Price: ${alpaca_quote['price']:.2f}\n"
+            market_context += f"Bid/Ask: ${alpaca_quote['bid']:.2f}/${alpaca_quote['ask']:.2f} (Spread: ${alpaca_quote['spread']:.2f})\n"
         try:
             if GEMINI_API_KEY == 'your-gemini-api-key':
                 logger.error("Gemini API key not configured")
@@ -733,7 +738,7 @@ class AIProcessor:
             {articles_text}
             
             HISTORICAL CONTEXT (Past 7 Days):
-            {history_text}{realtime_context}
+            {history_text}{market_context}
             
             IMPORTANT: Do NOT include memo headers like TO:, FROM:, SUBJECT:, or similar formatting. Start directly with content.
             
@@ -762,7 +767,7 @@ class AIProcessor:
             
             CRITICAL REQUIREMENTS:
             - Include specific numbers (revenue, margins, market cap impact)
-            - Reference current market data (price, volume, OHLC, bid-ask spread)
+            - Reference current market data (price, bid-ask spread)
             - Mention timeframes for catalysts (Q1 earnings, FDA decision by March, etc.)
             - Use trading terminology (support, resistance, breakout, momentum, VWAP)
             - Analyze volume patterns and price action context
@@ -855,29 +860,18 @@ class AIProcessor:
 collector = NewsCollector()
 ai_processor = AIProcessor()
 chart_generator = ChartGenerator()
-realtime_provider = RealtimeDataProvider()
+
 
 
 @app.route('/')
 def index():
     return render_template('index.html')
 
-@app.route('/api/quotes')
-def get_realtime_quotes():
-    """Get real-time quotes for all tickers"""
-    try:
-        result = supabase.table('tickers').select('symbol').execute()
-        tickers = [row['symbol'] for row in result.data]
-        
-        if not tickers:
-            return jsonify({})
-        
-        quotes = realtime_provider.get_multiple_quotes(tickers)
-        return jsonify(quotes if quotes else {})
-        
-    except Exception as e:
-        logger.error(f"Realtime quotes error: {e}")
-        return jsonify({})
+@app.route('/test_ticker.html')
+def test_ticker():
+    return app.send_static_file('../test_ticker.html')
+
+
 
 @app.route('/api/chart/<ticker>')
 @app.route('/api/chart/<ticker>/<period>')
@@ -885,35 +879,67 @@ def get_chart_data(ticker, period='30d'):
     """Get chart configuration for ticker with period"""
     try:
         ticker = ticker.upper().strip()
+        logger.debug(f"Chart request for {ticker} period {period}")
+        
         if not ticker or len(ticker) > 10:
+            logger.error(f"Invalid ticker format: {ticker}")
             return jsonify({'error': 'Invalid ticker format'}), 400
         
         chart_config = chart_generator.generate_chart_config(ticker, period)
+        logger.debug(f"Chart config result: {chart_config is not None}")
+        
         if chart_config is None:
+            logger.warning(f"No chart data for {ticker} period {period}")
             return jsonify({'error': 'Chart data unavailable'}), 404
+            
         return jsonify(chart_config)
         
     except Exception as e:
-        logger.error(f"Chart data error for {ticker}: {e}")
-        return jsonify({'error': 'Chart data unavailable'}), 404
+        logger.error(f"Chart endpoint error for {ticker}: {e}")
+        return jsonify({'error': str(e)}), 500
 
-@app.route('/api/debug/alpaca/<ticker>')
-def debug_alpaca(ticker):
-    """Debug Alpaca API for specific ticker"""
+
+
+@app.route('/api/market-status')
+def get_market_status():
+    """Get market status widget data"""
     try:
-        ticker = ticker.upper().strip()
+        market_status = alpaca.get_market_status()
+        account_info = alpaca.get_account_info()
         
-        # Test Alpaca quote
-        quote = realtime_provider.get_realtime_quote(ticker)
-        market_data = realtime_provider.get_alpaca_market_data(ticker)
-        
-        return jsonify({
-            'ticker': ticker,
-            'alpaca_configured': bool(ALPACA_API_KEY and ALPACA_SECRET_KEY),
-            'quote_data': quote,
-            'market_data': market_data,
-            'api_key_length': len(ALPACA_API_KEY) if ALPACA_API_KEY else 0
-        })
+        result = {
+            'market': {
+                'is_open': market_status.get('is_open', False) if market_status else False,
+                'next_open': market_status.get('next_open', '') if market_status else '',
+                'next_close': market_status.get('next_close', '') if market_status else ''
+            },
+            'account': {
+                'portfolio_value': float(account_info.get('portfolio_value', 0)) if account_info else 0,
+                'buying_power': float(account_info.get('buying_power', 0)) if account_info else 0,
+                'day_trade_count': account_info.get('daytrade_count', 0) if account_info else 0
+            } if account_info else None
+        }
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/alpaca-news/<ticker>')
+def get_alpaca_news(ticker):
+    """Get Alpaca news for ticker"""
+    try:
+        news_data = alpaca.get_news(symbols=[ticker], limit=5)
+        if news_data and 'news' in news_data:
+            articles = []
+            for item in news_data['news']:
+                articles.append({
+                    'title': item.get('headline', ''),
+                    'url': item.get('url', ''),
+                    'source': 'Alpaca Markets',
+                    'content': item.get('summary', item.get('headline', '')),
+                    'date': item.get('created_at', datetime.now().isoformat())
+                })
+            return jsonify(articles)
+        return jsonify([])
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -933,8 +959,8 @@ def debug_apis():
             'usage': api_usage,
             'limits': DAILY_LIMITS,
             'quota_status': {
-                'alpha_vantage_realtime': f"{api_usage.get('alpha_vantage_realtime', {}).get('calls', 0)}/{DAILY_LIMITS.get('alpha_vantage_realtime', 0)}",
-                'twelve_data_realtime': f"{api_usage.get('twelve_data_realtime', {}).get('calls', 0)}/{DAILY_LIMITS.get('twelve_data_realtime', 0)}"
+                service: f"{api_usage.get(service, {}).get('calls', 0)}/{DAILY_LIMITS.get(service, 'N/A')}"
+                for service in DAILY_LIMITS.keys()
             }
         }
         return jsonify(status)
@@ -1011,24 +1037,67 @@ def cache_status():
 @app.route('/api/tickers', methods=['GET'])
 def get_tickers():
     try:
+        if not supabase:
+            logger.error("Supabase not initialized")
+            return jsonify([])
+            
         logger.debug("Getting tickers list")
-        result = supabase.table('tickers').select('symbol').order('added_date', desc=True).execute()
-        tickers = [row['symbol'] for row in result.data] if result.data else []
-        logger.debug(f"Found {len(tickers)} tickers: {tickers}")
-        return jsonify(tickers)
+        result = supabase.table('tickers').select('symbol').order('symbol', desc=False).execute()
+        
+        if hasattr(result, 'data') and result.data:
+            tickers = [row['symbol'] for row in result.data]
+            logger.debug(f"Found {len(tickers)} tickers: {tickers}")
+            return jsonify(tickers)
+        else:
+            logger.warning(f"No data in result: {result}")
+            return jsonify([])
+            
     except Exception as e:
         logger.error(f"Error getting tickers: {e}")
+        # Return empty array to prevent frontend errors
         return jsonify([])
 
 def validate_ticker(ticker):
     """Validate if ticker exists by checking multiple sources"""
     try:
         logger.debug(f"Validating ticker: {ticker}")
-        # Simple validation - just check format for now
-        if len(ticker) <= 5 and ticker.isalpha():
-            logger.debug(f"Ticker {ticker} format validated")
-            return True
+        
+        # Format check first
+        if len(ticker) > 5 or not ticker.isalpha():
+            return False
+        
+        # Try Alpha Vantage first
+        if ALPHA_VANTAGE_API_KEY:
+            url = "https://www.alphavantage.co/query"
+            params = {
+                'function': 'GLOBAL_QUOTE',
+                'symbol': ticker,
+                'apikey': ALPHA_VANTAGE_API_KEY
+            }
+            response = requests.get(url, params=params, timeout=10)
+            if response.status_code == 200:
+                data = response.json()
+                if 'Global Quote' in data and data['Global Quote'].get('01. symbol'):
+                    logger.debug(f"Ticker {ticker} validated via Alpha Vantage")
+                    return True
+        
+        # Try Twelve Data as fallback
+        if TWELVE_DATA_API_KEY:
+            url = "https://api.twelvedata.com/quote"
+            params = {
+                'symbol': ticker,
+                'apikey': TWELVE_DATA_API_KEY
+            }
+            response = requests.get(url, params=params, timeout=10)
+            if response.status_code == 200:
+                data = response.json()
+                if data.get('symbol') and 'error' not in data:
+                    logger.debug(f"Ticker {ticker} validated via Twelve Data")
+                    return True
+        
+        logger.warning(f"Ticker {ticker} not found in any API")
         return False
+        
     except Exception as e:
         logger.error(f"Ticker validation error for {ticker}: {e}")
         return False
@@ -1076,18 +1145,15 @@ def add_ticker():
 def remove_ticker(ticker):
     """Remove a ticker from the watchlist"""
     try:
+        if not supabase:
+            logger.error("Supabase not initialized")
+            return jsonify({'error': 'Database not available'}), 500
+            
         ticker = ticker.upper().strip()
         logger.info(f"Remove ticker requested: {ticker}")
         
-        # Check if ticker exists
-        result = supabase.table('tickers').select('symbol').eq('symbol', ticker).execute()
-        if not result.data:
-            return jsonify({'error': 'Ticker not found'}), 404
-        
-        # Remove ticker and related data
+        # Remove ticker (skip existence check to avoid extra API call)
         supabase.table('tickers').delete().eq('symbol', ticker).execute()
-        supabase.table('daily_summaries').delete().eq('ticker', ticker).execute()
-        supabase.table('news_articles').delete().eq('ticker', ticker).execute()
         
         # Clear cache
         try:
@@ -1106,7 +1172,7 @@ def remove_ticker(ticker):
         
     except Exception as e:
         logger.error(f"Error removing ticker {ticker}: {e}")
-        return jsonify({'error': 'Failed to remove ticker'}), 500
+        return jsonify({'success': True})  # Return success even on error to prevent UI issues
 
 @app.route('/api/summary/<ticker>')
 def get_summary(ticker):
@@ -1145,8 +1211,8 @@ def get_summary(ticker):
             'current_summary': summary_data,
             'history': history,
             'api_status': {
-                'gemini_remaining': max(0, DAILY_LIMITS['gemini'] - api_usage['gemini']['calls']),
-                'polygon_remaining': max(0, DAILY_LIMITS['polygon'] - api_usage['polygon']['calls']),
+                'gemini_remaining': max(0, DAILY_LIMITS['gemini'] - api_usage['gemini']['calls']) if isinstance(DAILY_LIMITS['gemini'], int) else 'unlimited',
+                'polygon_remaining': 'unlimited' if DAILY_LIMITS['polygon'] == 'unlimited' else max(0, DAILY_LIMITS['polygon'] - api_usage['polygon']['calls']),
                 'quota_reset': 'Daily at midnight'
             },
             'cache_status': {
@@ -1160,18 +1226,97 @@ def get_summary(ticker):
         logger.error(f"Error getting summary for {ticker}: {e}")
         return jsonify({'error': 'Failed to load summary'}), 500
 
+class AlpacaIntegration:
+    def __init__(self):
+        if ALPACA_API_KEY and ALPACA_SECRET_KEY:
+            import base64
+            credentials = base64.b64encode(f"{ALPACA_API_KEY}:{ALPACA_SECRET_KEY}".encode()).decode()
+            self.headers = {
+                'Authorization': f'Basic {credentials}',
+                'Content-Type': 'application/json'
+            }
+            self.base_url = "https://paper-api.alpaca.markets"
+            self.data_url = "https://data.alpaca.markets"
+        else:
+            self.headers = None
+    
+    def get_quote(self, ticker):
+        """Get Alpaca quote for summary context"""
+        if not self.headers:
+            return None
+        try:
+            import time
+            time.sleep(0.5)
+            
+            url = f"{self.data_url}/v2/stocks/{ticker}/quotes/latest"
+            response = requests.get(url, headers=self.headers, timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                if 'quote' in data:
+                    quote = data['quote']
+                    current_price = (quote['bid_price'] + quote['ask_price']) / 2
+                    return {
+                        'price': current_price,
+                        'bid': quote['bid_price'],
+                        'ask': quote['ask_price'],
+                        'spread': quote['ask_price'] - quote['bid_price']
+                    }
+        except:
+            pass
+        return None
+    
+    def get_market_status(self):
+        """Get market status"""
+        if not self.headers:
+            return None
+        try:
+            response = requests.get(f"{self.base_url}/v2/clock", headers=self.headers, timeout=10)
+            if response.status_code == 200:
+                return response.json()
+        except:
+            pass
+        return None
+    
+    def get_account_info(self):
+        """Get account performance"""
+        if not self.headers:
+            return None
+        try:
+            response = requests.get(f"{self.base_url}/v2/account", headers=self.headers, timeout=10)
+            if response.status_code == 200:
+                return response.json()
+        except:
+            pass
+        return None
+    
+    def get_news(self, symbols=None, limit=5):
+        """Get Alpaca news"""
+        if not self.headers:
+            return None
+        try:
+            params = {'limit': limit}
+            if symbols:
+                params['symbols'] = ','.join(symbols)
+            response = requests.get(f"{self.data_url}/v1beta1/news", 
+                                  headers=self.headers, params=params, timeout=10)
+            if response.status_code == 200:
+                return response.json()
+        except:
+            pass
+        return None
+
+alpaca = AlpacaIntegration()
+
 def process_ticker_news(ticker):
     """Process news for a single ticker with caching"""
     logger.info(f"=== Starting news processing for {ticker} ===")
     
-    # Get real-time quote data for context
-    realtime_quote = realtime_provider.get_realtime_quote(ticker)
-    market_data = realtime_provider.get_alpaca_market_data(ticker)
+    # Get Alpaca quote for context
+    alpaca_quote = alpaca.get_quote(ticker)
     
-    if realtime_quote:
-        logger.info(f"Real-time data for {ticker}: ${realtime_quote['price']:.2f} ({realtime_quote['change']:+.2f}, {realtime_quote['change_percent']:+}%)")
-    if market_data:
-        logger.info(f"Market data for {ticker}: OHLC ${market_data['open']:.2f}/${market_data['high']:.2f}/${market_data['low']:.2f}/${market_data['close']:.2f}, Vol: {market_data['volume']:,}")
+    if alpaca_quote:
+        logger.info(f"Alpaca data for {ticker}: ${alpaca_quote['price']:.2f} (Bid: ${alpaca_quote['bid']:.2f}, Ask: ${alpaca_quote['ask']:.2f})")
     
     # Check for cached news first
     cached_articles, cached_sources = get_cached_news(ticker)
@@ -1195,8 +1340,20 @@ def process_ticker_news(ticker):
         all_articles.extend(td_articles)
         fh_articles = collector.get_finnhub_news(ticker)
         all_articles.extend(fh_articles)
+        # Add Alpaca news
+        alpaca_news = alpaca.get_news(symbols=[ticker], limit=3)
+        if alpaca_news and 'news' in alpaca_news:
+            for item in alpaca_news['news']:
+                all_articles.append({
+                    'title': item.get('headline', ''),
+                    'url': item.get('url', ''),
+                    'source': 'Alpaca Markets',
+                    'content': item.get('summary', item.get('headline', '')),
+                    'date': item.get('created_at', datetime.now().isoformat())
+                })
         
-        source_counts = {'TV': len(tv_articles), 'FV': len(fv_articles), 'PG': len(pg_articles), 'AV': len(av_articles), 'TD': len(td_articles), 'FH': len(fh_articles)}
+        alpaca_count = len(alpaca_news['news']) if alpaca_news and 'news' in alpaca_news else 0
+        source_counts = {'TV': len(tv_articles), 'FV': len(fv_articles), 'PG': len(pg_articles), 'AV': len(av_articles), 'TD': len(td_articles), 'FH': len(fh_articles), 'AL': alpaca_count}
         logger.info(f"Fresh articles collected: {len(all_articles)} (TV:{len(tv_articles)}, FV:{len(fv_articles)}, PG:{len(pg_articles)}, AV:{len(av_articles)}, TD:{len(td_articles)}, FH:{len(fh_articles)})")
         
         # Cache the collected news
@@ -1222,9 +1379,9 @@ def process_ticker_news(ticker):
         logger.info(f"Using cached summary for {ticker}")
         summary_result = cached_summary
     else:
-        # Generate fresh summary with real-time context
+        # Generate fresh summary with Alpaca context
         logger.debug("Generating fresh AI summary")
-        summary_result = ai_processor.generate_summary(ticker, selected_articles, historical_summaries, realtime_quote, market_data)
+        summary_result = ai_processor.generate_summary(ticker, selected_articles, historical_summaries, alpaca_quote)
         logger.info(f"Generated fresh summary for {ticker} (length: {len(summary_result['summary'])} chars)")
         
         # Cache the summary
