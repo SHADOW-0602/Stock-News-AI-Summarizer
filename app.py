@@ -146,8 +146,9 @@ fallback_news_cache = {}
 fallback_summary_cache = {}
 
 def get_cached_news(ticker):
-    """Get cached news if valid"""
+    """Get cached news if valid, fallback to Supabase"""
     try:
+        # Check Redis cache first
         if redis_client:
             cached_data = redis_client.get(f"news:{ticker}")
             if cached_data:
@@ -161,6 +162,23 @@ def get_cached_news(ticker):
                 if (datetime.now() - cache_entry['timestamp']).total_seconds() < CACHE_DURATION:
                     logger.debug(f"Using fallback cached news for {ticker}")
                     return cache_entry['data'], cache_entry['sources']
+        
+        # If no cache, check Supabase for recent articles (within cache duration)
+        if supabase:
+            cutoff_time = datetime.now() - timedelta(seconds=CACHE_DURATION)
+            result = supabase.table('news_articles').select('title, url, source, content, date').eq('ticker', ticker).gte('date', cutoff_time.isoformat()).execute()
+            
+            if result.data:
+                articles = result.data
+                # Count by source
+                sources = {}
+                for article in articles:
+                    source = article['source']
+                    sources[source] = sources.get(source, 0) + 1
+                
+                logger.debug(f"Using Supabase fallback news for {ticker} ({len(articles)} articles)")
+                return articles, sources
+                
     except Exception as e:
         logger.debug(f"Cache read error for {ticker}: {e}")
     return None, None
