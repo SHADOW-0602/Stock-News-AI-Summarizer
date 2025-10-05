@@ -207,11 +207,62 @@ class StockNewsApp {
 
         const summary = data.current_summary;
         
+        // Display ML analysis if available
+        let mlAnalysisHtml = '';
+        if (data.ml_analysis) {
+            const ml = data.ml_analysis;
+            mlAnalysisHtml = `
+                <div class="future-predictions-box">
+                    <div class="predictions-header">
+                        <span class="predictions-icon">🔮</span>
+                        <strong>Future Predictions</strong>
+                    </div>
+                    <div class="predictions-content">
+            `;
+            
+            if (ml.price_forecast) {
+                const forecast = ml.price_forecast;
+                const changeClass = forecast.change_percent >= 0 ? 'positive' : 'negative';
+                mlAnalysisHtml += `
+                    <div class="prediction-section">
+                        <div class="prediction-label">📈 Price Forecast (${forecast.timeframe})</div>
+                        <div class="price-prediction">
+                            <span class="current-price">$${forecast.current_price}</span>
+                            <span class="arrow">→</span>
+                            <span class="predicted-price">$${forecast.predicted_price}</span>
+                            <span class="price-change ${changeClass}">
+                                ${forecast.change_percent >= 0 ? '+' : ''}${forecast.change_percent}%
+                            </span>
+                        </div>
+                        <div class="prediction-meta">Model: ${forecast.model_used.toUpperCase()} | Confidence: ${forecast.confidence}</div>
+                    </div>
+                `;
+            }
+            
+            if (ml.sentiment) {
+                const sentiment = ml.sentiment;
+                const sentimentClass = sentiment.sentiment.toLowerCase();
+                mlAnalysisHtml += `
+                    <div class="prediction-section">
+                        <div class="prediction-label">💭 Market Sentiment</div>
+                        <div class="sentiment-prediction">
+                            <span class="sentiment-score ${sentimentClass}">${sentiment.sentiment}</span>
+                            <span class="sentiment-value">(${sentiment.score})</span>
+                        </div>
+                        <div class="prediction-meta">Based on ${sentiment.articles_analyzed} articles | Confidence: ${sentiment.confidence}</div>
+                    </div>
+                `;
+            }
+            
+            mlAnalysisHtml += '</div></div>';
+        }
+        
         // Display main summary
         summaryContent.innerHTML = `
             <div class="summary-date">
                 <strong>Last Updated:</strong> ${new Date(summary.date).toLocaleDateString()}
             </div>
+            ${mlAnalysisHtml}
             <div class="summary-text">${this.formatSummary(summary.summary)}</div>
             ${summary.what_changed && summary.what_changed.trim() !== '' && 
               summary.what_changed !== 'No material developments identified.' && 
@@ -951,6 +1002,107 @@ style.textContent = `
         color: #7f8c8d;
         min-width: 60px;
         text-align: right;
+    }
+    
+    .future-predictions-box {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 12px;
+        padding: 18px;
+        margin: 20px 0;
+        color: white;
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.3);
+    }
+    
+    .predictions-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 16px;
+        font-size: 16px;
+        font-weight: 600;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        padding-bottom: 8px;
+    }
+    
+    .predictions-icon {
+        margin-right: 10px;
+        font-size: 18px;
+    }
+    
+    .prediction-section {
+        margin-bottom: 16px;
+    }
+    
+    .prediction-section:last-child {
+        margin-bottom: 0;
+    }
+    
+    .prediction-label {
+        font-size: 13px;
+        font-weight: 500;
+        margin-bottom: 8px;
+        opacity: 0.9;
+    }
+    
+    .price-prediction {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 6px;
+        font-size: 15px;
+        font-weight: 600;
+    }
+    
+    .arrow {
+        font-size: 18px;
+        opacity: 0.8;
+    }
+    
+    .price-change.positive {
+        color: #2ecc71;
+        font-weight: 700;
+    }
+    
+    .price-change.negative {
+        color: #ff6b6b;
+        font-weight: 700;
+    }
+    
+    .sentiment-prediction {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 6px;
+        font-size: 15px;
+    }
+    
+    .sentiment-score {
+        font-weight: 600;
+        padding: 4px 8px;
+        border-radius: 4px;
+        background: rgba(255, 255, 255, 0.2);
+    }
+    
+    .sentiment-score.bullish {
+        background: rgba(46, 204, 113, 0.3);
+    }
+    
+    .sentiment-score.bearish {
+        background: rgba(231, 76, 60, 0.3);
+    }
+    
+    .sentiment-score.neutral {
+        background: rgba(243, 156, 18, 0.3);
+    }
+    
+    .sentiment-value {
+        font-size: 13px;
+        opacity: 0.8;
+    }
+    
+    .prediction-meta {
+        font-size: 11px;
+        opacity: 0.7;
+        font-style: italic;
     }
     
     .market-widget {
