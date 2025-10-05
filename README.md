@@ -248,15 +248,6 @@ REALTIME_DELAY = 420 # seconds (7 minutes)
 - **Optimized Prompts**: Shorter, more focused AI requests
 - **Smart Scheduling**: Skip weekends, use off-peak hours
 
-#### 4. Usage Monitoring
-```bash
-# Track daily usage
-python usage_monitor.py
-
-# Set alerts at 80% of limits
-# Graceful degradation on API failures
-```
-
 ### Graceful Degradation
 - **Gemini Quota Exceeded**: 
   - Falls back to first 5 articles (no AI selection)
