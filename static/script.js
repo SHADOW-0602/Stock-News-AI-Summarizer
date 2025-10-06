@@ -1,6 +1,7 @@
 class StockNewsApp {
     constructor() {
         this.currentTicker = null;
+        this.chartListenersSet = false;
         this.init();
     }
 
@@ -546,7 +547,7 @@ class StockNewsApp {
             
             chartContainer.style.display = 'block';
             
-            // Update period buttons
+            // Update period buttons immediately
             document.querySelectorAll('.period-btn').forEach(btn => {
                 btn.classList.remove('active');
                 if (btn.dataset.period === period) {
@@ -554,19 +555,21 @@ class StockNewsApp {
                 }
             });
             
-            // Set up period button listeners
-            document.querySelectorAll('.period-btn').forEach(btn => {
-                btn.onclick = () => this.loadChart(ticker, btn.dataset.period);
-            });
+            // Set up period button listeners once
+            if (!this.chartListenersSet) {
+                document.querySelectorAll('.period-btn').forEach(btn => {
+                    btn.onclick = () => this.loadChart(ticker, btn.dataset.period);
+                });
+                this.chartListenersSet = true;
+            }
             
             const periodLabels = {'7d': '7 Day', '30d': '30 Day', '90d': '90 Day', '1y': '1 Year', '2y': '2 Year'};
             chartTitle.textContent = `${ticker} - ${periodLabels[period]} Trend`;
-            chartStats.innerHTML = '<div class="loading-container"><div class="loading-spinner"></div><div class="loading-text">Loading chart...</div></div>';
+            chartStats.innerHTML = 'Loading...';
             
             const response = await fetch(`/api/chart/${ticker}/${period}`);
             
             if (!response.ok) {
-                // Hide chart if no data available
                 chartContainer.style.display = 'none';
                 return;
             }
@@ -574,7 +577,6 @@ class StockNewsApp {
             const chartConfig = await response.json();
             
             if (chartConfig.data) {
-                // Update stats
                 const stats = chartConfig.stats;
                 const changeClass = stats.change_percent >= 0 ? 'positive' : 'negative';
                 chartStats.innerHTML = `
@@ -586,19 +588,18 @@ class StockNewsApp {
                     </div>
                 `;
                 
-                // Create chart
                 const ctx = document.getElementById('price-chart').getContext('2d');
                 
-                // Destroy existing chart if it exists
                 if (window.stockChart) {
                     window.stockChart.destroy();
                 }
                 
-                // Fix callback function for Chart.js
                 chartConfig.options.scales.y.ticks.callback = function(value) {
                     return '$' + value.toFixed(2);
                 };
                 
+                chartConfig.options.responsive = true;
+                chartConfig.options.maintainAspectRatio = false;
                 window.stockChart = new Chart(ctx, chartConfig);
             } else {
                 chartContainer.style.display = 'none';

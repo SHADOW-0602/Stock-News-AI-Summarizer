@@ -98,6 +98,13 @@
     position: relative;
     height: 300px;
     width: 100%;
+    overflow: hidden;
+}
+
+#price-chart {
+    max-width: 100%;
+    height: auto !important;
+    width: 100% !important;
 }
 
 .loading-stats {
@@ -111,6 +118,11 @@
 }
 
 @media (max-width: 768px) {
+    .chart-container {
+        padding: 15px;
+        margin: 15px -15px;
+    }
+    
     .chart-header {
         flex-direction: column;
         gap: 15px;
@@ -124,9 +136,47 @@
     
     .period-selector {
         justify-content: center;
+        flex-wrap: wrap;
+    }
+    
+    .period-btn {
+        padding: 6px 10px;
+        font-size: 0.8rem;
     }
     
     .chart-wrapper {
         height: 250px;
+        margin: 0 -5px;
+    }
+    
+    .current-price {
+        font-size: 1.2rem;
+    }
+    
+    .price-change {
+        font-size: 1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .chart-container {
+        padding: 12px;
+        margin: 12px -12px;
+    }
+    
+    .chart-wrapper {
+        height: 200px;
+    }
+    
+    .chart-header h3 {
+        font-size: 1.1rem;
+    }
+    
+    .current-price {
+        font-size: 1.1rem;
+    }
+    
+    .price-change {
+        font-size: 0.9rem;
     }
 }
