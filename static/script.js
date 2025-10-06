@@ -161,25 +161,28 @@ class StockNewsApp {
         const chartBtn = document.getElementById('chart-toggle-btn');
         refreshBtn.style.display = 'block';
         chartBtn.style.display = 'block';
-        // Reset button state if it was in loading state
         refreshBtn.innerHTML = '🤖 Generate';
         refreshBtn.disabled = false;
         refreshBtn.classList.remove('loading');
 
-        // Hide chart when switching tickers
         this.hideChart();
-        
-        // Hide sources and history sections immediately
         document.getElementById('sources-section').style.display = 'none';
         document.getElementById('history-section').style.display = 'none';
         
-        // Show loading
+        // Show loading animation
         document.getElementById('summary-content').innerHTML =
-            '<div class="loading">Loading summary...</div>';
+            '<div class="loading-container"><div class="loading-spinner"></div><div class="loading-text">Loading summary...</div></div>';
 
         try {
             const response = await fetch(`/api/summary/${ticker}`);
             const data = await response.json();
+            
+            // Update header with logo if available
+            console.log('Logo data:', data.company_logo);
+            if (data.company_logo) {
+                document.getElementById('current-ticker').innerHTML = `<img src="${data.company_logo}" alt="${ticker} logo" class="company-logo" onerror="console.log('Logo failed to load: ${data.company_logo}')"> ${ticker} - Daily Summary`;
+            }
+            
             this.displaySummary(data);
         } catch (error) {
             console.error('Error loading summary:', error);
@@ -323,9 +326,38 @@ class StockNewsApp {
         }
     }
 
+    highlightEntities(text) {
+        // Highlight key financial entities and terms
+        let highlighted = text;
+        
+        // Financial amounts: $1.2B, $500M, $50K
+        highlighted = highlighted.replace(/\$[\d,]+\.?\d*[BMK]?/g, '<span class="highlight-financial">$&</span>');
+        
+        // Percentages: 15%, 2.5%
+        highlighted = highlighted.replace(/\b\d+\.?\d*%/g, '<span class="highlight-percentage">$&</span>');
+        
+        // Large numbers: 1.5B, 500M, 50K
+        highlighted = highlighted.replace(/\b\d+\.?\d*[BMK]\b/g, '<span class="highlight-number">$&</span>');
+        
+        // Quarters: Q3 2024, Q1 2025
+        highlighted = highlighted.replace(/\bQ[1-4]\s+\d{4}/g, '<span class="highlight-quarter">$&</span>');
+        
+        // Important financial terms
+        const terms = ['earnings', 'revenue', 'profit', 'loss', 'guidance', 'outlook', 'acquisition', 'merger', 'partnership', 'IPO', 'dividend', 'buyback', 'FDA', 'approval'];
+        terms.forEach(term => {
+            const regex = new RegExp(`\\b${term}\\b`, 'gi');
+            highlighted = highlighted.replace(regex, '<span class="highlight-term">$&</span>');
+        });
+        
+        // Ticker symbols (2-5 uppercase letters)
+        highlighted = highlighted.replace(/\b[A-Z]{2,5}\b/g, '<span class="highlight-ticker">$&</span>');
+        
+        return highlighted;
+    }
+    
     formatSummary(text) {
-        // Enhanced formatting for professional readability
-        let formatted = text
+        // Enhanced formatting with entity highlighting
+        let formatted = this.highlightEntities(text)
             // Remove "What Changed Today" and "Risk Factors" sections from main summary
             .replace(/\*\*WHAT CHANGED TODAY\*\*[\s\S]*?(?=\n\n|\*\*|$)/gi, '')
             .replace(/WHAT CHANGED TODAY[\s\S]*?(?=\n\n|\*\*|$)/gi, '')
@@ -529,7 +561,7 @@ class StockNewsApp {
             
             const periodLabels = {'7d': '7 Day', '30d': '30 Day', '90d': '90 Day', '1y': '1 Year', '2y': '2 Year'};
             chartTitle.textContent = `${ticker} - ${periodLabels[period]} Trend`;
-            chartStats.innerHTML = '<div class="loading-stats">Loading price data...</div>';
+            chartStats.innerHTML = '<div class="loading-container"><div class="loading-spinner"></div><div class="loading-text">Loading chart...</div></div>';
             
             const response = await fetch(`/api/chart/${ticker}/${period}`);
             
@@ -1103,6 +1135,86 @@ style.textContent = `
         font-size: 11px;
         opacity: 0.7;
         font-style: italic;
+    }
+    
+    /* Entity Highlighting Styles */
+    .highlight-financial {
+        background: linear-gradient(120deg, #2ecc71, #27ae60);
+        color: white;
+        padding: 2px 4px;
+        border-radius: 3px;
+        font-weight: 600;
+        font-size: 0.95em;
+    }
+    
+    .highlight-percentage {
+        background: linear-gradient(120deg, #e74c3c, #c0392b);
+        color: white;
+        padding: 2px 4px;
+        border-radius: 3px;
+        font-weight: 600;
+    }
+    
+    .highlight-number {
+        background: linear-gradient(120deg, #3498db, #2980b9);
+        color: white;
+        padding: 2px 4px;
+        border-radius: 3px;
+        font-weight: 600;
+    }
+    
+    .highlight-quarter {
+        background: linear-gradient(120deg, #9b59b6, #8e44ad);
+        color: white;
+        padding: 2px 4px;
+        border-radius: 3px;
+        font-weight: 600;
+        font-size: 0.9em;
+    }
+    
+    .highlight-term {
+        background: linear-gradient(120deg, #f39c12, #e67e22);
+        color: white;
+        padding: 2px 4px;
+        border-radius: 3px;
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.85em;
+    }
+    
+    .highlight-ticker {
+        background: linear-gradient(120deg, #34495e, #2c3e50);
+        color: white;
+        padding: 2px 4px;
+        border-radius: 3px;
+        font-weight: 700;
+        font-family: 'Courier New', monospace;
+        font-size: 0.9em;
+        letter-spacing: 0.5px;
+    }
+    
+    /* Hover effects for highlights */
+    .highlight-financial:hover,
+    .highlight-percentage:hover,
+    .highlight-number:hover,
+    .highlight-quarter:hover,
+    .highlight-term:hover,
+    .highlight-ticker:hover {
+        transform: scale(1.05);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        transition: all 0.2s ease;
+    }
+    
+    .company-logo {
+        width: 48px;
+        height: 48px;
+        margin-right: 12px;
+        vertical-align: middle;
+        border-radius: 6px;
+        object-fit: contain;
+        display: inline-block;
+        background: #f0f0f0;
+        border: 1px solid #ddd;
     }
     
     .market-widget {

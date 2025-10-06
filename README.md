@@ -7,8 +7,13 @@ A professional-grade financial news aggregation and AI analysis platform that de
 - **Multi-Source Intelligence**: Aggregates news from 7 sources: TradingView, Finviz, Polygon, Alpha Vantage, Twelve Data, Finnhub, and Alpaca Markets
 - **AI-Powered Analysis**: Uses Gemini 2.5 Pro with real-time market context for institutional-grade summaries
 - **Smart Article Selection**: AI selects 5-7 most trading-relevant articles from 30-70 collected articles
+- **ML Price Forecasting**: Multi-model machine learning with cross-validation for price predictions
+- **NLP Sentiment Analysis**: Real-time sentiment scoring from news headlines and content
+- **Entity Highlighting**: Auto-highlights financial metrics, company names, and key terms for quick scanning
+- **Company Logos**: Visual branding with cached company logos from API Ninjas
 - **Interactive Price Charts**: Toggle charts with multiple timeframes (7D, 30D, 90D, 1Y, 2Y)
-- **Upstash Redis Caching**: 4-hour news cache, 2-hour summary cache reduces API calls by 60%
+- **Optimized Caching**: 8-hour news cache, 6-hour summary cache, 7-day logo cache reduces API calls by 80%
+- **100 Ticker Support**: Batch processing with smart API allocation for large portfolios
 - **Smart Rate Limiting**: Conservative API quota management with intelligent caching
 - **Trading-Focused Reports**: Risk/reward analysis, sector context, and specific trading catalysts
 - **Cost-Optimized**: Operates on $0/month using free API tiers
@@ -82,6 +87,12 @@ pip install -r requirements.txt
 3. Provides market status widget and professional news feed
 4. Free tier includes real-time market data for enhanced AI analysis
 
+#### API Ninjas (Company Logos)
+1. Sign up at [API Ninjas](https://api.api-ninjas.com/)
+2. Get free API key from dashboard
+3. Provides company logos for visual branding
+4. Free tier: 50,000 requests/month with 7-day caching
+
 ### 4. Environment Setup
 ```bash
 # Copy environment template
@@ -99,6 +110,7 @@ TWELVE_DATA_API_KEY=your_twelve_data_api_key
 FINNHUB_API_KEY=your_finnhub_api_key
 ALPACA_API_KEY=your_alpaca_api_key
 ALPACA_SECRET_KEY=your_alpaca_secret_key
+API_NINJAS_KEY=your_api_ninjas_key
 PORT=5000
 ```
 
@@ -160,19 +172,22 @@ git push heroku main
 
 ### Professional Features
 - **Market Status Widget**: Live market open/closed indicator in header
+- **Company Logos**: Visual branding with 48px logos next to ticker names
 - **Interactive Price Charts**: Multiple timeframes with professional Chart.js integration
-- **ML Price Predictions**: Multi-model forecasting with confidence scores
-- **Sentiment Analysis**: Real-time NLP sentiment from news aggregation
+- **Future Predictions Box**: ML price forecasting + sentiment analysis in unified display
+- **Entity Highlighting**: Auto-highlighted financial metrics ($1.2B, 15%, Q3 2024, earnings)
+- **Smart Caching**: 8-hour news, 6-hour summary, 7-day logo cache for 100-ticker optimization
 - **Executive Summaries**: Portfolio manager-focused insights with Alpaca market context
 - **Market Implications**: Trading considerations and risk factors
 - **Quantified Impact**: Revenue, margin, and market share analysis
 - **Sector Context**: Peer comparison and competitive positioning
 
 ### Best Practices
-- **Add 5-10 tickers** for optimal performance and caching efficiency
-- **Review summaries daily** - cached data provides instant access
+- **Add up to 100 tickers** - optimized batch processing supports large portfolios
+- **Review summaries daily** - extended 8-hour cache provides instant access
 - **Use manual refresh sparingly** - clears cache and uses fresh API calls
-- **Monitor quota usage** - conservative limits prevent API exhaustion
+- **Monitor quota usage** - smart API allocation prevents exhaustion
+- **Entity scanning** - highlighted metrics help quick information extraction
 - **Chart analysis** - use chart toggle for price trend analysis
 
 ## 💰 Comprehensive Cost Analysis
@@ -190,6 +205,7 @@ git push heroku main
 | Twelve Data API | Free | $0 | ~2,400 requests/month | 24,000 available | 60% reduction |
 | Finnhub API | Free | $0 | ~3,600 requests/month | 2.6M available | Minimal impact |
 | Alpaca Markets | Free | $0 | Unlimited | Real-time data | N/A |
+| API Ninjas | Free | $0 | ~150 requests/month | 150,000 available | 95% reduction |
 | **Total** | | **$0** | | **95%+ headroom** | **Major savings** |
 
 ### Scaling Cost Projections
@@ -205,11 +221,14 @@ git push heroku main
 
 #### 1. Multi-Level Caching
 ```python
-# News articles cached for 4 hours
-NEWS_CACHE_DURATION = 4 * 3600  # Reduces scraping by 60%
+# News articles cached for 8 hours
+NEWS_CACHE_DURATION = 8 * 3600  # Reduces scraping by 80%
 
-# AI summaries cached for 2 hours  
-SUMMARY_CACHE_DURATION = 2 * 3600  # Reduces Gemini calls by 70%
+# AI summaries cached for 6 hours  
+SUMMARY_CACHE_DURATION = 6 * 3600  # Reduces Gemini calls by 80%
+
+# Company logos cached for 7 days
+LOGO_CACHE_DURATION = 7 * 24 * 3600  # Reduces logo API calls by 95%
 
 # Daily processing at 8 AM IST
 DAILY_UPDATE_SCHEDULE = '08:00 IST'  # Automated news processing
@@ -228,7 +247,8 @@ DAILY_LIMITS = {
     'alpha_vantage': 25,   # 25 requests/day (critical bottleneck)
     'twelve_data': 800,    # 800 requests/day (free tier)
     'finnhub': 7200,       # 60 calls/minute = ~86,400/day theoretical
-    'alpaca': 'unlimited'  # Unlimited real-time market data
+    'alpaca': 'unlimited',  # Unlimited real-time market data
+    'api_ninjas': 50000     # 50,000 requests/month (logos)
 }
 
 # Automatic quota checking

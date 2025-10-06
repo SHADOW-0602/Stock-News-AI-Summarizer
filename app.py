@@ -7,6 +7,7 @@ import os
 from datetime import datetime, timedelta
 from chart_generator import ChartGenerator
 from ml_analysis import MLAnalyzer
+from entity_highlighter import EntityHighlighter
 from supabase import create_client, Client
 import requests
 import json
@@ -48,6 +49,7 @@ TWELVE_DATA_API_KEY = os.getenv('TWELVE_DATA_API_KEY')
 FINNHUB_API_KEY = os.getenv('FINNHUB_API_KEY')
 ALPACA_API_KEY = os.getenv('ALPACA_API_KEY')
 ALPACA_SECRET_KEY = os.getenv('ALPACA_SECRET_KEY')
+API_NINJAS_KEY = os.getenv('API_NINJAS_KEY')
 SUPABASE_URL = os.getenv('SUPABASE_URL')
 SUPABASE_KEY = os.getenv('SUPABASE_ANON_KEY')
 
@@ -137,9 +139,10 @@ api_usage = {
     'twelve_data_realtime': {'calls': 0, 'last_reset': datetime.now().date()}
 }
 
-# Caching System
-CACHE_DURATION = 4 * 3600  # 4 hours in seconds
-SUMMARY_CACHE_DURATION = 2 * 3600  # 2 hours in seconds
+# Optimized Caching for 100 tickers
+CACHE_DURATION = 8 * 3600  # 8 hours (longer for 100 tickers)
+SUMMARY_CACHE_DURATION = 6 * 3600  # 6 hours (reduce API calls)
+ML_CACHE_DURATION = 12 * 3600  # 12 hours for ML predictions
 
 # Fallback in-memory cache if Redis unavailable
 fallback_news_cache = {}
@@ -879,6 +882,7 @@ collector = NewsCollector()
 ai_processor = AIProcessor()
 chart_generator = ChartGenerator()
 ml_analyzer = MLAnalyzer()
+entity_highlighter = EntityHighlighter()
 
 
 
@@ -1193,6 +1197,40 @@ def remove_ticker(ticker):
         logger.error(f"Error removing ticker {ticker}: {e}")
         return jsonify({'success': True})  # Return success even on error to prevent UI issues
 
+@app.route('/api/logo/<ticker>')
+def get_company_logo(ticker):
+    """Get company logo from API Ninjas with caching"""
+    try:
+        if not API_NINJAS_KEY:
+            return jsonify({'error': 'API key not configured'}), 500
+            
+        ticker = ticker.upper().strip()
+        
+        # Check cache first
+        if redis_client:
+            cached_logo = redis_client.get(f"logo:{ticker}")
+            if cached_logo:
+                return jsonify({'image': cached_logo.decode('utf-8')})
+        
+        url = f"https://api.api-ninjas.com/v1/logo?ticker={ticker}"
+        headers = {'X-Api-Key': API_NINJAS_KEY}
+        
+        response = requests.get(url, headers=headers, timeout=10)
+        
+        if response.status_code == 200:
+            data = response.json()
+            if data and len(data) > 0:
+                logo_url = data[0].get('image')
+                # Cache for 7 days
+                if redis_client and logo_url:
+                    redis_client.setex(f"logo:{ticker}", 7*24*3600, logo_url)
+                return jsonify({'image': logo_url, 'name': data[0].get('name')})
+            return jsonify({'error': 'No logo data'}), 404
+        return jsonify({'error': f'Logo not found (status: {response.status_code})'}), 404
+    except Exception as e:
+        logger.error(f"Logo API error for {ticker}: {e}")
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/api/summary/<ticker>')
 def get_summary(ticker):
     try:
@@ -1233,9 +1271,39 @@ def get_summary(ticker):
         recent_articles = supabase.table('news_articles').select('title, content').eq('ticker', ticker).order('date', desc=True).limit(10).execute()
         sentiment_analysis = ml_analyzer.analyze_sentiment(recent_articles.data if recent_articles.data else [])
         
+        # Apply entity highlighting to summary if available
+        if summary_data and summary_data.get('summary'):
+            summary_data['summary'] = entity_highlighter.highlight_entities(summary_data['summary'])
+        
+        # Get company logo with caching
+        logo_url = None
+        if API_NINJAS_KEY:
+            try:
+                # Check cache first
+                if redis_client:
+                    cached_logo = redis_client.get(f"logo:{ticker}")
+                    if cached_logo:
+                        logo_url = cached_logo.decode('utf-8')
+                        logger.debug(f"Using cached logo for {ticker}")
+                
+                if not logo_url:
+                    logo_response = requests.get(f"https://api.api-ninjas.com/v1/logo?ticker={ticker}", 
+                                               headers={'X-Api-Key': API_NINJAS_KEY}, timeout=5)
+                    if logo_response.status_code == 200:
+                        logo_data = logo_response.json()
+                        if logo_data and len(logo_data) > 0:
+                            logo_url = logo_data[0].get('image')
+                            # Cache for 7 days
+                            if redis_client and logo_url:
+                                redis_client.setex(f"logo:{ticker}", 7*24*3600, logo_url)
+                            logger.debug(f"Logo found and cached for {ticker}: {logo_url}")
+            except Exception as e:
+                logger.debug(f"Logo fetch error for {ticker}: {e}")
+        
         return jsonify({
             'current_summary': summary_data,
             'history': history,
+            'company_logo': logo_url,
             'ml_analysis': {
                 'price_forecast': price_forecast,
                 'sentiment': sentiment_analysis
@@ -1355,21 +1423,31 @@ def process_ticker_news(ticker):
         all_articles = cached_articles
         source_counts = cached_sources
     else:
-        # Collect news from all sources
-        logger.debug("Collecting fresh news from all sources")
+        # Optimized source collection for 100 tickers
+        logger.debug("Collecting optimized news sources")
         all_articles = []
+        
+        # Free unlimited sources (no API limits)
         tv_articles = collector.get_tradingview_news(ticker)
         all_articles.extend(tv_articles)
         fv_articles = collector.get_finviz_news(ticker)
         all_articles.extend(fv_articles)
-        pg_articles = collector.get_polygon_news(ticker)
-        all_articles.extend(pg_articles)
-        av_articles = collector.get_alphavantage_news(ticker)
-        all_articles.extend(av_articles)
-        td_articles = collector.get_twelve_data_news(ticker)
-        all_articles.extend(td_articles)
-        fh_articles = collector.get_finnhub_news(ticker)
-        all_articles.extend(fh_articles)
+        
+        # Limited API sources (quota managed)
+        if check_api_quota('polygon'):
+            pg_articles = collector.get_polygon_news(ticker)
+            all_articles.extend(pg_articles)
+        
+        # Skip Alpha Vantage for 100 tickers (only 25/day)
+        # av_articles = collector.get_alphavantage_news(ticker)
+        
+        if check_api_quota('twelve_data'):
+            td_articles = collector.get_twelve_data_news(ticker)
+            all_articles.extend(td_articles)
+        
+        if check_api_quota('finnhub'):
+            fh_articles = collector.get_finnhub_news(ticker)
+            all_articles.extend(fh_articles)
         # Add Alpaca news
         alpaca_news = alpaca.get_news(symbols=[ticker], limit=3)
         if alpaca_news and 'news' in alpaca_news:
@@ -1383,8 +1461,8 @@ def process_ticker_news(ticker):
                 })
         
         alpaca_count = len(alpaca_news['news']) if alpaca_news and 'news' in alpaca_news else 0
-        source_counts = {'TV': len(tv_articles), 'FV': len(fv_articles), 'PG': len(pg_articles), 'AV': len(av_articles), 'TD': len(td_articles), 'FH': len(fh_articles), 'AL': alpaca_count}
-        logger.info(f"Fresh articles collected: {len(all_articles)} (TV:{len(tv_articles)}, FV:{len(fv_articles)}, PG:{len(pg_articles)}, AV:{len(av_articles)}, TD:{len(td_articles)}, FH:{len(fh_articles)})")
+        source_counts = {'TV': len(tv_articles), 'FV': len(fv_articles), 'PG': len(pg_articles or []), 'TD': len(td_articles or []), 'FH': len(fh_articles or []), 'AL': alpaca_count}
+        logger.info(f"Fresh articles collected: {len(all_articles)} (TV:{len(tv_articles)}, FV:{len(fv_articles)}, PG:{len(pg_articles)}, TD:{len(td_articles)}, FH:{len(fh_articles)}, AL:{alpaca_count})")
         
         # Cache the collected news
         if all_articles:
@@ -1507,33 +1585,62 @@ def refresh_ticker(ticker):
         return jsonify({'error': str(e)}), 500
 
 def daily_update():
-    """Daily update job - runs at 8 AM IST"""
-    logger.info("Starting daily update")
+    """Optimized daily update for 100 tickers"""
+    logger.info("Starting optimized daily update for 100 tickers")
     
     result = supabase.table('tickers').select('symbol').execute()
     tickers = [row['symbol'] for row in result.data]
     
-    for ticker in tickers:
-        try:
-            process_ticker_news(ticker)
-            time.sleep(2)  # Rate limiting
-        except Exception as e:
-            logger.error(f"Error processing {ticker}: {e}")
+    # Process in batches to manage API quotas
+    batch_size = 20
+    total_batches = (len(tickers) + batch_size - 1) // batch_size
     
-    logger.info("Daily update completed")
+    for batch_num in range(total_batches):
+        start_idx = batch_num * batch_size
+        end_idx = min(start_idx + batch_size, len(tickers))
+        batch_tickers = tickers[start_idx:end_idx]
+        
+        logger.info(f"Processing batch {batch_num + 1}/{total_batches}: {len(batch_tickers)} tickers")
+        
+        for ticker in batch_tickers:
+            try:
+                process_ticker_news(ticker)
+                time.sleep(5)  # Increased delay for quota management
+            except Exception as e:
+                logger.error(f"Error processing {ticker}: {e}")
+        
+        # Longer pause between batches
+        if batch_num < total_batches - 1:
+            logger.info(f"Batch {batch_num + 1} complete. Waiting 2 minutes before next batch...")
+            time.sleep(120)  # 2 minute pause between batches
+    
+    logger.info(f"Daily update completed: {len(tickers)} tickers processed")
 
 if __name__ == '__main__':
     init_db()
     
-    # Setup scheduler for daily updates
+    # Setup optimized scheduler for 100 tickers
     scheduler = BackgroundScheduler()
+    
+    # Staggered updates to spread API load
     scheduler.add_job(
         func=daily_update,
         trigger="cron",
-        hour=8,
+        hour=6,  # Start earlier (6 AM IST)
+        minute=0,
+        timezone='Asia/Kolkata',
+        max_instances=1  # Prevent overlapping runs
+    )
+    
+    # Optional: Add weekend summary generation
+    scheduler.add_job(
+        func=cleanup_expired_cache,
+        trigger="cron",
+        hour=0,  # Midnight cleanup
         minute=0,
         timezone='Asia/Kolkata'
     )
+    
     scheduler.start()
     
     port = int(os.environ.get('PORT'))
