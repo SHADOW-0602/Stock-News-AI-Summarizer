@@ -2,20 +2,19 @@ from flask import Flask, render_template, request, jsonify
 from flask_cors import CORS
 import requests
 from bs4 import BeautifulSoup
-import json
 import os
 from datetime import datetime, timedelta
 from chart_generator import ChartGenerator
 from ml_analysis import MLAnalyzer
 from entity_highlighter import EntityHighlighter
-from supabase import create_client, Client
-import requests
-import json
 import google.genai as genai
 from apscheduler.schedulers.background import BackgroundScheduler
 import time
 import logging
 from dotenv import load_dotenv
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from database import db
+from cache import cache
 import warnings
 warnings.filterwarnings('ignore', category=UserWarning)
 
@@ -50,239 +49,58 @@ FINNHUB_API_KEY = os.getenv('FINNHUB_API_KEY')
 ALPACA_API_KEY = os.getenv('ALPACA_API_KEY')
 ALPACA_SECRET_KEY = os.getenv('ALPACA_SECRET_KEY')
 API_NINJAS_KEY = os.getenv('API_NINJAS_KEY')
-SUPABASE_URL = os.getenv('SUPABASE_URL')
-SUPABASE_KEY = os.getenv('SUPABASE_ANON_KEY')
+BENZINGA_API_KEY = os.getenv('BENZINGA_API_KEY')
+NEWSAPI_KEY = os.getenv('NEWSAPI_KEY')
 
-# Initialize Supabase client
-try:
-    if SUPABASE_URL and SUPABASE_KEY and SUPABASE_URL != 'your-supabase-url':
-        supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
-        logger.info("Supabase client initialized successfully")
-    else:
-        logger.error("Supabase credentials not configured properly")
-        supabase = None
-except Exception as e:
-    logger.error(f"Failed to initialize Supabase: {e}")
-    supabase = None
-
-# Initialize Upstash Redis REST client
-UPSTASH_REDIS_REST_URL = os.getenv('UPSTASH_REDIS_REST_URL')
-UPSTASH_REDIS_REST_TOKEN = os.getenv('UPSTASH_REDIS_REST_TOKEN')
-
-class UpstashRedis:
-    def __init__(self, url, token):
-        self.url = url
-        self.headers = {'Authorization': f'Bearer {token}'}
-    
-    def get(self, key):
-        try:
-            response = requests.get(f'{self.url}/get/{key}', headers=self.headers)
-            if response.status_code == 200:
-                result = response.json().get('result')
-                if result:
-                    # Upstash returns string directly, not base64
-                    return result.encode('utf-8')
-            return None
-        except:
-            return None
-    
-    def setex(self, key, seconds, value):
-        try:
-            # Upstash expects string value directly
-            string_value = value.decode('utf-8') if isinstance(value, bytes) else value
-            data = {'value': string_value, 'ex': seconds}
-            response = requests.post(f'{self.url}/set/{key}', headers=self.headers, json=data)
-            return response.status_code == 200
-        except:
-            return False
-    
-    def delete(self, *keys):
-        try:
-            for key in keys:
-                requests.post(f'{self.url}/del/{key}', headers=self.headers)
-            return True
-        except:
-            return False
-    
-    def exists(self, key):
-        try:
-            response = requests.get(f'{self.url}/exists/{key}', headers=self.headers)
-            return response.status_code == 200 and response.json().get('result', 0) == 1
-        except:
-            return False
-
-# Initialize Redis client
-try:
-    if UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN:
-        redis_client = UpstashRedis(UPSTASH_REDIS_REST_URL, UPSTASH_REDIS_REST_TOKEN)
-        # Test connection
-        redis_client.setex('test', 10, b'test')
-        logger.info("Upstash Redis connection successful")
-    else:
-        redis_client = None
-        logger.warning("Upstash Redis credentials not found")
-except Exception as e:
-    logger.warning(f"Upstash Redis connection failed: {e}. Using fallback cache.")
-    redis_client = None
 
 logger.info(f"Gemini API Key loaded: {'Yes' if GEMINI_API_KEY != 'your-gemini-api-key' else 'No'}")
 logger.info(f"Polygon API Key loaded: {'Yes' if POLYGON_API_KEY != 'your-polygon-api-key' else 'No'}")
 logger.info(f"Twelve Data API Key loaded: {'Yes' if TWELVE_DATA_API_KEY else 'No'}")
 logger.info(f"Finnhub API Key loaded: {'Yes' if FINNHUB_API_KEY else 'No'}")
+logger.info(f"Benzinga API Key loaded: {'Yes' if BENZINGA_API_KEY else 'No'}")
+logger.info(f"NewsAPI Key loaded: {'Yes' if NEWSAPI_KEY else 'No'}")
 logger.info(f"Alpaca API Key loaded: {'Yes' if ALPACA_API_KEY else 'No'}")
+logger.info(f"StockStory scraping: Enabled (no API key required)")
+logger.info(f"Motley Fool scraping: Enabled (no API key required)")
+logger.info(f"Reuters scraping: Enabled (no API key required)")
+logger.info(f"TechCrunch scraping: Enabled (no API key required)")
+logger.info(f"99Bitcoins scraping: Enabled (no API key required)")
+logger.info(f"MarketWatch scraping: Enabled (no API key required)")
+logger.info(f"Invezz scraping: Enabled (no API key required)")
+logger.info(f"11theState scraping: Enabled (no API key required)")
 
 # API Usage Tracking
 api_usage = {
     'gemini': {'calls': 0, 'last_reset': datetime.now().date()},
     'polygon': {'calls': 0, 'last_reset': datetime.now().date()},
-    'alpha_vantage_realtime': {'calls': 0, 'last_reset': datetime.now().date()},
-    'twelve_data_realtime': {'calls': 0, 'last_reset': datetime.now().date()}
+    'alpha_vantage': {'calls': 0, 'last_reset': datetime.now().date()},
+    'twelve_data': {'calls': 0, 'last_reset': datetime.now().date()},
+    'finnhub': {'calls': 0, 'last_reset': datetime.now().date()},
+    'newsapi': {'calls': 0, 'last_reset': datetime.now().date()}
 }
 
-# Optimized Caching for 100 tickers
-CACHE_DURATION = 8 * 3600  # 8 hours (longer for 100 tickers)
-SUMMARY_CACHE_DURATION = 6 * 3600  # 6 hours (reduce API calls)
 ML_CACHE_DURATION = 12 * 3600  # 12 hours for ML predictions
 
-# Fallback in-memory cache if Redis unavailable
-fallback_news_cache = {}
-fallback_summary_cache = {}
 
-def get_cached_news(ticker):
-    """Get cached news if valid, fallback to Supabase"""
-    try:
-        # Check Redis cache first
-        if redis_client:
-            cached_data = redis_client.get(f"news:{ticker}")
-            if cached_data:
-                cache_entry = json.loads(cached_data.decode('utf-8'))
-                logger.debug(f"Using Upstash cached news for {ticker}")
-                return cache_entry['data'], cache_entry['sources']
-        else:
-            # Fallback to in-memory cache
-            if ticker in fallback_news_cache:
-                cache_entry = fallback_news_cache[ticker]
-                if (datetime.now() - cache_entry['timestamp']).total_seconds() < CACHE_DURATION:
-                    logger.debug(f"Using fallback cached news for {ticker}")
-                    return cache_entry['data'], cache_entry['sources']
-        
-        # If no cache, check Supabase for recent articles (within cache duration)
-        if supabase:
-            cutoff_time = datetime.now() - timedelta(seconds=CACHE_DURATION)
-            result = supabase.table('news_articles').select('title, url, source, content, date').eq('ticker', ticker).gte('date', cutoff_time.isoformat()).execute()
-            
-            if result.data:
-                articles = result.data
-                # Count by source
-                sources = {}
-                for article in articles:
-                    source = article['source']
-                    sources[source] = sources.get(source, 0) + 1
-                
-                logger.debug(f"Using Supabase fallback news for {ticker} ({len(articles)} articles)")
-                return articles, sources
-                
-    except Exception as e:
-        logger.debug(f"Cache read error for {ticker}: {e}")
-    return None, None
-
-def cache_news(ticker, articles, sources):
-    """Cache news articles"""
-    try:
-        cache_data = {
-            'data': articles,
-            'timestamp': datetime.now().isoformat(),
-            'sources': sources
-        }
-        
-        if redis_client:
-            redis_client.setex(f"news:{ticker}", CACHE_DURATION, json.dumps(cache_data))
-            logger.debug(f"Cached {len(articles)} articles for {ticker} in Upstash")
-        else:
-            # Fallback to in-memory cache
-            fallback_news_cache[ticker] = {
-                'data': articles,
-                'timestamp': datetime.now(),
-                'sources': sources
-            }
-            logger.debug(f"Cached {len(articles)} articles for {ticker} in memory")
-    except Exception as e:
-        logger.debug(f"Cache write error for {ticker}: {e}")
-
-def get_cached_summary(ticker):
-    """Get cached summary if valid"""
-    try:
-        if redis_client:
-            cached_data = redis_client.get(f"summary:{ticker}")
-            if cached_data:
-                cache_entry = json.loads(cached_data.decode('utf-8'))
-                logger.debug(f"Using Upstash cached summary for {ticker}")
-                return cache_entry['summary']
-        else:
-            # Fallback to in-memory cache
-            if ticker in fallback_summary_cache:
-                cache_entry = fallback_summary_cache[ticker]
-                if (datetime.now() - cache_entry['timestamp']).total_seconds() < SUMMARY_CACHE_DURATION:
-                    logger.debug(f"Using fallback cached summary for {ticker}")
-                    return cache_entry['summary']
-    except Exception as e:
-        logger.debug(f"Summary cache read error for {ticker}: {e}")
-    return None
-
-def cache_summary(ticker, summary_data):
-    """Cache summary data"""
-    try:
-        cache_data = {
-            'summary': summary_data,
-            'timestamp': datetime.now().isoformat()
-        }
-        
-        if redis_client:
-            redis_client.setex(f"summary:{ticker}", SUMMARY_CACHE_DURATION, json.dumps(cache_data))
-            logger.debug(f"Cached summary for {ticker} in Upstash")
-        else:
-            # Fallback to in-memory cache
-            fallback_summary_cache[ticker] = {
-                'summary': summary_data,
-                'timestamp': datetime.now()
-            }
-            logger.debug(f"Cached summary for {ticker} in memory")
-    except Exception as e:
-        logger.debug(f"Summary cache write error for {ticker}: {e}")
-
-def cleanup_expired_cache():
-    """Redis handles expiry automatically, clean fallback cache only"""
-    if not redis_client:
-        # Clean fallback caches
-        current_time = datetime.now()
-        
-        expired_news = [ticker for ticker, data in fallback_news_cache.items() 
-                       if (current_time - data['timestamp']).total_seconds() > CACHE_DURATION]
-        for ticker in expired_news:
-            del fallback_news_cache[ticker]
-        
-        expired_summaries = [ticker for ticker, data in fallback_summary_cache.items()
-                            if (current_time - data['timestamp']).total_seconds() > SUMMARY_CACHE_DURATION]
-        for ticker in expired_summaries:
-            del fallback_summary_cache[ticker]
-        
-        if expired_news or expired_summaries:
-            logger.info(f"Cleaned {len(expired_news)} news + {len(expired_summaries)} fallback cache entries")
-    else:
-        logger.debug("Redis handles cache expiry automatically")
 
 # Daily Limits (official free tier limits)
 DAILY_LIMITS = {
     'gemini': 1500,  # 15 RPM, 1M tokens/month (daily estimate)
     'polygon': 'unlimited',  # 5 RPM but unlimited monthly calls
-    'alpha_vantage_realtime': 25,  # 25 requests/day (free tier)
-    'twelve_data_realtime': 800,  # 800 requests/day (free tier)
+    'alpha_vantage': 25,  # 25 requests/day (free tier)
+    'twelve_data': 800,  # 800 requests/day (free tier)
     'finnhub': 60,  # 60 calls/minute, ~86,400/day theoretical
+    'newsapi': 1000,  # 1000 requests/day (free tier)
     'alpaca': 'unlimited'  # Unlimited real-time data
 }
 
 def check_api_quota(service):
     """Check if API quota is available"""
+    # Initialize service if not exists
+    if service not in api_usage:
+        api_usage[service] = {'calls': 0, 'last_reset': datetime.now().date()}
+        logger.debug(f"Initialized API usage tracking for {service}")
+    
     today = datetime.now().date()
     if api_usage[service]['last_reset'] != today:
         api_usage[service]['calls'] = 0
@@ -300,6 +118,10 @@ def check_api_quota(service):
 
 def increment_api_usage(service):
     """Increment API usage counter"""
+    # Initialize service if not exists
+    if service not in api_usage:
+        api_usage[service] = {'calls': 0, 'last_reset': datetime.now().date()}
+    
     api_usage[service]['calls'] += 1
     logger.debug(f"{service} API call #{api_usage[service]['calls']}")
 
@@ -307,21 +129,11 @@ client = genai.Client(api_key=GEMINI_API_KEY)
 
 # Initialize scheduler for cache cleanup
 scheduler = BackgroundScheduler()
-scheduler.add_job(cleanup_expired_cache, 'interval', hours=1)
+scheduler.add_job(cache.cleanup_expired, 'interval', hours=1)
 scheduler.start()
 logger.info("Cache cleanup scheduler started (runs every hour)")
 
-# Database setup
-def init_db():
-    """Supabase tables are created via SQL migrations in dashboard"""
-    try:
-        # Test connection with a simple query
-        result = supabase.table('tickers').select('*').limit(1).execute()
-        logger.info("Supabase connection and tables verified")
-    except Exception as e:
-        logger.warning(f"Supabase tables not found: {e}")
-        logger.info("Please create tables using supabase_migration.sql in your Supabase dashboard")
-        # Don't raise error - let app start but warn user
+
 
 class NewsCollector:
     def __init__(self):
@@ -546,53 +358,79 @@ class NewsCollector:
             return []
     
     def get_twelve_data_news(self, ticker):
-        """Get news from Twelve Data API"""
-        logger.debug(f"Starting Twelve Data API call for {ticker}")
+        """Get news-like data from Twelve Data using earnings and profile endpoints"""
+        logger.debug(f"Starting Twelve Data earnings/profile collection for {ticker}")
         try:
-            url = "https://api.twelvedata.com/news"
-            params = {
+            articles = []
+            
+            # Get earnings data (acts as news)
+            earnings_url = "https://api.twelvedata.com/earnings"
+            earnings_params = {
                 'symbol': ticker,
-                'apikey': TWELVE_DATA_API_KEY,
-                'limit': 10
+                'apikey': TWELVE_DATA_API_KEY
             }
             
-            logger.debug(f"Twelve Data API call: {url} with params: {params}")
-            response = self.session.get(url, params=params, timeout=15)
-            logger.debug(f"Twelve Data response status: {response.status_code}")
+            response = self.session.get(earnings_url, params=earnings_params, timeout=15)
             
-            if response.status_code != 200:
-                logger.error(f"Twelve Data returned status {response.status_code}, response: {response.text[:200]}")
-                return []
+            if response.status_code == 200:
+                data = response.json()
+                if 'earnings' in data and data['earnings']:
+                    for earning in data['earnings'][:3]:  # Latest 3 earnings
+                        try:
+                            date = earning.get('date', '')
+                            eps_estimate = earning.get('eps_estimate', 'N/A')
+                            eps_actual = earning.get('eps_actual', 'N/A')
+                            revenue_estimate = earning.get('revenue_estimate', 'N/A')
+                            revenue_actual = earning.get('revenue_actual', 'N/A')
+                            
+                            if date:
+                                title = f"{ticker} Earnings Report - {date}: EPS ${eps_actual} vs ${eps_estimate} est"
+                                content = f"Earnings data for {ticker} on {date}. EPS: ${eps_actual} (est: ${eps_estimate}), Revenue: ${revenue_actual} (est: ${revenue_estimate})"
+                                
+                                articles.append({
+                                    'title': title,
+                                    'url': f"https://twelvedata.com/stocks/{ticker.lower()}/earnings",
+                                    'source': 'Twelve Data',
+                                    'content': content,
+                                    'date': date
+                                })
+                        except Exception as item_error:
+                            logger.debug(f"Error processing Twelve Data earnings item: {item_error}")
+                            continue
             
-            data = response.json()
-            logger.debug(f"Twelve Data response keys: {list(data.keys()) if isinstance(data, dict) else 'Not a dict'}")
+            # Get company profile (acts as company news)
+            profile_url = "https://api.twelvedata.com/profile"
+            profile_params = {
+                'symbol': ticker,
+                'apikey': TWELVE_DATA_API_KEY
+            }
             
-            articles = []
-            if 'data' in data:
-                for item in data['data'][:10]:
-                    try:
-                        title = item.get('title', '')
-                        url = item.get('url', '')
-                        summary = item.get('summary', '')
-                        
-                        if title and len(title) > 15:
-                            articles.append({
-                                'title': title,
-                                'url': url,
-                                'source': 'Twelve Data',
-                                'content': summary or title,
-                                'date': item.get('datetime', datetime.now().isoformat())
-                            })
-                    except Exception as item_error:
-                        logger.debug(f"Error processing Twelve Data item: {item_error}")
-                        continue
+            response = self.session.get(profile_url, params=profile_params, timeout=15)
             
-            logger.info(f"Twelve Data: Found {len(articles)} articles for {ticker}")
+            if response.status_code == 200:
+                data = response.json()
+                if 'name' in data and 'description' in data:
+                    company_name = data.get('name', ticker)
+                    description = data.get('description', '')[:200] + '...' if len(data.get('description', '')) > 200 else data.get('description', '')
+                    sector = data.get('sector', 'Unknown')
+                    industry = data.get('industry', 'Unknown')
+                    
+                    title = f"{company_name} ({ticker}) Company Profile Update"
+                    content = f"Company: {company_name}. Sector: {sector}, Industry: {industry}. {description}"
+                    
+                    articles.append({
+                        'title': title,
+                        'url': f"https://twelvedata.com/stocks/{ticker.lower()}",
+                        'source': 'Twelve Data',
+                        'content': content,
+                        'date': datetime.now().isoformat()
+                    })
+            
+            logger.info(f"Twelve Data: Found {len(articles)} earnings/profile items for {ticker}")
             return articles
             
         except Exception as e:
-            logger.error(f"Twelve Data API error for {ticker}: {e}")
-            logger.debug(f"Twelve Data full error: {repr(e)}")
+            logger.error(f"Twelve Data earnings/profile error for {ticker}: {e}")
             return []
     
     def get_finnhub_news(self, ticker):
@@ -645,6 +483,590 @@ class NewsCollector:
             logger.error(f"Finnhub API error for {ticker}: {e}")
             logger.debug(f"Finnhub full error: {repr(e)}")
             return []
+    
+    def get_benzinga_news(self, ticker):
+        """Get news from Benzinga API"""
+        logger.debug(f"Starting Benzinga API call for {ticker}")
+        try:
+            url = "https://api.benzinga.com/api/v2/news"
+            params = {
+                'token': BENZINGA_API_KEY,
+                'tickers': ticker,
+                'pageSize': 10,
+                'displayOutput': 'full'
+            }
+            
+            response = self.session.get(url, params=params, timeout=15)
+            
+            if response.status_code != 200:
+                logger.debug(f"Benzinga returned status {response.status_code} for {ticker}")
+                return []
+            
+            # Check if response has content
+            if not response.text.strip():
+                logger.debug(f"Benzinga returned empty response for {ticker}")
+                return []
+            
+            try:
+                data = response.json()
+            except ValueError as json_error:
+                logger.debug(f"Benzinga JSON parse error for {ticker}: {json_error}")
+                return []
+            
+            articles = []
+            
+            if isinstance(data, list):
+                for item in data[:10]:
+                    try:
+                        title = item.get('title', '')
+                        url = item.get('url', '')
+                        content = item.get('body', item.get('teaser', ''))
+                        
+                        if title and len(title) > 15:
+                            articles.append({
+                                'title': title,
+                                'url': url,
+                                'source': 'Benzinga',
+                                'content': content or title,
+                                'date': item.get('created', datetime.now().isoformat())
+                            })
+                    except Exception as item_error:
+                        logger.debug(f"Error processing Benzinga item: {item_error}")
+                        continue
+            
+            logger.info(f"Benzinga: Found {len(articles)} articles for {ticker}")
+            return articles
+            
+        except Exception as e:
+            logger.debug(f"Benzinga API error for {ticker}: {e}")
+            return []
+    
+    def get_stockstory_news(self, ticker):
+        """Scrape StockStory news for ticker"""
+        logger.debug(f"Starting StockStory scraping for {ticker}")
+        try:
+            # Try main search page instead of specific stock page
+            url = f"https://stockstory.org/?s={ticker}"
+            response = self.session.get(url, timeout=15)
+            
+            if response.status_code != 200:
+                return []
+            
+            soup = BeautifulSoup(response.content, 'html.parser')
+            articles = []
+            
+            # Look for search results or article links
+            article_links = soup.find_all('a', href=True)
+            
+            for link in article_links[:15]:
+                try:
+                    href = link.get('href', '')
+                    title = link.get_text(strip=True)
+                    
+                    # Filter for relevant articles
+                    if (title and len(title) > 20 and 
+                        any(word in title.lower() for word in [ticker.lower(), 'stock', 'earnings', 'analysis']) and
+                        href and ('stockstory.org' in href or href.startswith('/'))):
+                        
+                        full_url = href if href.startswith('http') else f"https://stockstory.org{href}"
+                        
+                        articles.append({
+                            'title': title,
+                            'url': full_url,
+                            'source': 'StockStory',
+                            'content': title,
+                            'date': datetime.now().isoformat()
+                        })
+                        
+                        if len(articles) >= 5:
+                            break
+                            
+                except Exception as item_error:
+                    logger.debug(f"Error processing StockStory item: {item_error}")
+                    continue
+            
+            logger.info(f"StockStory: Found {len(articles)} articles for {ticker}")
+            return articles
+            
+        except Exception as e:
+            logger.error(f"StockStory scraping error for {ticker}: {e}")
+            return []
+    
+    def get_motley_fool_news(self, ticker):
+        """Scrape Motley Fool news for ticker"""
+        logger.debug(f"Starting Motley Fool scraping for {ticker}")
+        try:
+            # Try investing section main page
+            url = "https://www.fool.com/investing/"
+            response = self.session.get(url, timeout=15)
+            
+            if response.status_code != 200:
+                logger.debug(f"Motley Fool returned status {response.status_code} for {ticker}")
+                return []
+            
+            soup = BeautifulSoup(response.content, 'html.parser')
+            articles = []
+            
+            # Look for article links in investing section
+            article_links = soup.find_all('a', href=True)
+            
+            for link in article_links[:30]:
+                try:
+                    href = link.get('href', '')
+                    title = link.get_text(strip=True)
+                    
+                    # Filter for relevant articles (broader search since we're on investing page)
+                    if (title and len(title) > 25 and 
+                        any(word in title.lower() for word in ['stock', 'earnings', 'buy', 'sell', 'invest', 'market', 'dividend']) and
+                        href and ('fool.com' in href or href.startswith('/')) and
+                        '/investing/' in href and
+                        not any(skip in href for skip in ['login', 'signup', 'subscribe', 'newsletter'])):
+                        
+                        full_url = href if href.startswith('http') else f"https://www.fool.com{href}"
+                        
+                        articles.append({
+                            'title': title,
+                            'url': full_url,
+                            'source': 'Motley Fool',
+                            'content': title,
+                            'date': datetime.now().isoformat()
+                        })
+                        
+                        if len(articles) >= 5:
+                            break
+                            
+                except Exception as item_error:
+                    logger.debug(f"Error processing Motley Fool item: {item_error}")
+                    continue
+            
+            logger.info(f"Motley Fool: Found {len(articles)} articles for {ticker}")
+            return articles
+            
+        except Exception as e:
+            logger.error(f"Motley Fool scraping error for {ticker}: {e}")
+            return []
+    
+    def get_reuters_news(self, ticker):
+        """Scrape Reuters news for ticker"""
+        logger.debug(f"Starting Reuters scraping for {ticker}")
+        try:
+            # Use business section with proper headers
+            url = "https://www.reuters.com/business/"
+            
+            # Add proper headers to avoid 401
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+                'Accept-Language': 'en-US,en;q=0.5',
+                'Accept-Encoding': 'gzip, deflate, br',
+                'Connection': 'keep-alive',
+                'Upgrade-Insecure-Requests': '1',
+                'Sec-Fetch-Dest': 'document',
+                'Sec-Fetch-Mode': 'navigate',
+                'Sec-Fetch-Site': 'none'
+            }
+            
+            response = requests.get(url, headers=headers, timeout=15)
+            
+            if response.status_code != 200:
+                logger.debug(f"Reuters returned status {response.status_code} for {ticker}")
+                return []
+            
+            soup = BeautifulSoup(response.content, 'html.parser')
+            articles = []
+            
+            # Look for actual article links with better selectors
+            # Reuters uses specific patterns for article URLs
+            all_links = soup.find_all('a', href=True)
+            
+            for link in all_links:
+                try:
+                    href = link.get('href', '')
+                    title = link.get_text(strip=True)
+                    
+                    # Reuters articles typically have dates in URL like /2025/10/07/
+                    if (title and len(title) > 30 and 
+                        href and href.startswith('/') and
+                        ('/2025/' in href or '/2024/' in href) and
+                        not any(skip in href for skip in ['video', 'graphics', 'podcast'])):
+                        
+                        full_url = f"https://www.reuters.com{href}"
+                        
+                        articles.append({
+                            'title': title,
+                            'url': full_url,
+                            'source': 'Reuters',
+                            'content': title,
+                            'date': datetime.now().isoformat()
+                        })
+                        
+                        if len(articles) >= 5:
+                            break
+                            
+                except Exception as item_error:
+                    logger.debug(f"Error processing Reuters item: {item_error}")
+                    continue
+            
+            logger.info(f"Reuters: Found {len(articles)} articles for {ticker}")
+            return articles
+            
+        except Exception as e:
+            logger.error(f"Reuters scraping error for {ticker}: {e}")
+            return []
+    
+    def get_techcrunch_news(self, ticker):
+        """Scrape TechCrunch news for ticker"""
+        logger.debug(f"Starting TechCrunch scraping for {ticker}")
+        try:
+            url = f"https://techcrunch.com/?s={ticker}"
+            response = self.session.get(url, timeout=15)
+            
+            if response.status_code != 200:
+                logger.debug(f"TechCrunch returned status {response.status_code} for {ticker}")
+                return []
+            
+            soup = BeautifulSoup(response.content, 'html.parser')
+            articles = []
+            
+            # Look for article links
+            article_links = soup.find_all('a', href=True)
+            
+            for link in article_links[:20]:
+                try:
+                    href = link.get('href', '')
+                    title = link.get_text(strip=True)
+                    
+                    # Filter for relevant articles
+                    if (title and len(title) > 20 and 
+                        any(word in title.lower() for word in [ticker.lower(), 'stock', 'ipo', 'funding', 'startup']) and
+                        href and 'techcrunch.com' in href and '/20' in href):
+                        
+                        articles.append({
+                            'title': title,
+                            'url': href,
+                            'source': 'TechCrunch',
+                            'content': title,
+                            'date': datetime.now().isoformat()
+                        })
+                        
+                        if len(articles) >= 5:
+                            break
+                            
+                except Exception as item_error:
+                    logger.debug(f"Error processing TechCrunch item: {item_error}")
+                    continue
+            
+            logger.info(f"TechCrunch: Found {len(articles)} articles for {ticker}")
+            return articles
+            
+        except Exception as e:
+            logger.error(f"TechCrunch scraping error for {ticker}: {e}")
+            return []
+    
+    def get_99bitcoins_news(self, ticker):
+        """Get news from 99Bitcoins RSS feed"""
+        logger.debug(f"Starting 99Bitcoins RSS feed collection for {ticker}")
+        try:
+            # Use RSS feed which is accessible
+            url = "https://99bitcoins.com/feed/"
+            response = self.session.get(url, timeout=15)
+            
+            if response.status_code != 200:
+                logger.debug(f"99Bitcoins RSS returned status {response.status_code} for {ticker}")
+                return []
+            
+            soup = BeautifulSoup(response.content, 'html.parser')
+            articles = []
+            
+            # Parse RSS feed
+            items = soup.find_all('item')
+            
+            for item in items[:10]:
+                try:
+                    title = item.find('title')
+                    link = item.find('link')
+                    description = item.find('description')
+                    pub_date = item.find('pubDate')
+                    
+                    if title and link:
+                        title_text = title.get_text(strip=True)
+                        link_url = link.get_text(strip=True)
+                        desc_text = description.get_text(strip=True) if description else title_text
+                        date_text = pub_date.get_text(strip=True) if pub_date else datetime.now().isoformat()
+                        
+                        # Filter for crypto/finance related content
+                        if (title_text and len(title_text) > 20 and 
+                            any(word in title_text.lower() for word in ['bitcoin', 'crypto', 'stock', 'trading', 'market', 'finance', 'investment'])):
+                            
+                            articles.append({
+                                'title': title_text,
+                                'url': link_url,
+                                'source': '99Bitcoins',
+                                'content': desc_text,
+                                'date': date_text
+                            })
+                            
+                            if len(articles) >= 5:
+                                break
+                                
+                except Exception as item_error:
+                    logger.debug(f"Error processing 99Bitcoins RSS item: {item_error}")
+                    continue
+            
+            logger.info(f"99Bitcoins: Found {len(articles)} articles for {ticker}")
+            return articles
+            
+        except Exception as e:
+            logger.error(f"99Bitcoins RSS error for {ticker}: {e}")
+            return []
+    
+    def get_newsapi_news(self, ticker):
+        """Get news from NewsAPI.org"""
+        logger.debug(f"Starting NewsAPI collection for {ticker}")
+        try:
+            if not NEWSAPI_KEY or NEWSAPI_KEY == 'your-newsapi-key':
+                logger.debug(f"NewsAPI key not configured for {ticker}")
+                return []
+            
+            if not check_api_quota('newsapi'):
+                logger.warning("NewsAPI quota exhausted, skipping API call")
+                return []
+            
+            url = "https://newsapi.org/v2/everything"
+            params = {
+                'q': f'{ticker} stock OR {ticker} earnings OR {ticker} company',
+                'language': 'en',
+                'sortBy': 'publishedAt',
+                'pageSize': 10,
+                'apiKey': NEWSAPI_KEY
+            }
+            
+            response = self.session.get(url, params=params, timeout=15)
+            increment_api_usage('newsapi')
+            
+            if response.status_code != 200:
+                logger.error(f"NewsAPI returned status {response.status_code} for {ticker}")
+                return []
+            
+            data = response.json()
+            articles = []
+            
+            if 'articles' in data and data['articles']:
+                for item in data['articles'][:10]:
+                    try:
+                        title = item.get('title', '')
+                        url = item.get('url', '')
+                        description = item.get('description', '')
+                        source_name = item.get('source', {}).get('name', 'NewsAPI')
+                        
+                        if title and len(title) > 15:
+                            articles.append({
+                                'title': title,
+                                'url': url,
+                                'source': f'NewsAPI ({source_name})',
+                                'content': description or title,
+                                'date': item.get('publishedAt', datetime.now().isoformat())
+                            })
+                    except Exception as item_error:
+                        logger.debug(f"Error processing NewsAPI item: {item_error}")
+                        continue
+            
+            logger.info(f"NewsAPI: Found {len(articles)} articles for {ticker}")
+            return articles
+            
+        except Exception as e:
+            logger.error(f"NewsAPI error for {ticker}: {e}")
+            return []
+    
+    def get_marketwatch_news(self, ticker):
+        """Scrape MarketWatch news for ticker"""
+        logger.debug(f"Starting MarketWatch scraping for {ticker}")
+        try:
+            # Use markets section with proper headers
+            url = "https://www.marketwatch.com/markets"
+            
+            # Add proper headers to avoid 401
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+                'Accept-Language': 'en-US,en;q=0.5',
+                'Accept-Encoding': 'gzip, deflate, br',
+                'Connection': 'keep-alive',
+                'Upgrade-Insecure-Requests': '1',
+                'Referer': 'https://www.google.com/',
+                'Cache-Control': 'max-age=0'
+            }
+            
+            response = requests.get(url, headers=headers, timeout=15)
+            
+            if response.status_code != 200:
+                logger.debug(f"MarketWatch returned status {response.status_code} for {ticker}")
+                return []
+            
+            soup = BeautifulSoup(response.content, 'html.parser')
+            articles = []
+            
+            # Look for actual story links
+            all_links = soup.find_all('a', href=True)
+            
+            for link in all_links:
+                try:
+                    href = link.get('href', '')
+                    title = link.get_text(strip=True)
+                    
+                    # MarketWatch stories have /story/ in URL
+                    if (title and len(title) > 30 and 
+                        href and '/story/' in href and
+                        'marketwatch.com' in href and
+                        not any(skip in href for skip in ['video', 'podcast', 'newsletter'])):
+                        
+                        articles.append({
+                            'title': title,
+                            'url': href,
+                            'source': 'MarketWatch',
+                            'content': title,
+                            'date': datetime.now().isoformat()
+                        })
+                        
+                        if len(articles) >= 5:
+                            break
+                            
+                except Exception as item_error:
+                    logger.debug(f"Error processing MarketWatch item: {item_error}")
+                    continue
+            
+            # If no stories found, try general financial news from homepage
+            if not articles:
+                try:
+                    homepage_response = requests.get("https://www.marketwatch.com/", headers=headers, timeout=15)
+                    if homepage_response.status_code == 200:
+                        homepage_soup = BeautifulSoup(homepage_response.content, 'html.parser')
+                        homepage_links = homepage_soup.find_all('a', href=True)
+                        
+                        for link in homepage_links[:20]:
+                            href = link.get('href', '')
+                            title = link.get_text(strip=True)
+                            
+                            if (title and len(title) > 25 and 
+                                any(word in title.lower() for word in ['stock', 'market', 'dow', 'nasdaq']) and
+                                '/story/' in href):
+                                
+                                articles.append({
+                                    'title': title,
+                                    'url': href if href.startswith('http') else f"https://www.marketwatch.com{href}",
+                                    'source': 'MarketWatch',
+                                    'content': title,
+                                    'date': datetime.now().isoformat()
+                                })
+                                
+                                if len(articles) >= 3:
+                                    break
+                except:
+                    pass
+            
+            logger.info(f"MarketWatch: Found {len(articles)} articles for {ticker}")
+            return articles
+            
+        except Exception as e:
+            logger.error(f"MarketWatch scraping error for {ticker}: {e}")
+            return []
+    
+    def get_invezz_news(self, ticker):
+        """Scrape Invezz news for ticker"""
+        logger.debug(f"Starting Invezz scraping for {ticker}")
+        try:
+            # Use news section which is accessible
+            url = "https://invezz.com/news/"
+            response = self.session.get(url, timeout=15)
+            
+            if response.status_code != 200:
+                logger.debug(f"Invezz returned status {response.status_code} for {ticker}")
+                return []
+            
+            soup = BeautifulSoup(response.content, 'html.parser')
+            articles = []
+            
+            article_links = soup.find_all('a', href=True)
+            
+            for link in article_links[:30]:
+                try:
+                    href = link.get('href', '')
+                    title = link.get_text(strip=True)
+                    
+                    # Look for general financial/stock news since we can't search specifically
+                    if (title and len(title) > 25 and 
+                        any(word in title.lower() for word in ['stock', 'trading', 'invest', 'market', 'crypto', 'finance']) and
+                        href and 'invezz.com' in href and
+                        not any(skip in href for skip in ['author', 'category', 'tag'])):
+                        
+                        articles.append({
+                            'title': title,
+                            'url': href,
+                            'source': 'Invezz',
+                            'content': title,
+                            'date': datetime.now().isoformat()
+                        })
+                        
+                        if len(articles) >= 3:
+                            break
+                            
+                except Exception as item_error:
+                    logger.debug(f"Error processing Invezz item: {item_error}")
+                    continue
+            
+            logger.info(f"Invezz: Found {len(articles)} articles for {ticker}")
+            return articles
+            
+        except Exception as e:
+            logger.error(f"Invezz scraping error for {ticker}: {e}")
+            return []
+    
+    def get_11thestate_news(self, ticker):
+        """Scrape 11theState news for ticker"""
+        logger.debug(f"Starting 11theState scraping for {ticker}")
+        try:
+            url = f"https://11thestate.com/?s={ticker}"
+            response = self.session.get(url, timeout=15)
+            
+            if response.status_code != 200:
+                logger.debug(f"11theState returned status {response.status_code} for {ticker}")
+                return []
+            
+            soup = BeautifulSoup(response.content, 'html.parser')
+            articles = []
+            
+            article_links = soup.find_all('a', href=True)
+            
+            for link in article_links[:15]:
+                try:
+                    href = link.get('href', '')
+                    title = link.get_text(strip=True)
+                    
+                    if (title and len(title) > 20 and 
+                        any(word in title.lower() for word in [ticker.lower(), 'stock', 'finance', 'market']) and
+                        href and '11thestate.com' in href):
+                        
+                        articles.append({
+                            'title': title,
+                            'url': href,
+                            'source': '11theState',
+                            'content': title,
+                            'date': datetime.now().isoformat()
+                        })
+                        
+                        if len(articles) >= 3:
+                            break
+                            
+                except Exception as item_error:
+                    logger.debug(f"Error processing 11theState item: {item_error}")
+                    continue
+            
+            logger.info(f"11theState: Found {len(articles)} articles for {ticker}")
+            return articles
+            
+        except Exception as e:
+            logger.debug(f"11theState scraping error for {ticker}: {e}")
+            return []
 
 class AIProcessor:
     def __init__(self):
@@ -657,7 +1079,7 @@ class AIProcessor:
             return fallback_result
         
         try:
-            time.sleep(4)  # Rate limiting
+            time.sleep(1)  # Optimized for speed
             response = self.client.models.generate_content(
                 model='gemini-2.5-pro',
                 contents=prompt
@@ -977,6 +1399,7 @@ def debug_apis():
                 'alpha_vantage': {'configured': bool(ALPHA_VANTAGE_API_KEY and ALPHA_VANTAGE_API_KEY != 'your-alpha-vantage-api-key')},
                 'twelve_data': {'configured': bool(TWELVE_DATA_API_KEY)},
                 'finnhub': {'configured': bool(FINNHUB_API_KEY)},
+                'newsapi': {'configured': bool(NEWSAPI_KEY and NEWSAPI_KEY != 'your-newsapi-key')},
                 'alpaca': {'configured': bool(ALPACA_API_KEY and ALPACA_SECRET_KEY)}
             },
             'usage': api_usage,
@@ -994,62 +1417,7 @@ def debug_apis():
 def cache_status():
     """Check cache functionality and status"""
     try:
-        status = {
-            'cache_type': 'Upstash' if redis_client else 'Memory',
-            'upstash_configured': bool(UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN),
-            'connection_test': False,
-            'cache_keys': [],
-            'test_result': None
-        }
-        
-        if redis_client:
-            # Test Redis connection
-            try:
-                test_key = 'cache_test'
-                test_value = {'test': 'data', 'timestamp': datetime.now().isoformat()}
-                
-                # Test write
-                write_success = redis_client.setex(test_key, 60, json.dumps(test_value))
-                
-                # Test read
-                read_data = redis_client.get(test_key)
-                read_success = read_data is not None
-                
-                if read_success:
-                    read_value = json.loads(read_data.decode('utf-8'))
-                    status['test_result'] = 'SUCCESS: Write and read operations working'
-                else:
-                    status['test_result'] = 'FAILED: Could not read test data'
-                
-                status['connection_test'] = write_success and read_success
-                
-                # Clean up test
-                redis_client.delete(test_key)
-                
-            except Exception as e:
-                status['test_result'] = f'ERROR: {str(e)}'
-                status['connection_test'] = False
-        else:
-            status['test_result'] = 'Using fallback memory cache'
-            status['connection_test'] = True
-        
-        # Get current cache info and durations
-        status['cache_durations'] = {
-            'news_cache': f'{CACHE_DURATION // 3600} hours ({CACHE_DURATION} seconds)',
-            'summary_cache': f'{SUMMARY_CACHE_DURATION // 3600} hours ({SUMMARY_CACHE_DURATION} seconds)'
-        }
-        
-        if redis_client:
-            # Can't easily list keys in Upstash REST, so show configured status
-            status['cache_info'] = 'Upstash Redis REST API configured'
-        else:
-            status['cache_keys'] = {
-                'news_cache': list(fallback_news_cache.keys()),
-                'summary_cache': list(fallback_summary_cache.keys())
-            }
-        
-        return jsonify(status)
-        
+        return jsonify(cache.get_status())
     except Exception as e:
         return jsonify({
             'error': str(e),
@@ -1060,25 +1428,12 @@ def cache_status():
 @app.route('/api/tickers', methods=['GET'])
 def get_tickers():
     try:
-        if not supabase:
-            logger.error("Supabase not initialized")
-            return jsonify([])
-            
-        logger.debug("Getting tickers list")
-        result = supabase.table('tickers').select('symbol').order('symbol', desc=False).execute()
-        
-        if hasattr(result, 'data') and result.data:
-            tickers = [row['symbol'] for row in result.data]
-            logger.debug(f"Found {len(tickers)} tickers: {tickers}")
-            return jsonify(tickers)
-        else:
-            logger.warning(f"No data in result: {result}")
-            return jsonify([])
-            
+        tickers = db.get_tickers()
+        logger.info(f"API endpoint: Found {len(tickers)} tickers: {tickers}")
+        return jsonify(tickers)
     except Exception as e:
         logger.error(f"Error getting tickers: {e}")
-        # Return empty array to prevent frontend errors
-        return jsonify([])
+        return jsonify({'error': str(e)}), 500
 
 def validate_ticker(ticker):
     """Validate if ticker exists by checking multiple sources"""
@@ -1151,11 +1506,18 @@ def add_ticker():
         return jsonify({'error': f'Ticker {ticker} not found or invalid'}), 400
     
     try:
-        result = supabase.table('tickers').insert({
-            'symbol': ticker,
-            'added_date': datetime.now().isoformat()
-        }).execute()
+        result = db.add_ticker(ticker)
         logger.info(f"Successfully added ticker: {ticker}")
+        
+        # Immediately process news for the new ticker
+        try:
+            logger.info(f"Processing initial news for new ticker: {ticker}")
+            process_ticker_news(ticker)
+            logger.info(f"Initial news processing completed for {ticker}")
+        except Exception as process_error:
+            logger.error(f"Error processing initial news for {ticker}: {process_error}")
+            # Don't fail the ticker addition if news processing fails
+        
         return jsonify({'success': True})
     except Exception as e:
         error_msg = str(e)
@@ -1168,68 +1530,56 @@ def add_ticker():
 def remove_ticker(ticker):
     """Remove a ticker from the watchlist"""
     try:
-        if not supabase:
-            logger.error("Supabase not initialized")
-            return jsonify({'error': 'Database not available'}), 500
-            
         ticker = ticker.upper().strip()
         logger.info(f"Remove ticker requested: {ticker}")
         
-        # Remove ticker (skip existence check to avoid extra API call)
-        supabase.table('tickers').delete().eq('symbol', ticker).execute()
-        
-        # Clear cache
-        try:
-            if redis_client:
-                redis_client.delete(f"news:{ticker}", f"summary:{ticker}")
-            else:
-                if ticker in fallback_news_cache:
-                    del fallback_news_cache[ticker]
-                if ticker in fallback_summary_cache:
-                    del fallback_summary_cache[ticker]
-        except Exception as e:
-            logger.debug(f"Cache clear error for {ticker}: {e}")
+        db.remove_ticker(ticker)
+        cache.clear(ticker)
         
         logger.info(f"Successfully removed ticker: {ticker}")
         return jsonify({'success': True})
         
     except Exception as e:
         logger.error(f"Error removing ticker {ticker}: {e}")
-        return jsonify({'success': True})  # Return success even on error to prevent UI issues
+        return jsonify({'success': True})
 
 @app.route('/api/logo/<ticker>')
 def get_company_logo(ticker):
-    """Get company logo from API Ninjas with caching"""
+    """Get company logo from database or API Ninjas"""
     try:
-        if not API_NINJAS_KEY:
-            return jsonify({'error': 'API key not configured'}), 500
-            
         ticker = ticker.upper().strip()
         
-        # Check cache first
-        if redis_client:
-            cached_logo = redis_client.get(f"logo:{ticker}")
-            if cached_logo:
-                return jsonify({'image': cached_logo.decode('utf-8')})
+        # Check database first
+        logo_url = db.get_logo(ticker)
+        if logo_url:
+            return jsonify({'image': logo_url})
         
-        url = f"https://api.api-ninjas.com/v1/logo?ticker={ticker}"
-        headers = {'X-Api-Key': API_NINJAS_KEY}
+        # Fetch from API if not in database
+        if not API_NINJAS_KEY or API_NINJAS_KEY == 'your_api_ninjas_key':
+            return jsonify({'error': 'API key not configured'}), 404
         
-        response = requests.get(url, headers=headers, timeout=10)
+        response = requests.get(
+            f"https://api.api-ninjas.com/v1/logo?ticker={ticker}",
+            headers={'X-Api-Key': API_NINJAS_KEY},
+            timeout=10
+        )
         
         if response.status_code == 200:
             data = response.json()
-            if data and len(data) > 0:
+            if data and len(data) > 0 and data[0].get('image'):
                 logo_url = data[0].get('image')
-                # Cache for 7 days
-                if redis_client and logo_url:
-                    redis_client.setex(f"logo:{ticker}", 7*24*3600, logo_url)
-                return jsonify({'image': logo_url, 'name': data[0].get('name')})
-            return jsonify({'error': 'No logo data'}), 404
-        return jsonify({'error': f'Logo not found (status: {response.status_code})'}), 404
+                company_name = data[0].get('name', ticker)
+                
+                # Save to database
+                db.save_logo(ticker, logo_url, company_name)
+                
+                return jsonify({'image': logo_url, 'name': company_name})
+        
+        return jsonify({'error': 'No logo available'}), 404
+            
     except Exception as e:
         logger.error(f"Logo API error for {ticker}: {e}")
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': 'Logo service error'}), 500
 
 @app.route('/api/summary/<ticker>')
 def get_summary(ticker):
@@ -1241,64 +1591,43 @@ def get_summary(ticker):
             return jsonify({'error': 'Invalid ticker format'}), 400
         
         # Get latest summary
-        result = supabase.table('daily_summaries').select('date, summary, articles_used, what_changed, risk_factors').eq('ticker', ticker).order('date', desc=True).limit(1).execute()
-        
-        logger.debug(f"Executed query for {ticker}")
-        logger.debug(f"Query result for {ticker}: {'Found' if result.data else 'None'}")
-        
-        if result.data:
-            row = result.data[0]
-            logger.debug(f"Summary data found: date={row['date']}, summary_len={len(row['summary'])}, what_changed_len={len(row.get('what_changed', ''))}") 
-            summary_data = {
-                'date': row['date'],
-                'summary': row['summary'],
-                'articles_used': json.loads(row['articles_used']),
-                'what_changed': row.get('what_changed', ''),
-                'risk_factors': row.get('risk_factors', '')
-            }
-        else:
-            logger.warning(f"No summary data found for {ticker}")
-            summary_data = None
+        summary_data = db.get_summary(ticker)
         
         # Get 7-day history
-        history_result = supabase.table('daily_summaries').select('date, what_changed').eq('ticker', ticker).order('date', desc=True).limit(7).execute()
-        history = [{'date': row['date'], 'what_changed': row['what_changed']} for row in history_result.data]
+        history = db.get_history(ticker)
         
         # Get ML analysis
         price_forecast = ml_analyzer.get_price_forecast(ticker)
         
         # Get recent articles for sentiment
-        recent_articles = supabase.table('news_articles').select('title, content').eq('ticker', ticker).order('date', desc=True).limit(10).execute()
-        sentiment_analysis = ml_analyzer.analyze_sentiment(recent_articles.data if recent_articles.data else [])
+        recent_articles = db.get_recent_articles(ticker)
+        sentiment_analysis = ml_analyzer.analyze_sentiment(recent_articles)
         
         # Apply entity highlighting to summary if available
         if summary_data and summary_data.get('summary'):
             summary_data['summary'] = entity_highlighter.highlight_entities(summary_data['summary'])
         
-        # Get company logo with caching
-        logo_url = None
-        if API_NINJAS_KEY:
+        # Get company logo - check database first, then API
+        logo_url = db.get_logo(ticker)
+        
+        if not logo_url and API_NINJAS_KEY:
             try:
-                # Check cache first
-                if redis_client:
-                    cached_logo = redis_client.get(f"logo:{ticker}")
-                    if cached_logo:
-                        logo_url = cached_logo.decode('utf-8')
-                        logger.debug(f"Using cached logo for {ticker}")
-                
-                if not logo_url:
-                    logo_response = requests.get(f"https://api.api-ninjas.com/v1/logo?ticker={ticker}", 
-                                               headers={'X-Api-Key': API_NINJAS_KEY}, timeout=5)
-                    if logo_response.status_code == 200:
-                        logo_data = logo_response.json()
-                        if logo_data and len(logo_data) > 0:
-                            logo_url = logo_data[0].get('image')
-                            # Cache for 7 days
-                            if redis_client and logo_url:
-                                redis_client.setex(f"logo:{ticker}", 7*24*3600, logo_url)
-                            logger.debug(f"Logo found and cached for {ticker}: {logo_url}")
+                logo_response = requests.get(
+                    f"https://api.api-ninjas.com/v1/logo?ticker={ticker}", 
+                    headers={'X-Api-Key': API_NINJAS_KEY}, 
+                    timeout=5
+                )
+                if logo_response.status_code == 200:
+                    logo_data = logo_response.json()
+                    if logo_data and len(logo_data) > 0:
+                        logo_url = logo_data[0].get('image')
+                        company_name = logo_data[0].get('name')
+                        
+                        # Save to database
+                        db.save_logo(ticker, logo_url, company_name)
+                        logger.debug(f"Logo fetched and saved for {ticker}: {logo_url}")
             except Exception as e:
-                logger.debug(f"Logo fetch error for {ticker}: {e}")
+                logger.debug(f"Logo fetch failed for {ticker}: {e}")
         
         return jsonify({
             'current_summary': summary_data,
@@ -1314,10 +1643,7 @@ def get_summary(ticker):
                 'quota_reset': 'Daily at midnight'
             },
             'cache_status': {
-                'news_cached': redis_client.exists(f"news:{ticker}") if redis_client else ticker in fallback_news_cache,
-                'summary_cached': redis_client.exists(f"summary:{ticker}") if redis_client else ticker in fallback_summary_cache,
-                'cache_duration': f'{CACHE_DURATION // 3600} hours',
-                'cache_type': 'Upstash' if redis_client else 'Memory'
+                'cache_type': cache.redis_client and 'Upstash' or 'Memory'
             }
         })
     except Exception as e:
@@ -1417,137 +1743,191 @@ def process_ticker_news(ticker):
         logger.info(f"Alpaca data for {ticker}: ${alpaca_quote['price']:.2f} (Bid: ${alpaca_quote['bid']:.2f}, Ask: ${alpaca_quote['ask']:.2f})")
     
     # Check for cached news first
-    cached_articles, cached_sources = get_cached_news(ticker)
+    cached_articles, cached_sources = cache.get_news(ticker)
     if cached_articles:
         logger.info(f"Using cached news for {ticker} ({len(cached_articles)} articles)")
         all_articles = cached_articles
         source_counts = cached_sources
     else:
-        # Optimized source collection for 100 tickers
-        logger.debug("Collecting optimized news sources")
+        # Parallel source collection for faster processing
+        logger.debug("Collecting news sources in parallel")
         all_articles = []
+        source_counts = {}
         
-        # Free unlimited sources (no API limits)
-        tv_articles = collector.get_tradingview_news(ticker)
-        all_articles.extend(tv_articles)
-        fv_articles = collector.get_finviz_news(ticker)
-        all_articles.extend(fv_articles)
+        # Priority sources first
+        priority_tasks = []
+        if BENZINGA_API_KEY:
+            priority_tasks.append(('Benzinga', collector.get_benzinga_news, ticker))
+        priority_tasks.extend([
+            ('Motley Fool', collector.get_motley_fool_news, ticker),
+            ('StockStory', collector.get_stockstory_news, ticker),
+            ('Reuters', collector.get_reuters_news, ticker),
+            ('TechCrunch', collector.get_techcrunch_news, ticker)
+        ])
         
-        # Limited API sources (quota managed)
+        # Secondary sources
+        secondary_tasks = [
+            ('TradingView', collector.get_tradingview_news, ticker),
+            ('Finviz', collector.get_finviz_news, ticker),
+            ('99Bitcoins', collector.get_99bitcoins_news, ticker),
+            ('MarketWatch', collector.get_marketwatch_news, ticker),
+            ('Invezz', collector.get_invezz_news, ticker),
+            ('11theState', collector.get_11thestate_news, ticker)
+        ]
+        
+        # API sources with quota checks
+        api_tasks = []
         if check_api_quota('polygon'):
-            pg_articles = collector.get_polygon_news(ticker)
-            all_articles.extend(pg_articles)
-        
-        # Skip Alpha Vantage for 100 tickers (only 25/day)
-        # av_articles = collector.get_alphavantage_news(ticker)
-        
+            api_tasks.append(('Polygon', collector.get_polygon_news, ticker))
         if check_api_quota('twelve_data'):
-            td_articles = collector.get_twelve_data_news(ticker)
-            all_articles.extend(td_articles)
-        
+            api_tasks.append(('Twelve Data', collector.get_twelve_data_news, ticker))
         if check_api_quota('finnhub'):
-            fh_articles = collector.get_finnhub_news(ticker)
-            all_articles.extend(fh_articles)
-        # Add Alpaca news
-        alpaca_news = alpaca.get_news(symbols=[ticker], limit=3)
-        if alpaca_news and 'news' in alpaca_news:
-            for item in alpaca_news['news']:
-                all_articles.append({
-                    'title': item.get('headline', ''),
-                    'url': item.get('url', ''),
-                    'source': 'Alpaca Markets',
-                    'content': item.get('summary', item.get('headline', '')),
-                    'date': item.get('created_at', datetime.now().isoformat())
-                })
+            api_tasks.append(('Finnhub', collector.get_finnhub_news, ticker))
+        if check_api_quota('newsapi'):
+            api_tasks.append(('NewsAPI', collector.get_newsapi_news, ticker))
         
-        alpaca_count = len(alpaca_news['news']) if alpaca_news and 'news' in alpaca_news else 0
-        source_counts = {'TV': len(tv_articles), 'FV': len(fv_articles), 'PG': len(pg_articles or []), 'TD': len(td_articles or []), 'FH': len(fh_articles or []), 'AL': alpaca_count}
-        logger.info(f"Fresh articles collected: {len(all_articles)} (TV:{len(tv_articles)}, FV:{len(fv_articles)}, PG:{len(pg_articles)}, TD:{len(td_articles)}, FH:{len(fh_articles)}, AL:{alpaca_count})")
+        # Combine in priority order
+        tasks = priority_tasks + api_tasks + secondary_tasks
+        
+        # Execute priority sources first
+        logger.info(f"Processing {len(priority_tasks)} priority sources first...")
+        with ThreadPoolExecutor(max_workers=3) as executor:
+            priority_futures = {executor.submit(task[1], task[2]): task[0] for task in priority_tasks}
+            
+            for future in as_completed(priority_futures, timeout=45):
+                source_name = priority_futures[future]
+                try:
+                    articles = future.result(timeout=30)
+                    if articles:
+                        all_articles.extend(articles)
+                        source_counts[source_name] = len(articles)
+                        logger.info(f"PRIORITY {source_name}: SUCCESS - {len(articles)} articles")
+                    else:
+                        source_counts[source_name] = 0
+                        logger.warning(f"PRIORITY {source_name}: NO ARTICLES")
+                except Exception as e:
+                    logger.error(f"PRIORITY {source_name}: FAILED - {str(e)[:50]}")
+                    source_counts[source_name] = 0
+        
+        # Execute remaining sources
+        remaining_tasks = api_tasks + secondary_tasks
+        logger.info(f"Processing {len(remaining_tasks)} remaining sources...")
+        with ThreadPoolExecutor(max_workers=4) as executor:
+            future_to_source = {executor.submit(task[1], task[2]): task[0] for task in remaining_tasks}
+            
+            for future in as_completed(future_to_source, timeout=60):
+                source_name = future_to_source[future]
+                try:
+                    articles = future.result(timeout=45)
+                    if articles:
+                        all_articles.extend(articles)
+                        source_counts[source_name] = len(articles)
+                        logger.info(f"{source_name}: SUCCESS - {len(articles)} articles")
+                    else:
+                        source_counts[source_name] = 0
+                        logger.warning(f"{source_name}: NO ARTICLES FOUND")
+                except Exception as e:
+                    logger.error(f"{source_name}: FAILED - {str(e)[:50]}")
+                    source_counts[source_name] = 0
+                    
+                    # Retry failed sources once
+                    if source_name not in ['Polygon', 'Alpha Vantage', 'NewsAPI']:  # Don't retry API sources
+                        try:
+                            logger.info(f"Retrying {source_name}...")
+                            retry_task = next((t for t in tasks if t[0] == source_name), None)
+                            if retry_task:
+                                retry_articles = retry_task[1](retry_task[2])
+                                if retry_articles:
+                                    all_articles.extend(retry_articles)
+                                    source_counts[source_name] = len(retry_articles)
+                                    logger.info(f"{source_name}: RETRY SUCCESS - {len(retry_articles)} articles")
+                        except Exception as retry_error:
+                            logger.error(f"{source_name}: RETRY FAILED - {str(retry_error)[:50]}")
+        
+        # Add Alpaca news (sequential due to authentication)
+        try:
+            alpaca_news = alpaca.get_news(symbols=[ticker], limit=3)
+            if alpaca_news and 'news' in alpaca_news:
+                for item in alpaca_news['news']:
+                    all_articles.append({
+                        'title': item.get('headline', ''),
+                        'url': item.get('url', ''),
+                        'source': 'Alpaca Markets',
+                        'content': item.get('summary', item.get('headline', '')),
+                        'date': item.get('created_at', datetime.now().isoformat())
+                    })
+                source_counts['Alpaca'] = len(alpaca_news['news'])
+            else:
+                source_counts['Alpaca'] = 0
+        except Exception as e:
+            logger.debug(f"Alpaca news error: {e}")
+            source_counts['Alpaca'] = 0
+        
+        # Log detailed source results
+        successful_sources = [name for name, count in source_counts.items() if count > 0]
+        failed_sources = [name for name, count in source_counts.items() if count == 0]
+        
+        logger.info(f"COLLECTION SUMMARY for {ticker}:")
+        logger.info(f"  Total articles: {len(all_articles)}")
+        logger.info(f"  Successful sources ({len(successful_sources)}): {', '.join(successful_sources)}")
+        logger.info(f"  Failed sources ({len(failed_sources)}): {', '.join(failed_sources)}")
+        
+        if len(failed_sources) > len(successful_sources):
+            logger.warning(f"More sources failed than succeeded for {ticker}")
         
         # Cache the collected news
         if all_articles:
-            cache_news(ticker, all_articles, source_counts)
+            cache.set_news(ticker, all_articles, source_counts)
     
     if not all_articles:
-        logger.warning(f"No articles found for {ticker} - stopping processing")
+        logger.error(f"CRITICAL: No articles found for {ticker} from ANY source")
+        logger.error(f"Source status: {source_counts}")
+        # Still save empty result to database to track the failure
+        db.save_summary(ticker, {
+            'summary': f"No news articles available for {ticker}. All sources failed to return data.",
+            'what_changed': "No data available - all news sources failed."
+        }, [])
         return
     
-    # Select top articles using AI
-    logger.debug("Selecting top articles using AI")
-    selected_articles = ai_processor.select_top_articles(all_articles, ticker)
-    logger.info(f"Selected {len(selected_articles)} articles for summary")
-    
-    # Get historical summaries
-    result = supabase.table('daily_summaries').select('summary, what_changed').eq('ticker', ticker).order('date', desc=True).limit(7).execute()
-    historical_summaries = [{'summary': row['summary'], 'what_changed': row['what_changed']} for row in result.data]
-    
     # Check for cached summary first
-    cached_summary = get_cached_summary(ticker)
-    if cached_summary and not cached_articles:  # Only use cached summary if news is also cached
+    cached_summary = cache.get_summary(ticker)
+    if cached_summary and not cached_articles:
         logger.info(f"Using cached summary for {ticker}")
         summary_result = cached_summary
+        selected_articles = all_articles[:5]  # Use first 5 for database storage
     else:
-        # Generate fresh summary with Alpaca context
-        logger.debug("Generating fresh AI summary")
+        # Get historical summaries and run AI processing in parallel
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            # Submit both tasks
+            history_future = executor.submit(db.get_history, ticker)
+            selection_future = executor.submit(ai_processor.select_top_articles, all_articles, ticker)
+            
+            # Get results
+            selected_articles = selection_future.result()
+            history = history_future.result()
+            
+        historical_summaries = [{'summary': '', 'what_changed': item['what_changed']} for item in history]
+        
+        # Generate summary
         summary_result = ai_processor.generate_summary(ticker, selected_articles, historical_summaries, alpaca_quote)
         logger.info(f"Generated fresh summary for {ticker} (length: {len(summary_result['summary'])} chars)")
         
         # Cache the summary
-        cache_summary(ticker, summary_result)
+        cache.set_summary(ticker, summary_result)
     
     # Save articles to database
-    today = datetime.now().date().isoformat()
-    
-    # Save all collected articles with duplicate prevention
-    articles_saved = 0
-    articles_skipped = 0
-    
-    for article in all_articles:
-        try:
-            # Check if article already exists (by ticker, title, and source)
-            existing = supabase.table('news_articles').select('id').eq('ticker', ticker).eq('title', article['title']).eq('source', article['source']).limit(1).execute()
-            
-            if existing.data:
-                articles_skipped += 1
-                logger.debug(f"Skipping duplicate article: {article['title'][:50]}...")
-                continue
-            
-            # Insert new article
-            supabase.table('news_articles').insert({
-                'ticker': ticker,
-                'title': article['title'],
-                'url': article['url'],
-                'source': article['source'],
-                'content': article['content'],
-                'date': article['date']
-            }).execute()
-            articles_saved += 1
-            
-        except Exception as e:
-            logger.error(f"Error saving article '{article['title'][:50]}...': {e}")
-            articles_skipped += 1
-    
-    logger.info(f"Articles saved: {articles_saved}, skipped: {articles_skipped}")
+    articles_saved, articles_skipped = db.save_articles(ticker, all_articles)
+    logger.info(f"DATABASE SAVE RESULT for {ticker}: {articles_saved} SAVED, {articles_skipped} SKIPPED out of {len(all_articles)} TOTAL")
     
     # Save summary
-    articles_used = json.dumps([{
+    articles_used = [{
         'title': art['title'],
         'url': art['url'],
         'source': art['source']
-    } for art in selected_articles])
+    } for art in selected_articles]
     
-    logger.debug(f"Saving summary to database for {ticker} on {today}")
-    logger.debug(f"Summary length: {len(summary_result['summary'])} chars")
-    logger.debug(f"What changed: {summary_result['what_changed'][:100]}...")
-    
-    # Upsert (insert or update) with conflict resolution
-    supabase.table('daily_summaries').upsert({
-        'ticker': ticker,
-        'date': today,
-        'summary': summary_result['summary'],
-        'articles_used': articles_used,
-        'what_changed': summary_result['what_changed']
-    }, on_conflict='ticker,date').execute()
+    logger.debug(f"Saving summary to database for {ticker}")
+    db.save_summary(ticker, summary_result, articles_used)
     
     logger.info(f"Processed {len(all_articles)} articles ({articles_saved} saved, {articles_skipped} skipped) and summary for {ticker}")
     logger.debug(f"Database save completed for {ticker}")
@@ -1565,31 +1945,21 @@ def refresh_ticker(ticker):
             return jsonify({'error': 'Invalid ticker format'}), 400
         
         # Clear cache for fresh data
-        try:
-            if redis_client:
-                redis_client.delete(f"news:{ticker}", f"summary:{ticker}")
-                logger.debug(f"Cleared Redis cache for {ticker}")
-            else:
-                if ticker in fallback_news_cache:
-                    del fallback_news_cache[ticker]
-                if ticker in fallback_summary_cache:
-                    del fallback_summary_cache[ticker]
-                logger.debug(f"Cleared fallback cache for {ticker}")
-        except Exception as e:
-            logger.debug(f"Cache clear error for {ticker}: {e}")
+        cache.clear(ticker)
         
+        # Process the ticker
         process_ticker_news(ticker)
-        return jsonify({'success': True})
+        return jsonify({'success': True, 'message': f'Successfully refreshed {ticker}'})
+        
     except Exception as e:
         logger.error(f"Refresh error for {ticker}: {e}")
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': f'Failed to refresh {ticker}: {str(e)}'}), 500
 
 def daily_update():
     """Optimized daily update for 100 tickers"""
     logger.info("Starting optimized daily update for 100 tickers")
     
-    result = supabase.table('tickers').select('symbol').execute()
-    tickers = [row['symbol'] for row in result.data]
+    tickers = db.get_tickers()
     
     # Process in batches to manage API quotas
     batch_size = 20
@@ -1617,7 +1987,7 @@ def daily_update():
     logger.info(f"Daily update completed: {len(tickers)} tickers processed")
 
 if __name__ == '__main__':
-    init_db()
+    db.test_connection()
     
     # Setup optimized scheduler for 100 tickers
     scheduler = BackgroundScheduler()
@@ -1634,7 +2004,7 @@ if __name__ == '__main__':
     
     # Optional: Add weekend summary generation
     scheduler.add_job(
-        func=cleanup_expired_cache,
+        func=cache.cleanup_expired,
         trigger="cron",
         hour=0,  # Midnight cleanup
         minute=0,

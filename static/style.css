@@ -572,6 +572,7 @@ body {
     .company-logo {
         width: 32px;
         height: 32px;
+        margin-right: 8px;
     }
 }
 
@@ -604,6 +605,7 @@ body {
     .company-logo {
         width: 24px;
         height: 24px;
+        margin-right: 6px;
     }
 }
 

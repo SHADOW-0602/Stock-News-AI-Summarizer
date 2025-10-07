@@ -97,7 +97,15 @@ class StockNewsApp {
         const tickerList = document.getElementById('ticker-list');
 
         if (!tickers || tickers.length === 0) {
-            tickerList.innerHTML = '<div class="no-tickers">No tickers added yet</div>';
+            tickerList.innerHTML = `
+                <div class="no-tickers">
+                    <div class="no-tickers-title">No tickers added yet</div>
+                    <div class="no-tickers-subtitle">Add your first stock ticker above to get started</div>
+                    <div class="no-tickers-examples">
+                        <strong>Examples:</strong> AAPL, TSLA, MSFT, GOOGL
+                    </div>
+                </div>
+            `;
             return;
         }
 
@@ -179,9 +187,12 @@ class StockNewsApp {
             const data = await response.json();
             
             // Update header with logo if available
-            console.log('Logo data:', data.company_logo);
             if (data.company_logo) {
-                document.getElementById('current-ticker').innerHTML = `<img src="${data.company_logo}" alt="${ticker} logo" class="company-logo" onerror="console.log('Logo failed to load: ${data.company_logo}')"> ${ticker} - Daily Summary`;
+                console.log(`Logo found for ${ticker}: ${data.company_logo}`);
+                document.getElementById('current-ticker').innerHTML = `<img src="${data.company_logo}" alt="${ticker} logo" class="company-logo" onerror="console.log('Logo failed to load: ${data.company_logo}'); this.style.display='none'"> ${ticker} - Daily Summary`;
+            } else {
+                console.log(`No logo found for ${ticker}`);
+                document.getElementById('current-ticker').textContent = `${ticker} - Daily Summary`;
             }
             
             this.displaySummary(data);
@@ -189,6 +200,10 @@ class StockNewsApp {
             console.error('Error loading summary:', error);
             document.getElementById('summary-content').innerHTML =
                 '<div class="error-message">Failed to load summary</div>';
+            // Re-enable generate button on error
+            refreshBtn.innerHTML = '🤖 Generate';
+            refreshBtn.disabled = false;
+            refreshBtn.classList.remove('loading');
         }
     }
 
@@ -328,37 +343,41 @@ class StockNewsApp {
     }
 
     highlightEntities(text) {
-        // Highlight key financial entities and terms
+        // Prevent double highlighting by checking if text is already highlighted
+        if (text.includes('<span class="highlight-')) {
+            return text;
+        }
+        
         let highlighted = text;
         
-        // Financial amounts: $1.2B, $500M, $50K
+        // Financial amounts: $1.2B, $500M, $50K (most specific first)
         highlighted = highlighted.replace(/\$[\d,]+\.?\d*[BMK]?/g, '<span class="highlight-financial">$&</span>');
         
         // Percentages: 15%, 2.5%
-        highlighted = highlighted.replace(/\b\d+\.?\d*%/g, '<span class="highlight-percentage">$&</span>');
-        
-        // Large numbers: 1.5B, 500M, 50K
-        highlighted = highlighted.replace(/\b\d+\.?\d*[BMK]\b/g, '<span class="highlight-number">$&</span>');
+        highlighted = highlighted.replace(/(?<!<[^>]*>)\b\d+\.?\d*%/g, '<span class="highlight-percentage">$&</span>');
         
         // Quarters: Q3 2024, Q1 2025
-        highlighted = highlighted.replace(/\bQ[1-4]\s+\d{4}/g, '<span class="highlight-quarter">$&</span>');
+        highlighted = highlighted.replace(/(?<!<[^>]*>)\bQ[1-4]\s+\d{4}/g, '<span class="highlight-quarter">$&</span>');
         
-        // Important financial terms
+        // Large numbers: 1.5B, 500M, 50K (avoid already highlighted content)
+        highlighted = highlighted.replace(/(?<!<[^>]*>)(?<!\$[\d,]*\.?\d*)\b\d+\.?\d*[BMK]\b/g, '<span class="highlight-number">$&</span>');
+        
+        // Important financial terms (avoid already highlighted content)
         const terms = ['earnings', 'revenue', 'profit', 'loss', 'guidance', 'outlook', 'acquisition', 'merger', 'partnership', 'IPO', 'dividend', 'buyback', 'FDA', 'approval'];
         terms.forEach(term => {
-            const regex = new RegExp(`\\b${term}\\b`, 'gi');
+            const regex = new RegExp(`(?<!<[^>]*>)\\b${term}\\b`, 'gi');
             highlighted = highlighted.replace(regex, '<span class="highlight-term">$&</span>');
         });
         
-        // Ticker symbols (2-5 uppercase letters)
-        highlighted = highlighted.replace(/\b[A-Z]{2,5}\b/g, '<span class="highlight-ticker">$&</span>');
+        // Ticker symbols (2-5 uppercase letters, avoid already highlighted)
+        highlighted = highlighted.replace(/(?<!<[^>]*>)\b[A-Z]{2,5}\b/g, '<span class="highlight-ticker">$&</span>');
         
         return highlighted;
     }
     
     formatSummary(text) {
-        // Enhanced formatting with entity highlighting
-        let formatted = this.highlightEntities(text)
+        // Enhanced formatting (highlighting applied at the end)
+        let formatted = text
             // Remove "What Changed Today" and "Risk Factors" sections from main summary
             .replace(/\*\*WHAT CHANGED TODAY\*\*[\s\S]*?(?=\n\n|\*\*|$)/gi, '')
             .replace(/WHAT CHANGED TODAY[\s\S]*?(?=\n\n|\*\*|$)/gi, '')
@@ -402,7 +421,8 @@ class StockNewsApp {
             // Remove headers at the end with no content
             .replace(/<h4>([^<]+)<\/h4>\s*<\/p>\s*$/g, '</p>');
         
-        return formatted;
+        // Apply entity highlighting at the end to avoid conflicts
+        return this.highlightEntities(formatted);
     }
 
     truncateUrl(url) {
@@ -416,6 +436,7 @@ class StockNewsApp {
         const refreshBtn = document.getElementById('refresh-btn');
         const originalText = refreshBtn.textContent;
         const summaryContent = document.getElementById('summary-content');
+        let response = null;
 
         // Show loading animation
         refreshBtn.innerHTML = '<span class="spinner"></span> Generating...';
@@ -435,7 +456,7 @@ class StockNewsApp {
         this.loadChart(ticker);
 
         try {
-            const response = await fetch(`/api/refresh/${ticker}`);
+            response = await fetch(`/api/refresh/${ticker}`);
             const result = await response.json();
 
             if (response.ok) {
@@ -445,19 +466,19 @@ class StockNewsApp {
             } else {
                 this.showMessage(result.error || 'Failed to refresh', 'error');
                 summaryContent.innerHTML = `<div class="error-message">Failed to generate summary: ${result.error}</div>`;
+                // Re-enable button on error
+                refreshBtn.innerHTML = originalText;
+                refreshBtn.disabled = false;
+                refreshBtn.classList.remove('loading');
             }
         } catch (error) {
             console.error('Error refreshing ticker:', error);
             this.showMessage('Failed to generate summary', 'error');
             summaryContent.innerHTML = '<div class="error-message">Failed to generate summary</div>';
-        } finally {
-            // Only reset button if there was an error
-            // Success case resets via selectTicker
-            if (!response || !response.ok) {
-                refreshBtn.innerHTML = originalText;
-                refreshBtn.disabled = false;
-                refreshBtn.classList.remove('loading');
-            }
+            // Re-enable button on error
+            refreshBtn.innerHTML = originalText;
+            refreshBtn.disabled = false;
+            refreshBtn.classList.remove('loading');
         }
     }
 
@@ -838,8 +859,32 @@ style.textContent = `
     .no-tickers {
         text-align: center;
         color: #7f8c8d;
-        font-style: italic;
         padding: 20px;
+        background: #f8f9fa;
+        border-radius: 8px;
+        margin: 10px 0;
+    }
+    
+    .no-tickers-title {
+        font-size: 16px;
+        font-weight: 600;
+        color: #2c3e50;
+        margin-bottom: 8px;
+    }
+    
+    .no-tickers-subtitle {
+        font-size: 14px;
+        color: #7f8c8d;
+        margin-bottom: 12px;
+    }
+    
+    .no-tickers-examples {
+        font-size: 12px;
+        color: #95a5a6;
+        background: #ecf0f1;
+        padding: 8px;
+        border-radius: 4px;
+        border-left: 3px solid #3498db;
     }
     
     .spinner {

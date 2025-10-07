@@ -4,15 +4,15 @@ A professional-grade financial news aggregation and AI analysis platform that de
 
 ## 🚀 Key Features
 
-- **Multi-Source Intelligence**: Aggregates news from 7 sources: TradingView, Finviz, Polygon, Alpha Vantage, Twelve Data, Finnhub, and Alpaca Markets
+- **Multi-Source Intelligence**: Aggregates news from 15+ sources including Benzinga, Motley Fool, StockStory, Reuters, TechCrunch, Polygon, Alpha Vantage, Finnhub, and more
 - **AI-Powered Analysis**: Uses Gemini 2.5 Pro with real-time market context for institutional-grade summaries
-- **Smart Article Selection**: AI selects 5-7 most trading-relevant articles from 30-70 collected articles
+- **Priority Source Processing**: Prioritizes premium sources (Benzinga, Motley Fool, StockStory, Reuters, TechCrunch) with retry logic and enhanced error handling
 - **ML Price Forecasting**: Multi-model machine learning with cross-validation for price predictions
 - **NLP Sentiment Analysis**: Real-time sentiment scoring from news headlines and content
 - **Entity Highlighting**: Auto-highlights financial metrics, company names, and key terms for quick scanning
 - **Company Logos**: Visual branding with cached company logos from API Ninjas
 - **Interactive Price Charts**: Toggle charts with multiple timeframes (7D, 30D, 90D, 1Y, 2Y)
-- **Optimized Caching**: 8-hour news cache, 6-hour summary cache, 7-day logo cache reduces API calls by 80%
+- **Optimized Caching**: 8-hour news cache, 6-hour summary cache, 7-day logo cache with complete cleanup on ticker deletion
 - **100 Ticker Support**: Batch processing with smart API allocation for large portfolios
 - **Smart Rate Limiting**: Conservative API quota management with intelligent caching
 - **Trading-Focused Reports**: Risk/reward analysis, sector context, and specific trading catalysts
@@ -192,7 +192,7 @@ git push heroku main
 
 ## 💰 Comprehensive Cost Analysis
 
-### Current Monthly Costs (10 Tickers)
+### Current Monthly Costs (100 Tickers)
 | Service | Tier | Cost | Usage | Limits | Cache Impact |
 |---------|------|------|-------|--------|-------------|
 | **Hosting** |
@@ -206,7 +206,7 @@ git push heroku main
 | Finnhub API | Free | $0 | ~3,600 requests/month | 2.6M available | Minimal impact |
 | Alpaca Markets | Free | $0 | Unlimited | Real-time data | N/A |
 | API Ninjas | Free | $0 | ~150 requests/month | 150,000 available | 95% reduction |
-| **Total** | | **$0** | | **95%+ headroom** | **Major savings** |
+| **Total** | | **$0-5** | | **Scalable to 100 tickers** | **Major savings** |
 
 ### Scaling Cost Projections
 | Tickers | Monthly Requests | Estimated Cost | Optimization |
@@ -303,24 +303,37 @@ Scheduling: APScheduler (Background jobs)
 
 ### Summary Generation Process
 ```
-1. News Collection (7 Sources - 30-70 articles)
+1. News Collection (15+ Sources - 50-100 articles)
+   Priority Sources (Processed First):
+   ├── Benzinga API (Premium financial news) → 10 articles
+   ├── Motley Fool (Investment analysis) → 5 articles
+   ├── StockStory (Stock-focused content) → 5 articles
+   ├── Reuters (Business news) → 5 articles
+   └── TechCrunch (Tech/startup coverage) → 5 articles
+   
+   Secondary Sources:
    ├── TradingView (Web scraping) → 5-8 articles
    ├── Finviz (Quote page extraction) → 10 articles
    ├── Polygon API (Professional feed) → 10 articles
    ├── Alpha Vantage (News sentiment) → 10 articles
    ├── Twelve Data (Company news) → 10 articles
    ├── Finnhub (Market news) → 10 articles
+   ├── NewsAPI (General news) → 10 articles
+   ├── MarketWatch (Financial news) → 5 articles
+   ├── Invezz (Investment news) → 3 articles
    └── Alpaca Markets (Trading news) → 3 articles
 
-2. AI Processing Pipeline (Gemini 2.5 Pro)
+2. Enhanced Processing Pipeline (Gemini 2.5 Pro)
+   ├── Priority Source Processing → Process premium sources first with retry logic
    ├── Article Selection → Top 5-7 most relevant by trading priority
-   ├── Market Context Integration → Real-time price/bid-ask data
+   ├── Market Context Integration → Real-time price/bid-ask data from Alpaca
    ├── Historical Analysis → Compare with past 7 days
    └── Professional Summary → Trading thesis + risk analysis
 
-3. Data Storage & Caching
-   ├── Supabase Database → All articles + summaries stored
-   ├── Upstash Redis Cache → 4hr news, 2hr summaries (60% API reduction)
+3. Enhanced Data Management
+   ├── Supabase Database → All articles + summaries + logos stored
+   ├── Upstash Redis Cache → 8hr news, 6hr summaries, ML cache
+   ├── Complete Cleanup → Ticker deletion removes all data and cache
    ├── Duplicate Prevention → Smart deduplication logic
    └── 7-day Rolling History → Track changes over time
 
@@ -333,12 +346,14 @@ Scheduling: APScheduler (Background jobs)
 ```
 
 ### Performance Optimizations
-- **Multi-Level Caching**: 4-hour news cache, 2-hour summary cache
+- **Priority Processing**: Premium sources processed first with dedicated resources
+- **Enhanced Error Handling**: Retry logic for failed sources with detailed logging
+- **Multi-Level Caching**: 8-hour news cache, 6-hour summary cache, ML cache
 - **Session Reuse**: Persistent HTTP connections for web scraping
-- **Intelligent Rate Limiting**: Conservative API quota management
+- **Intelligent Rate Limiting**: Conservative API quota management with quota checking
 - **Graceful Degradation**: Automatic fallbacks when limits hit
-- **Cache-First Strategy**: Instant responses for cached data
-- **Async Processing**: Background job scheduling
+- **Complete Cleanup**: Full data removal on ticker deletion
+- **Async Processing**: Background job scheduling with batch processing
 
 ### Security Features
 - Environment variable protection
@@ -406,26 +421,38 @@ Phase 4 (Enterprise): Microservices + Auto-scaling
 
 #### "Summary unavailable" Error
 ```bash
-# Verify environment variables
-echo $GEMINI_API_KEY
+# Check API debug endpoint
+curl http://localhost:5000/api/debug/apis
 
 # Check logs for detailed errors
 tail -f app.log
 
-# Check API quota status
-# Look for "quota exhausted" or "rate limit" in logs
+# Look for source-specific failures
+grep "PRIORITY.*FAILED" app.log
+grep "quota exhausted" app.log
+```
+
+#### Source Collection Issues
+```bash
+# Check which sources are failing
+grep "COLLECTION SUMMARY" app.log
+grep "Failed sources" app.log
+
+# Manual refresh to clear cache and retry
+curl -X GET http://localhost:5000/api/refresh/AAPL
 ```
 
 #### Cache Issues
 ```bash
-# Clear cache manually (restart app)
-# Or use manual refresh to clear specific ticker cache
+# Check cache status
+curl http://localhost:5000/api/cache-status
 
-# Check cache status in API responses
-curl http://localhost:5000/api/summary/AAPL | grep cache_status
+# Clear specific ticker cache
+curl -X DELETE http://localhost:5000/api/tickers/AAPL
 
-# Monitor cache hit rates in logs
+# Monitor cache performance
 grep "Using cached" app.log
+grep "Cleared.*cache" app.log
 ```
 
 
