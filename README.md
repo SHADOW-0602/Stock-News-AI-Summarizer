@@ -4,7 +4,7 @@ A professional-grade financial news aggregation and AI analysis platform that de
 
 ## 🚀 Key Features
 
-- **Multi-Source Intelligence**: Aggregates news from 15+ sources including Benzinga, Motley Fool, StockStory, Reuters, TechCrunch, Polygon, Alpha Vantage, Finnhub, and more
+- **Multi-Source Intelligence**: Aggregates news from 15+ sources including TradingView (Selenium), Benzinga, Motley Fool, StockStory, Reuters, TechCrunch, 99Bitcoins (RSS), Polygon, Alpha Vantage, Finnhub, and more
 - **AI-Powered Analysis**: Uses Gemini 2.5 Pro with real-time market context for institutional-grade summaries
 - **Priority Source Processing**: Prioritizes premium sources (Benzinga, Motley Fool, StockStory, Reuters, TechCrunch) with retry logic and enhanced error handling
 - **ML Price Forecasting**: Multi-model machine learning with cross-validation for price predictions
@@ -22,6 +22,7 @@ A professional-grade financial news aggregation and AI analysis platform that de
 
 ### Prerequisites
 - Python 3.8+ installed
+- Google Chrome browser (for TradingView scraping)
 - Internet connection for API access
 - Web browser for interface
 
@@ -161,6 +162,21 @@ heroku config:set ALPHA_VANTAGE_API_KEY=your_key
 git push heroku main
 ```
 
+### Chrome Browser Setup (Required for TradingView)
+```bash
+# Ubuntu/Debian
+sudo apt-get update
+sudo apt-get install -y google-chrome-stable
+
+# Docker (add to Dockerfile)
+RUN apt-get update && apt-get install -y \
+    wget gnupg \
+    && wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | apt-key add - \
+    && echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google-chrome.list \
+    && apt-get update \
+    && apt-get install -y google-chrome-stable
+```
+
 ## 💡 User Guide
 
 ### Getting Started
@@ -296,7 +312,9 @@ Backend: Python 3.8+ + Flask
 Database: Supabase (PostgreSQL) - Cloud-native with real-time capabilities
 Cache: Upstash Redis - Serverless Redis with REST API
 AI/ML: Google Gemini 2.5 Pro API
-Data Sources: TradingView, Finviz, Polygon API, Alpha Vantage, Twelve Data, Finnhub
+Automation: Selenium WebDriver + Chrome (TradingView)
+Parsing: BeautifulSoup4 + lxml (RSS/XML)
+Data Sources: TradingView, Finviz, 99Bitcoins, Polygon API, Alpha Vantage, Twelve Data, Finnhub
 Hosting: Railway/Render (Cloud)
 Scheduling: APScheduler (Background jobs)
 ```
@@ -312,8 +330,9 @@ Scheduling: APScheduler (Background jobs)
    └── TechCrunch (Tech/startup coverage) → 5 articles
    
    Secondary Sources:
-   ├── TradingView (Web scraping) → 5-8 articles
+   ├── TradingView (Selenium automation) → 5-8 articles
    ├── Finviz (Quote page extraction) → 10 articles
+   ├── 99Bitcoins (RSS feed) → 5 articles
    ├── Polygon API (Professional feed) → 10 articles
    ├── Alpha Vantage (News sentiment) → 10 articles
    ├── Twelve Data (Company news) → 10 articles
@@ -350,6 +369,8 @@ Scheduling: APScheduler (Background jobs)
 - **Enhanced Error Handling**: Retry logic for failed sources with detailed logging
 - **Multi-Level Caching**: 8-hour news cache, 6-hour summary cache, ML cache
 - **Session Reuse**: Persistent HTTP connections for web scraping
+- **Selenium Optimization**: Headless Chrome with 3-second wait for dynamic content
+- **XML Parsing**: lxml parser for efficient RSS feed processing (99Bitcoins)
 - **Intelligent Rate Limiting**: Conservative API quota management with quota checking
 - **Graceful Degradation**: Automatic fallbacks when limits hit
 - **Complete Cleanup**: Full data removal on ticker deletion

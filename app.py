@@ -162,84 +162,78 @@ class NewsCollector:
             raise e
     
     def get_tradingview_news(self, ticker):
-        """Scrape TradingView news for ticker - improved version"""
-        logger.debug(f"Starting TradingView scraping for {ticker}")
+        """Scrape TradingView news using Selenium"""
+        logger.debug(f"Starting TradingView Selenium scraping for {ticker}")
         try:
-            # Try different TradingView URLs
+            from selenium import webdriver
+            from selenium.webdriver.chrome.options import Options
+            from selenium.webdriver.common.by import By
+            from selenium.webdriver.support.ui import WebDriverWait
+            from selenium.webdriver.support import expected_conditions as EC
+            from webdriver_manager.chrome import ChromeDriverManager
+            from selenium.webdriver.chrome.service import Service
+            
+            chrome_options = Options()
+            chrome_options.add_argument('--headless')
+            chrome_options.add_argument('--no-sandbox')
+            chrome_options.add_argument('--disable-dev-shm-usage')
+            chrome_options.add_argument('--disable-gpu')
+            chrome_options.add_argument('--window-size=1920,1080')
+            
+            service = Service(ChromeDriverManager().install())
+            driver = webdriver.Chrome(service=service, options=chrome_options)
+            
+            articles = []
             urls = [
-                f"https://www.tradingview.com/symbols/{ticker}/news/",
                 f"https://www.tradingview.com/symbols/NASDAQ-{ticker}/news/",
                 f"https://www.tradingview.com/symbols/NYSE-{ticker}/news/"
             ]
             
-            articles = []
             for url in urls:
                 try:
-                    logger.debug(f"Trying URL: {url}")
-                    response = self.session.get(url, timeout=15)
+                    driver.get(url)
+                    WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
+                    time.sleep(3)
                     
-                    if response.status_code != 200:
-                        continue
+                    # Use better selectors based on test results
+                    article_elements = driver.find_elements(By.CSS_SELECTOR, "[class*='article']")
                     
-                    soup = BeautifulSoup(response.content, 'html.parser')
-                    
-                    # Look for JSON data in script tags (TradingView often embeds data)
-                    scripts = soup.find_all('script')
-                    for script in scripts:
-                        if script.string and 'news' in script.string.lower():
-                            script_content = script.string
-                            # Try to extract news titles from JSON-like content
-                            import re
-                            titles = re.findall(r'"title"\s*:\s*"([^"]+)"', script_content)
-                            urls_found = re.findall(r'"url"\s*:\s*"([^"]+)"', script_content)
+                    for element in article_elements[:8]:
+                        try:
+                            # Get title text from the article element
+                            title = element.text.strip()
                             
-                            for i, title in enumerate(titles[:8]):
-                                if len(title) > 15:
-                                    article_url = urls_found[i] if i < len(urls_found) else url
-                                    articles.append({
-                                        'title': title,
-                                        'url': article_url,
-                                        'source': 'TradingView',
-                                        'content': title,
-                                        'date': datetime.now().isoformat()
-                                    })
-                    
-                    # Fallback: look for any text that looks like news headlines
-                    if not articles:
-                        # Find all text elements and filter for news-like content
-                        all_text = soup.get_text()
-                        lines = [line.strip() for line in all_text.split('\n') if line.strip()]
-                        
-                        potential_headlines = []
-                        for line in lines:
-                            # Filter for lines that look like headlines
-                            if (20 < len(line) < 150 and 
-                                not line.startswith(('http', 'www', 'Copyright', 'Terms')) and
-                                any(word in line.lower() for word in ['stock', 'market', 'price', 'earnings', 'revenue', ticker.lower()])):
-                                potential_headlines.append(line)
-                        
-                        # Take first few potential headlines
-                        for headline in potential_headlines[:5]:
-                            articles.append({
-                                'title': headline,
-                                'url': url,
-                                'source': 'TradingView',
-                                'content': headline,
-                                'date': datetime.now().isoformat()
-                            })
+                            # Try to find a link within the element
+                            link_elem = element.find_element(By.CSS_SELECTOR, "a")
+                            link = link_elem.get_attribute('href') if link_elem else url
+                            
+                            # Filter out sign-in prompts and short text
+                            if (title and len(title) > 20 and 
+                                'sign in' not in title.lower() and
+                                'more in news' not in title.lower()):
+                                articles.append({
+                                    'title': title,
+                                    'url': link,
+                                    'source': 'TradingView',
+                                    'content': title,
+                                    'date': datetime.now().isoformat()
+                                })
+                        except:
+                            continue
                     
                     if articles:
                         break
                         
                 except Exception as url_error:
-                    logger.debug(f"Error with URL {url}: {url_error}")
+                    logger.debug(f"TradingView URL error {url}: {url_error}")
                     continue
             
+            driver.quit()
             logger.info(f"TradingView: Found {len(articles)} articles for {ticker}")
             return articles
             
         except Exception as e:
-            logger.error(f"TradingView scraping error for {ticker}: {e}")
+            logger.error(f"TradingView Selenium error for {ticker}: {e}")
             return []
     
     def get_finviz_news(self, ticker):
@@ -767,7 +761,6 @@ class NewsCollector:
         """Get news from 99Bitcoins RSS feed"""
         logger.debug(f"Starting 99Bitcoins RSS feed collection for {ticker}")
         try:
-            # Use RSS feed which is accessible
             url = "https://99bitcoins.com/feed/"
             response = self.session.get(url, timeout=15)
             
@@ -775,22 +768,31 @@ class NewsCollector:
                 logger.debug(f"99Bitcoins RSS returned status {response.status_code} for {ticker}")
                 return []
             
-            soup = BeautifulSoup(response.content, 'html.parser')
+            soup = BeautifulSoup(response.content, 'xml')
             articles = []
             
-            # Parse RSS feed
             items = soup.find_all('item')
             
             for item in items[:10]:
                 try:
                     title = item.find('title')
                     link = item.find('link')
+                    guid = item.find('guid')
                     description = item.find('description')
                     pub_date = item.find('pubDate')
                     
-                    if title and link:
+                    if title:
                         title_text = title.get_text(strip=True)
-                        link_url = link.get_text(strip=True)
+                        
+                        # Try multiple ways to get URL
+                        link_url = ""
+                        if link and link.get_text(strip=True):
+                            link_url = link.get_text(strip=True)
+                        elif guid and guid.get_text(strip=True):
+                            link_url = guid.get_text(strip=True)
+                        else:
+                            link_url = "https://99bitcoins.com/"
+                        
                         desc_text = description.get_text(strip=True) if description else title_text
                         date_text = pub_date.get_text(strip=True) if pub_date else datetime.now().isoformat()
                         
@@ -1509,14 +1511,15 @@ def add_ticker():
         result = db.add_ticker(ticker)
         logger.info(f"Successfully added ticker: {ticker}")
         
-        # Immediately process news for the new ticker
+        # Auto-start summary generation for new ticker
         try:
-            logger.info(f"Processing initial news for new ticker: {ticker}")
-            process_ticker_news(ticker)
-            logger.info(f"Initial news processing completed for {ticker}")
+            logger.info(f"Auto-generating summary for new ticker: {ticker}")
+            from threading import Thread
+            Thread(target=process_ticker_news, args=(ticker,), daemon=True).start()
+            logger.info(f"Summary generation started in background for {ticker}")
         except Exception as process_error:
-            logger.error(f"Error processing initial news for {ticker}: {process_error}")
-            # Don't fail the ticker addition if news processing fails
+            logger.error(f"Error starting summary generation for {ticker}: {process_error}")
+            # Don't fail the ticker addition if processing fails
         
         return jsonify({'success': True})
     except Exception as e:
@@ -1831,7 +1834,7 @@ def process_ticker_news(ticker):
                     source_counts[source_name] = 0
                     
                     # Retry failed sources once
-                    if source_name not in ['Polygon', 'Alpha Vantage', 'NewsAPI']:  # Don't retry API sources
+                    if source_name not in ['Polygon', 'Alpha Vantage', 'NewsAPI', 'TradingView']:  # Don't retry API/Selenium sources
                         try:
                             logger.info(f"Retrying {source_name}...")
                             retry_task = next((t for t in tasks if t[0] == source_name), None)
