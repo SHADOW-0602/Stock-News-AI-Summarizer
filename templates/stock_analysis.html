@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ ticker }} - Stock Analysis</title>
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='analysis.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+    <header class="analysis-header">
+        <div class="header-content">
+            <div class="stock-info">
+                <div class="stock-logo-container">
+                    <div id="stock-logo" class="stock-logo">{{ ticker[0] }}</div>
+                </div>
+                <div class="stock-details">
+                    <h1 id="stock-symbol">{{ ticker }}</h1>
+                    <p id="company-name">Loading...</p>
+                    <div class="price-info">
+                        <span id="current-price">$--</span>
+                        <span id="price-change" class="price-change">--</span>
+                    </div>
+                </div>
+            </div>
+            <div class="header-actions">
+                <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
+                <a href="/" class="back-btn">← Back to Portfolio</a>
+            </div>
+        </div>
+    </header>
+
+    <main class="analysis-main">
+        <div class="tab-navigation">
+            <button class="tab-btn active" data-tab="chart">📊 Chart</button>
+            <button class="tab-btn" data-tab="news">📰 News</button>
+            <button class="tab-btn" data-tab="financials">📋 Financial Statements</button>
+            <button class="tab-btn" data-tab="trade-ideas">💡 Trade Ideas</button>
+        </div>
+
+        <!-- Chart Tab -->
+        <div id="chart-tab" class="tab-content active">
+            <div class="chart-controls">
+                <div class="timeframe-selector">
+                    <button class="timeframe-btn" data-period="1D">1D</button>
+                    <button class="timeframe-btn" data-period="5D">5D</button>
+                    <button class="timeframe-btn active" data-period="1M">1M</button>
+                    <button class="timeframe-btn" data-period="3M">3M</button>
+                    <button class="timeframe-btn" data-period="6M">6M</button>
+                    <button class="timeframe-btn" data-period="1Y">1Y</button>
+                    <button class="timeframe-btn" data-period="2Y">2Y</button>
+                </div>
+
+            </div>
+            <div class="chart-container">
+                <div id="candlestick-chart"></div>
+            </div>
+            <div class="chart-stats">
+                <div class="stat-item">
+                    <span class="stat-label">52W High</span>
+                    <span id="week-52-high" class="stat-value">--</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">52W Low</span>
+                    <span id="week-52-low" class="stat-value">--</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Volume</span>
+                    <span id="avg-volume" class="stat-value">--</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Market Cap</span>
+                    <span id="market-cap" class="stat-value">--</span>
+                </div>
+            </div>
+            <div class="chart-info">
+                <small id="chart-source-info" class="source-info">Loading chart data...</small>
+            </div>
+        </div>
+
+        <!-- News Tab -->
+        <div id="news-tab" class="tab-content">
+            <div class="analyst-commentary">
+                <h2>AI Analyst Commentary</h2>
+                <div id="analyst-summary" class="commentary-content">
+                    Loading AI analysis...
+                </div>
+                <div class="commentary-meta">
+                    <span id="last-updated">Last updated: --</span>
+                    <button id="refresh-analysis" class="refresh-btn">🔄 Refresh Analysis</button>
+                </div>
+            </div>
+
+            <div class="what-changed-section">
+                <h3>📈 What Changed Today (Last 7 Days)</h3>
+                <div id="what-changed-timeline" class="timeline-container">
+                    <p style="color: #666; text-align: center; padding: 1rem;">Loading recent changes...</p>
+                </div>
+            </div>
+
+
+
+            <div class="news-section">
+                <div class="news-filters">
+                    <button class="filter-btn active" data-filter="all">All News</button>
+                </div>
+                <div id="news-list" class="news-list">
+                    <div style="text-align: center; color: #666; padding: 2rem;">Loading news articles...</div>
+                </div>
+                <div id="news-pagination" class="news-pagination"></div>
+            </div>
+        </div>
+
+        <!-- Financial Statements Tab -->
+        <div id="financials-tab" class="tab-content">
+            <div class="financials-controls">
+                <div class="statement-selector">
+                    <button class="statement-btn active" data-statement="income">Income Statement</button>
+                    <button class="statement-btn" data-statement="balance">Balance Sheet</button>
+                    <button class="statement-btn" data-statement="cashflow">Cash Flow</button>
+                </div>
+                <div class="period-selector">
+                    <button class="period-btn active" data-period="annual">Annual</button>
+                    <button class="period-btn" data-period="quarterly">Quarterly</button>
+                </div>
+
+                <div class="view-selector">
+                    <button class="view-btn active" data-view="table">📊 Table</button>
+                    <button class="view-btn" data-view="charts">📈 Charts</button>
+                </div>
+
+            </div>
+
+            <div id="financial-data" class="financial-table-container">
+                <div style="text-align: center; color: #666; padding: 2rem;">Loading financial statements...</div>
+            </div>
+        </div>
+
+        <!-- Trade Ideas Tab -->
+        <div id="trade-ideas-tab" class="tab-content">
+            <div class="trade-ideas-header">
+                <h2>AI-Powered Trade Ideas</h2>
+                <p>Advanced algorithmic recommendations based on technical analysis, sentiment, and market conditions
+                </p>
+            </div>
+
+            <div class="trade-recommendations">
+                <div class="recommendation-card">
+                    <div class="rec-header">
+                        <span class="rec-type">LONG</span>
+                        <span class="confidence">High Confidence</span>
+                    </div>
+                    <div class="rec-content">
+                        <h4>Momentum Breakout Strategy</h4>
+                        <p>Technical indicators suggest potential upward momentum with strong volume confirmation.</p>
+                    </div>
+                </div>
+
+                <div class="recommendation-card">
+                    <div class="rec-header">
+                        <span class="rec-type">SWING</span>
+                        <span class="confidence">Medium Confidence</span>
+                    </div>
+                    <div class="rec-content">
+                        <h4>Mean Reversion Play</h4>
+                        <p>Stock appears oversold based on RSI and sentiment analysis. Potential bounce expected.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="ml-analysis">
+                <h3>🚀 ML Analysis & Recommendations</h3>
+                <div id="ml-recommendations" class="ml-content">
+                    Loading ML analysis...
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const ticker = '{{ ticker }}';
+        let currentTab = 'chart';
+        let currentTimeframe = '1M';
+        let currentStatement = 'income';
+        let currentPeriod = 'annual';
+
+        // Theme toggle
+        function toggleTheme() {
+            document.body.classList.toggle('light-mode');
+            const toggle = document.querySelector('.theme-toggle');
+            toggle.textContent = document.body.classList.contains('light-mode') ? '☀️' : '🌙';
+        }
+
+        // Tab switching
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const tabName = btn.dataset.tab;
+                switchTab(tabName);
+            });
+        });
+
+
+
+        function switchTab(tabName) {
+            // Update active tab button
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+
+            // Update active tab content
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            document.getElementById(`${tabName}-tab`).classList.add('active');
+
+            currentTab = tabName;
+
+            // Load tab-specific data
+            switch (tabName) {
+                case 'chart':
+                    loadChartData();
+                    break;
+                case 'news':
+                    loadNewsData();
+                    break;
+                case 'financials':
+                    loadFinancialData();
+                    break;
+                case 'trade-ideas':
+                    loadTradeIdeas();
+                    break;
+            }
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            loadStockInfo();
+            loadChartData();
+            // Set company name immediately if still loading
+            setTimeout(() => {
+                if (document.getElementById('company-name').textContent === 'Loading...') {
+                    document.getElementById('company-name').textContent = `${ticker} Corporation`;
+                }
+            }, 1000);
+        });
+    </script>
+    <script src="{{ url_for('static', filename='analysis.js') }}"></script>
+    <script src="{{ url_for('static', filename='financial-charts.js') }}"></script>
+</body>
+
+</html>

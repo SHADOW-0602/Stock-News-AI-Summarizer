@@ -31,7 +31,21 @@ CREATE TABLE IF NOT EXISTS daily_summaries (
     UNIQUE(ticker, date)
 );
 
+-- Financial statements table
+CREATE TABLE IF NOT EXISTS financial_statements (
+    id SERIAL PRIMARY KEY,
+    ticker TEXT NOT NULL,
+    statement_type TEXT NOT NULL, -- 'income', 'balance', 'cash_flow'
+    period TEXT NOT NULL, -- 'quarterly', 'annual'
+    fiscal_date DATE NOT NULL,
+    data JSONB NOT NULL,
+    created_at TIMESTAMP DEFAULT NOW(),
+    UNIQUE(ticker, statement_type, period, fiscal_date)
+);
+
 -- Create indexes for better performance
 CREATE INDEX IF NOT EXISTS idx_tickers_symbol ON tickers(symbol);
 CREATE INDEX IF NOT EXISTS idx_news_ticker ON news_articles(ticker);
 CREATE INDEX IF NOT EXISTS idx_summaries_ticker_date ON daily_summaries(ticker, date);
+CREATE INDEX IF NOT EXISTS idx_financial_ticker_type ON financial_statements(ticker, statement_type);
+CREATE INDEX IF NOT EXISTS idx_financial_date ON financial_statements(fiscal_date);

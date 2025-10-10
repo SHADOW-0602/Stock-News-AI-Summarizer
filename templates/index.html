@@ -7,172 +7,287 @@
     <title>Stock News AI Summarizer</title>
     <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='chart.css') }}">
-
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
 
 <body>
-    <div class="container">
-        <header class="professional-header">
-            <div class="header-content">
-                <div class="logo-section">
-                    <img src="{{ url_for('static', filename='favicon.svg') }}" alt="Stock News AI"
-                        class="header-logo-icon">
-                    <div class="logo-text">
-                        <h1>Stock News AI Summarizer</h1>
-                        <p class="tagline">Professional Market Intelligence Platform</p>
-                    </div>
-                </div>
-                <div class="market-widget" id="market-widget">
-                    <div class="market-status-loading">Loading market data...</div>
-                </div>
-
+    <!-- Header Section -->
+    <header class="main-header">
+        <nav class="navbar">
+            <div class="nav-brand">
+                <h1>Stock News</h1>
             </div>
-        </header>
-
-
-
-        <div class="main-content">
-            <!-- Left Side: News Sources & Summary -->
-            <div class="left-panel">
-                <div class="summary-section">
-                    <div class="summary-header">
-                        <h2 id="current-ticker">Select a ticker to view summary</h2>
-                        <div class="header-buttons">
-                            <button id="chart-toggle-btn" class="chart-toggle-btn" style="display: none;" title="Toggle chart">📊 Chart</button>
-                            <button id="refresh-btn" class="refresh-btn" style="display: none;">🤖 Generate</button>
-                        </div>
-                    </div>
-
-                    <div class="chart-container" id="chart-container" style="display: none;">
-                        <div class="chart-header">
-                            <h3 id="chart-title">Loading Chart...</h3>
-                            <div class="chart-controls">
-                                <div class="period-selector">
-                                    <button class="period-btn active" data-period="7d">7D</button>
-                                    <button class="period-btn" data-period="30d">30D</button>
-                                    <button class="period-btn" data-period="90d">90D</button>
-                                    <button class="period-btn" data-period="1y">1Y</button>
-                                    <button class="period-btn" data-period="2y">2Y</button>
-                                </div>
-                                <div class="chart-stats" id="chart-stats"></div>
-                            </div>
-                        </div>
-                        <div class="chart-wrapper">
-                            <canvas id="price-chart"></canvas>
-                        </div>
-                    </div>
-
-                    <div id="summary-content" class="summary-content">
-                        <div class="welcome-message">
-                            <div class="trading-dashboard">
-                                <div class="dashboard-header">
-                                    <h3>🏛️ Professional Trading Dashboard</h3>
-                                    <p>Institutional-grade market intelligence powered by AI</p>
-                                </div>
-
-                                <div class="feature-grid">
-                                    <div class="feature-card">
-                                        <div class="feature-icon">📈</div>
-                                        <h4>Multi-Source Intelligence</h4>
-                                        <p>Alpha Vantage • Finviz • Polygon • TradingView • Twelve Data • Finnhub</p>
-                                    </div>
-
-                                    <div class="feature-card">
-                                        <div class="feature-icon">🤖</div>
-                                        <h4>AI-Powered Analysis</h4>
-                                        <p>Gemini Pro curates top market-moving news</p>
-                                    </div>
-
-                                    <div class="feature-card">
-                                        <div class="feature-icon">⚡</div>
-                                        <h4>Real-Time Insights</h4>
-                                        <p>Daily summaries with change detection</p>
-                                    </div>
-
-                                    <div class="feature-card">
-                                        <div class="feature-icon">📊</div>
-                                        <h4>Historical Tracking</h4>
-                                        <p>7-day trend analysis and comparisons</p>
-                                    </div>
-                                </div>
-
-
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="sources-section" id="sources-section" style="display: none;">
-                    <h3>📰 Sources Used</h3>
-                    <div id="sources-list" class="sources-list"></div>
-                </div>
-
-                <div class="history-section" id="history-section" style="display: none;">
-                    <h3>📅 7-Day History</h3>
-                    <div id="history-list" class="history-list"></div>
-                </div>
+            <div class="nav-links">
+                <a href="#">Features</a>
+                <a href="#">About</a>
+                <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
             </div>
+        </nav>
+    </header>
 
-            <!-- Right Sidebar: Tickers -->
-            <div class="right-sidebar">
-                <div class="ticker-section">
-                    <h3>📋 Stock Tickers</h3>
-
-                    <div class="add-ticker">
-                        <input type="text" id="ticker-input" placeholder="Enter ticker (e.g., AAPL)" maxlength="10">
-                        <button id="add-ticker-btn">+ Add</button>
-                    </div>
-
-                    <div id="ticker-list" class="ticker-list">
-                        <div class="loading">Loading tickers...</div>
-                    </div>
+    <!-- Hero Section -->
+    <section class="hero">
+        <video class="hero-video" autoplay muted loop>
+            <source src="{{ url_for('static', filename='HeroSection.mp4') }}" type="video/mp4">
+        </video>
+        <div class="hero-overlay"></div>
+        <div class="hero-content">
+            <div class="hero-badge">AI-Powered Financial Intelligence Platform</div>
+            <h1 class="hero-title">Revolutionize Your Trading with AI-Powered Stock News Analysis</h1>
+            <p class="hero-description">Experience the future of trading with our cutting-edge AI that analyzes
+                thousands of news sources, market trends, and financial data to deliver precise trading signals and
+                comprehensive stock summaries.</p>
+            <div class="hero-buttons">
+                <button class="btn-primary">Get Started Free</button>
+                <button class="btn-secondary">View Live Demo</button>
+            </div>
+            <div class="hero-stats">
+                <div class="stat">
+                    <span class="stat-number">15+</span>
+                    <span class="stat-label">News Sources</span>
                 </div>
-
-
-
-                <div class="info-section professional-info">
-                    <div class="info-header">
-                        <div class="info-icon">💼</div>
-                        <h4>Professional Workflow</h4>
-                    </div>
-                    <div class="workflow-steps">
-                        <div class="step">
-                            <div class="step-number">1</div>
-                            <div class="step-content">
-                                <strong>Portfolio Setup</strong>
-                                <p>Add tickers to your watchlist</p>
-                            </div>
-                        </div>
-                        <div class="step">
-                            <div class="step-number">2</div>
-                            <div class="step-content">
-                                <strong>AI Analysis</strong>
-                                <p>Multi-source news aggregation</p>
-                            </div>
-                        </div>
-                        <div class="step">
-                            <div class="step-number">3</div>
-                            <div class="step-content">
-                                <strong>Daily Reports</strong>
-                                <p>8 AM IST automated updates</p>
-                            </div>
-                        </div>
-                        <div class="step">
-                            <div class="step-number">4</div>
-                            <div class="step-content">
-                                <strong>Trend Analysis</strong>
-                                <p>Historical performance tracking</p>
-                            </div>
-                        </div>
-                    </div>
+                <div class="stat">
+                    <span class="stat-number">95%</span>
+                    <span class="stat-label">Accuracy Rate</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-number">24/7</span>
+                    <span class="stat-label">Market Monitoring</span>
                 </div>
             </div>
         </div>
-    </div>
+    </section>
 
-    <script src="{{ url_for('static', filename='script.js') }}"></script>
+    <!-- Features Section -->
+    <section class="features">
+        <div class="features-header">
+            <h2>Powerful AI Trading Features</h2>
+            <p>Everything you need to make smarter trading decisions</p>
+        </div>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon-large">📰</div>
+                <h3>Multi-Source News Analysis</h3>
+                <p>AI processes news from 15+ premium sources including TradingView, Benzinga, Reuters, and more to
+                    deliver comprehensive market insights</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon-large">🤖</div>
+                <h3>Gemini AI Summaries</h3>
+                <p>Advanced AI curates and summarizes the most relevant news articles, highlighting key market-moving
+                    events and trading opportunities</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon-large">📈</div>
+                <h3>Real-Time Price Charts</h3>
+                <p>Interactive charts with multiple timeframes, technical indicators, and price predictions powered by
+                    machine learning algorithms</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon-large">🎯</div>
+                <h3>Sentiment Analysis</h3>
+                <p>NLP-powered sentiment scoring from news headlines and content to gauge market mood and predict price
+                    movements</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon-large">🔍</div>
+                <h3>Entity Recognition</h3>
+                <p>Automatically highlights financial metrics, company names, and key terms in summaries for quick
+                    scanning and analysis</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon-large">⏱️</div>
+                <h3>Smart Caching</h3>
+                <p>8-hour news cache and 6-hour summary cache with 7-day logo storage for lightning-fast portfolio
+                    management</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta-section">
+        <div class="cta-content">
+            <h2>Ready to Transform Your Trading?</h2>
+            <p>Join thousands of traders who are already using AI to make smarter investment decisions</p>
+            <div class="cta-buttons">
+                <button class="btn-primary">Start Trading with AI</button>
+                <button class="btn-outline">Learn More</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Add Ticker Section -->
+    <section class="add-ticker-section">
+        <h2>Add New Stock</h2>
+        <div class="add-ticker-form">
+            <input type="text" id="ticker-input" placeholder="Enter ticker symbol (e.g., AAPL)" maxlength="10">
+            <button id="add-btn" onclick="addTicker()">Add Stock</button>
+        </div>
+        <div id="add-message" class="message"></div>
+    </section>
+
+    <!-- Supported Stocks -->
+    <section class="stocks-section">
+        <h2>Your Stock Portfolio</h2>
+        <p>AI-powered analysis for your tracked stocks with real-time news aggregation and sentiment analysis</p>
+
+        <div id="stocks-grid" class="stocks-grid">
+            <div class="loading">Loading your stocks...</div>
+        </div>
+    </section>
+
+    <script>
+        // Load tickers from Supabase
+        async function loadTickers() {
+            try {
+                const response = await fetch('/api/tickers');
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const tickers = await response.json();
+                const stocksGrid = document.getElementById('stocks-grid');
+
+                if (!Array.isArray(tickers)) {
+                    throw new Error('Invalid response format');
+                }
+
+                if (tickers.length === 0) {
+                    stocksGrid.innerHTML = '<p>No stocks added yet. Add some tickers to get started!</p>';
+                    return;
+                }
+
+                // Load logos for each ticker
+                const tickersWithLogos = await Promise.all(tickers.map(async (tickerData) => {
+                    const symbol = typeof tickerData === 'string' ? tickerData : tickerData.symbol;
+                    try {
+                        const logoResponse = await fetch(`/api/logo/${symbol}`);
+                        const logoData = logoResponse.ok ? await logoResponse.json() : null;
+                        return {
+                            symbol: symbol,
+                            company_name: typeof tickerData === 'object' ? tickerData.company_name : null,
+                            logoUrl: logoData?.image || null
+                        };
+                    } catch {
+                        return {
+                            symbol: symbol,
+                            company_name: typeof tickerData === 'object' ? tickerData.company_name : null,
+                            logoUrl: null
+                        };
+                    }
+                }));
+
+                stocksGrid.innerHTML = tickersWithLogos.map(ticker => `
+                    <div class="stock-card">
+                        <button class="remove-btn" onclick="removeTicker('${ticker.symbol}')">&times;</button>
+                        <div class="stock-logo" onclick="viewStock('${ticker.symbol}')">
+                            ${ticker.logoUrl ?
+                        `<img src="${ticker.logoUrl}" alt="${ticker.symbol}" style="width: 100%; height: 100%; object-fit: contain; border-radius: 8px;">` :
+                        `${ticker.symbol.charAt(0)}`
+                    }
+                        </div>
+                        <h4 onclick="viewStock('${ticker.symbol}')">${ticker.symbol}</h4>
+                        <p onclick="viewStock('${ticker.symbol}')">${ticker.company_name || ''}</p>
+
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error('Error loading tickers:', error);
+                document.getElementById('stocks-grid').innerHTML = `<p>Error loading stocks: ${error.message}</p>`;
+            }
+        }
+
+        function viewStock(symbol) {
+            window.location.href = `/stock/${symbol}`;
+        }
+
+        async function addTicker() {
+            const input = document.getElementById('ticker-input');
+            const symbol = input.value.trim().toUpperCase();
+            const message = document.getElementById('add-message');
+
+            if (!symbol) {
+                message.textContent = 'Please enter a ticker symbol';
+                message.className = 'message error';
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/tickers', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ticker: symbol })
+                });
+
+                if (response.ok) {
+                    message.textContent = `${symbol} added successfully!`;
+                    message.className = 'message success';
+                    input.value = '';
+                    loadTickers();
+                } else {
+                    const error = await response.json();
+                    message.textContent = error.error || 'Failed to add ticker';
+                    message.className = 'message error';
+                }
+            } catch (error) {
+                message.textContent = 'Error adding ticker';
+                message.className = 'message error';
+            }
+        }
+
+        async function removeTicker(symbol) {
+            if (!confirm(`Remove ${symbol} from your portfolio?`)) return;
+
+            // Add removing animation
+            const stockCards = document.querySelectorAll('.stock-card');
+            const targetCard = Array.from(stockCards).find(card => 
+                card.querySelector('h4').textContent === symbol
+            );
+            
+            if (targetCard) {
+                targetCard.classList.add('removing');
+            }
+
+            try {
+                const response = await fetch(`/api/tickers/${symbol}`, {
+                    method: 'DELETE'
+                });
+
+                if (response.ok) {
+                    // Wait for animation to complete before reloading
+                    setTimeout(() => loadTickers(), 200);
+                } else {
+                    // Remove animation class if failed
+                    if (targetCard) targetCard.classList.remove('removing');
+                    alert('Failed to remove ticker');
+                }
+            } catch (error) {
+                if (targetCard) targetCard.classList.remove('removing');
+                alert('Error removing ticker');
+            }
+        }
+
+        // Load tickers when page loads
+        document.addEventListener('DOMContentLoaded', loadTickers);
+
+        // Add ticker on Enter key
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('ticker-input').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') addTicker();
+            });
+        });
+    </script>
+
+    <script>
+        function toggleTheme() {
+            document.body.classList.toggle('light-mode');
+            const toggle = document.querySelector('.theme-toggle');
+            toggle.textContent = document.body.classList.contains('light-mode') ? '☀️' : '🌙';
+        }
+    </script>
 </body>
 
 </html>

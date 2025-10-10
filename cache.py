@@ -4,13 +4,28 @@ import os
 import json
 import logging
 import requests
+import math
 from datetime import datetime, timedelta
+
+def clean_for_json(obj):
+    """Clean object for JSON serialization by removing NaN values"""
+    if isinstance(obj, dict):
+        return {k: clean_for_json(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [clean_for_json(item) for item in obj]
+    elif isinstance(obj, float):
+        if math.isnan(obj) or math.isinf(obj):
+            return None
+        return obj
+    else:
+        return obj
 
 logger = logging.getLogger(__name__)
 
 # Cache durations
 CACHE_DURATION = 8 * 3600  # 8 hours
 SUMMARY_CACHE_DURATION = 6 * 3600  # 6 hours
+CHART_CACHE_DURATION = 4 * 3600  # 4 hours
 
 class UpstashRedis:
     def __init__(self, url, token):
@@ -60,6 +75,7 @@ class Cache:
         self.redis_client = None
         self.fallback_news_cache = {}
         self.fallback_summary_cache = {}
+        self.fallback_chart_cache = {}
         self._init_redis()
     
     def _init_redis(self):
@@ -162,17 +178,68 @@ class Cache:
         except Exception as e:
             logger.debug(f"Summary cache write error for {ticker}: {e}")
     
+    def get_chart_data(self, ticker, period):
+        """Get cached chart data"""
+        try:
+            cache_key = f"chart:{ticker}:{period}"
+            if self.redis_client:
+                cached_data = self.redis_client.get(cache_key)
+                if cached_data:
+                    cache_entry = json.loads(cached_data.decode('utf-8'))
+                    logger.debug(f"Using cached chart data for {ticker} ({period})")
+                    return cache_entry['data']
+            else:
+                if cache_key in self.fallback_chart_cache:
+                    cache_entry = self.fallback_chart_cache[cache_key]
+                    if (datetime.now() - cache_entry['timestamp']).total_seconds() < CHART_CACHE_DURATION:
+                        logger.debug(f"Using fallback cached chart data for {ticker} ({period})")
+                        return cache_entry['data']
+        except Exception as e:
+            logger.debug(f"Chart cache read error for {ticker}: {e}")
+        return None
+    
+    def set_chart_data(self, ticker, period, chart_data):
+        """Cache chart data"""
+        try:
+            cache_key = f"chart:{ticker}:{period}"
+            # Clean chart data before caching
+            cleaned_chart_data = clean_for_json(chart_data)
+            cache_data = {
+                'data': cleaned_chart_data,
+                'timestamp': datetime.now().isoformat()
+            }
+            
+            if self.redis_client:
+                self.redis_client.setex(cache_key, CHART_CACHE_DURATION, json.dumps(cache_data))
+                logger.debug(f"Cached chart data for {ticker} ({period})")
+            else:
+                self.fallback_chart_cache[cache_key] = {
+                    'data': cleaned_chart_data,
+                    'timestamp': datetime.now()
+                }
+                logger.debug(f"Cached chart data for {ticker} ({period}) in memory")
+        except Exception as e:
+            logger.debug(f"Chart cache write error for {ticker}: {e}")
+    
     def clear(self, ticker):
         """Clear all cache for ticker"""
         try:
             if self.redis_client:
-                self.redis_client.delete(f"news:{ticker}", f"summary:{ticker}", f"ml:{ticker}")
+                # Clear all chart periods for ticker
+                periods = ['1D', '5D', '1M', '3M', '6M', '1Y', '2Y']
+                keys_to_delete = [f"news:{ticker}", f"summary:{ticker}", f"ml:{ticker}"]
+                keys_to_delete.extend([f"chart:{ticker}:{period}" for period in periods])
+                self.redis_client.delete(*keys_to_delete)
                 logger.info(f"Cleared Redis cache for {ticker}")
             else:
                 if ticker in self.fallback_news_cache:
                     del self.fallback_news_cache[ticker]
                 if ticker in self.fallback_summary_cache:
                     del self.fallback_summary_cache[ticker]
+                # Clear chart cache
+                chart_keys = [key for key in self.fallback_chart_cache.keys() if key.startswith(f"chart:{ticker}:")]
+                for key in chart_keys:
+                    del self.fallback_chart_cache[key]
                 logger.info(f"Cleared memory cache for {ticker}")
         except Exception as e:
             logger.error(f"Cache clear error for {ticker}: {e}")
@@ -194,8 +261,14 @@ class Cache:
             for ticker in expired_summaries:
                 del self.fallback_summary_cache[ticker]
             
-            if expired_news or expired_summaries:
-                logger.info(f"Cleaned {len(expired_news)} news + {len(expired_summaries)} cache entries")
+            # Clean chart cache
+            expired_charts = [key for key, data in self.fallback_chart_cache.items()
+                             if (current_time - data['timestamp']).total_seconds() > CHART_CACHE_DURATION]
+            for key in expired_charts:
+                del self.fallback_chart_cache[key]
+            
+            if expired_news or expired_summaries or expired_charts:
+                logger.info(f"Cleaned {len(expired_news)} news + {len(expired_summaries)} summaries + {len(expired_charts)} chart entries")
         else:
             logger.debug("Redis handles cache expiry automatically")
     
@@ -234,7 +307,8 @@ class Cache:
         
         status['cache_durations'] = {
             'news_cache': f'{CACHE_DURATION // 3600} hours ({CACHE_DURATION} seconds)',
-            'summary_cache': f'{SUMMARY_CACHE_DURATION // 3600} hours ({SUMMARY_CACHE_DURATION} seconds)'
+            'summary_cache': f'{SUMMARY_CACHE_DURATION // 3600} hours ({SUMMARY_CACHE_DURATION} seconds)',
+            'chart_cache': f'{CHART_CACHE_DURATION // 3600} hours ({CHART_CACHE_DURATION} seconds)'
         }
         
         return status
