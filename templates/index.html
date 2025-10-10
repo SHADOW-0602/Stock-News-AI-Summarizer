@@ -20,8 +20,8 @@
                 <h1>Stock News</h1>
             </div>
             <div class="nav-links">
-                <a href="#">Features</a>
-                <a href="#">About</a>
+                <a href="/features">Features</a>
+                <a href="/about">About</a>
                 <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
             </div>
         </nav>
@@ -40,7 +40,7 @@
                 thousands of news sources, market trends, and financial data to deliver precise trading signals and
                 comprehensive stock summaries.</p>
             <div class="hero-buttons">
-                <button class="btn-primary">Get Started Free</button>
+                <button class="btn-primary" onclick="document.getElementById('ticker-input').scrollIntoView({behavior: 'smooth'}); document.getElementById('ticker-input').focus();">Get Started Free</button>
                 <button class="btn-secondary">View Live Demo</button>
             </div>
             <div class="hero-stats">
@@ -113,7 +113,7 @@
             <p>Join thousands of traders who are already using AI to make smarter investment decisions</p>
             <div class="cta-buttons">
                 <button class="btn-primary">Start Trading with AI</button>
-                <button class="btn-outline">Learn More</button>
+                <a href="/learn-more" class="btn-outline">Learn More</a>
             </div>
         </div>
     </section>

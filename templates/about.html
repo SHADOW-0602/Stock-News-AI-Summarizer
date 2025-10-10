@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About - Stock News AI Summarizer</title>
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='pages.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <header class="main-header">
+        <nav class="navbar">
+            <div class="nav-brand">
+                <a href="/">
+                    <h1>Stock News</h1>
+                </a>
+            </div>
+            <div class="nav-links">
+                <a href="/features">Features</a>
+                <a href="/about" class="active">About</a>
+                <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
+            </div>
+        </nav>
+    </header>
+
+    <main class="page-content">
+        <section class="page-hero">
+            <div class="hero-content">
+                <h1 class="page-title">About Stock News AI</h1>
+                <p class="page-subtitle">Delivering institutional-grade market intelligence at zero cost</p>
+            </div>
+        </section>
+
+        <section class="about-content">
+            <div class="about-section">
+                <h2>Our Mission</h2>
+                <p>We democratize access to professional-grade financial analysis by leveraging cutting-edge AI
+                    technology. Our platform aggregates news from multiple reliable sources and provides
+                    institutional-quality market intelligence that was previously only available to large financial
+                    institutions.</p>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number">15+</div>
+                    <div class="stat-label">Total Sources</div>
+                    <div class="stat-desc">8 core + 7 API sources</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">100</div>
+                    <div class="stat-label">Ticker Support</div>
+                    <div class="stat-desc">Batch processing</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">$0</div>
+                    <div class="stat-label">Monthly Cost</div>
+                    <div class="stat-desc">Free tier optimization</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">24/7</div>
+                    <div class="stat-label">Monitoring</div>
+                    <div class="stat-desc">Real-time updates</div>
+                </div>
+            </div>
+
+            <div class="about-section">
+                <h2>Technology Stack</h2>
+                <div class="tech-grid">
+                    <div class="tech-item">
+                        <h4>AI & Machine Learning</h4>
+                        <p>Google Gemini 2.5 Pro for advanced natural language processing and market analysis</p>
+                    </div>
+                    <div class="tech-item">
+                        <h4>Data Collection</h4>
+                        <p>Selenium WebDriver, RSS feeds, and API integrations for comprehensive news aggregation</p>
+                    </div>
+                    <div class="tech-item">
+                        <h4>Backend Infrastructure</h4>
+                        <p>Python Flask with Supabase PostgreSQL database and Upstash Redis caching</p>
+                    </div>
+                    <div class="tech-item">
+                        <h4>Frontend Experience</h4>
+                        <p>Modern HTML5, CSS3, and JavaScript with ApexCharts and Chart.js visualizations</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="about-section">
+                <h2>Data Sources</h2>
+                <div class="sources-grid">
+                    <div class="source-category">
+                        <h4>Web Scraping (5 Sources)</h4>
+                        <ul>
+                            <li>TradingView - Market news automation</li>
+                            <li>Finviz - Financial data extraction</li>
+                            <li>MarketWatch - Real-time financial news</li>
+                            <li>Motley Fool - Investment analysis</li>
+                            <li>StockStory - Stock-focused content</li>
+                        </ul>
+                    </div>
+                    <div class="source-category">
+                        <h4>RSS Feeds (3 Sources)</h4>
+                        <ul>
+                            <li>99Bitcoins - Crypto and market news</li>
+                            <li>Invezz - Investment news feed</li>
+                            <li>Seeking Alpha - Stock analysis</li>
+                        </ul>
+                    </div>
+                    <div class="source-category">
+                        <h4>API Sources (7 Sources)</h4>
+                        <ul>
+                            <li>Polygon API - Professional news feed</li>
+                            <li>Alpha Vantage - News sentiment analysis</li>
+                            <li>Twelve Data - Company news data</li>
+                            <li>Finnhub API - Market news feed</li>
+                            <li>Alpaca Markets - Trading news</li>
+                            <li>API Ninjas - Company logos</li>
+                            <li>TechCrunch API - Tech coverage</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="about-section">
+                <h2>Performance & Reliability</h2>
+                <div class="performance-grid">
+                    <div class="performance-item">
+                        <h4>Multi-Level Caching</h4>
+                        <p>8-hour news cache, 6-hour summary cache, and 7-day logo cache for optimal performance</p>
+                    </div>
+                    <div class="performance-item">
+                        <h4>Smart Rate Limiting</h4>
+                        <p>Conservative API quota management with intelligent fallback mechanisms</p>
+                    </div>
+                    <div class="performance-item">
+                        <h4>Error Handling</h4>
+                        <p>Robust retry logic and graceful degradation ensure 100% uptime</p>
+                    </div>
+                    <div class="performance-item">
+                        <h4>Scalability</h4>
+                        <p>Designed to handle up to 100 tickers with batch processing optimization</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="about-section">
+                <h2>Cost Optimization</h2>
+                <p>Our platform operates entirely on free API tiers, making institutional-grade market intelligence
+                    accessible to everyone. Through intelligent caching and rate limiting, we achieve significant cost
+                    savings while maintaining professional-level service quality.</p>
+
+                <div class="cost-comparison">
+                    <div class="cost-item">
+                        <h4>Traditional Solutions</h4>
+                        <div class="cost-price">$50-200/month</div>
+                        <p>Bloomberg Terminal, Reuters Eikon</p>
+                    </div>
+                    <div class="vs">VS</div>
+                    <div class="cost-item highlight">
+                        <h4>Stock News AI</h4>
+                        <div class="cost-price">$0/month</div>
+                        <p>Full feature access, unlimited usage</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="cta-section">
+            <div class="cta-content">
+                <h2>Experience the Future of Trading</h2>
+                <p>Join the revolution in AI-powered market intelligence</p>
+                <div class="cta-buttons">
+                    <a href="/" class="btn-primary">Start Trading</a>
+                    <a href="/features" class="btn-outline">View Features</a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        function toggleTheme() {
+            document.body.classList.toggle('light-mode');
+            const toggle = document.querySelector('.theme-toggle');
+            toggle.textContent = document.body.classList.contains('light-mode') ? '☀️' : '🌙';
+        }
+
+        // Animate sections on scroll
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('animate-in');
+                }
+            });
+        }, observerOptions);
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('.about-section, .stat-card, .tech-item, .performance-item').forEach(el => {
+                observer.observe(el);
+            });
+        });
+    </script>
+</body>
+
+</html>

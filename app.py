@@ -1568,6 +1568,18 @@ entity_highlighter = EntityHighlighter()
 def index():
     return render_template('index.html')
 
+@app.route('/features')
+def features():
+    return render_template('features.html')
+
+@app.route('/about')
+def about():
+    return render_template('about.html')
+
+@app.route('/learn-more')
+def learn_more():
+    return render_template('learn-more.html')
+
 @app.route('/stock/<ticker>')
 def stock_analysis(ticker):
     """Stock analysis page with 4-tab system"""

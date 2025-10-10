@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Features - Stock News AI Summarizer</title>
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='pages.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header class="main-header">
+        <nav class="navbar">
+            <div class="nav-brand">
+                <a href="/">
+                    <h1>Stock News</h1>
+                </a>
+            </div>
+            <div class="nav-links">
+                <a href="/features" class="active">Features</a>
+                <a href="/about">About</a>
+                <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
+            </div>
+        </nav>
+    </header>
+
+    <main class="page-content">
+        <section class="page-hero">
+            <div class="hero-content">
+                <h1 class="page-title">Powerful AI Trading Features</h1>
+                <p class="page-subtitle">Everything you need to make smarter trading decisions with institutional-grade market intelligence</p>
+            </div>
+        </section>
+
+        <section class="features-detailed">
+            <div class="feature-detail">
+                <div class="feature-icon">📰</div>
+                <div class="feature-content">
+                    <h3>Multi-Source Intelligence</h3>
+                    <p>Aggregates news from 8+ reliable sources including TradingView, Finviz, MarketWatch, Motley Fool, and more. Our system achieves 100% source success rate with enhanced error handling.</p>
+                    <ul>
+                        <li>5 Web scraping sources for real-time data</li>
+                        <li>3 RSS feeds for continuous monitoring</li>
+                        <li>30-50 articles collected per ticker</li>
+                        <li>Smart deduplication and filtering</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="feature-detail">
+                <div class="feature-icon">🤖</div>
+                <div class="feature-content">
+                    <h3>Gemini 2.5 Pro AI Analysis</h3>
+                    <p>Advanced AI curates and summarizes the most relevant news articles, highlighting key market-moving events and trading opportunities with institutional-grade analysis.</p>
+                    <ul>
+                        <li>AI selects top 5-7 most relevant articles</li>
+                        <li>Trading thesis with bull/bear cases</li>
+                        <li>Risk/reward analysis and catalysts</li>
+                        <li>Sector context and peer comparison</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="feature-detail">
+                <div class="feature-icon">📈</div>
+                <div class="feature-content">
+                    <h3>Interactive Price Charts</h3>
+                    <p>Professional ApexCharts candlestick charts with multiple timeframes, volume analysis, and Chart.js powered financial visualizations.</p>
+                    <ul>
+                        <li>Multiple timeframes (7D, 30D, 90D, 1Y, 2Y)</li>
+                        <li>Candlestick charts with volume indicators</li>
+                        <li>Financial statements visualization</li>
+                        <li>YoY growth analysis with conditional colors</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="feature-detail">
+                <div class="feature-icon">💰</div>
+                <div class="feature-content">
+                    <h3>Financial Statements Integration</h3>
+                    <p>Complete Yahoo Finance integration providing income statements, balance sheets, and cash flow data with dynamic visualization.</p>
+                    <ul>
+                        <li>Income statements, balance sheets, cash flow</li>
+                        <li>TTM (Trailing Twelve Months) calculations</li>
+                        <li>YoY growth indicators</li>
+                        <li>7-day data retention with auto-cleanup</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="feature-detail">
+                <div class="feature-icon">🎯</div>
+                <div class="feature-content">
+                    <h3>Smart Caching & Performance</h3>
+                    <p>Optimized multi-level caching system for lightning-fast performance and efficient API usage management.</p>
+                    <ul>
+                        <li>8-hour news cache for instant access</li>
+                        <li>6-hour summary cache for AI analysis</li>
+                        <li>7-day logo cache with 95% API reduction</li>
+                        <li>100 ticker support with batch processing</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="feature-detail">
+                <div class="feature-icon">🔍</div>
+                <div class="feature-content">
+                    <h3>Entity Recognition & Highlighting</h3>
+                    <p>Automatically highlights financial metrics, company names, and key terms in summaries for quick scanning and analysis.</p>
+                    <ul>
+                        <li>Financial metrics highlighting ($1.2B, 15%)</li>
+                        <li>Company names and ticker symbols</li>
+                        <li>Key dates and earnings periods</li>
+                        <li>Market-moving events identification</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section class="cta-section">
+            <div class="cta-content">
+                <h2>Ready to Experience These Features?</h2>
+                <p>Start using our AI-powered platform today</p>
+                <div class="cta-buttons">
+                    <a href="/" class="btn-primary">Get Started</a>
+                    <a href="/about" class="btn-outline">Learn More</a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        function toggleTheme() {
+            document.body.classList.toggle('light-mode');
+            const toggle = document.querySelector('.theme-toggle');
+            toggle.textContent = document.body.classList.contains('light-mode') ? '☀️' : '🌙';
+        }
+
+        // Animate features on scroll
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('animate-in');
+                }
+            });
+        }, observerOptions);
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('.feature-detail').forEach(el => {
+                observer.observe(el);
+            });
+        });
+    </script>
+</body>
+</html>

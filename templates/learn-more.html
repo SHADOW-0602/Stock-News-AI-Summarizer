@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Learn More - Stock News AI Summarizer</title>
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='pages.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header class="main-header">
+        <nav class="navbar">
+            <div class="nav-brand">
+                <a href="/">
+                    <h1>Stock News</h1>
+                </a>
+            </div>
+            <div class="nav-links">
+                <a href="/features">Features</a>
+                <a href="/about">About</a>
+                <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
+            </div>
+        </nav>
+    </header>
+
+    <main class="page-content">
+        <section class="page-hero">
+            <div class="hero-content">
+                <h1 class="page-title">How It Works</h1>
+                <p class="page-subtitle">Discover how AI transforms financial news into actionable trading insights</p>
+            </div>
+        </section>
+
+        <section class="learn-content">
+            <div class="step-section">
+                <div class="step-number">01</div>
+                <div class="step-content">
+                    <h3>Multi-Source Data Collection</h3>
+                    <p>Our system continuously monitors 15+ reliable sources including TradingView, Finviz, MarketWatch, and major financial APIs. We collect 30-50 articles per ticker with 100% source success rate.</p>
+                    <div class="step-features">
+                        <span>✓ Real-time web scraping</span>
+                        <span>✓ RSS feed monitoring</span>
+                        <span>✓ API integrations</span>
+                        <span>✓ Smart deduplication</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="step-section">
+                <div class="step-number">02</div>
+                <div class="step-content">
+                    <h3>AI-Powered Analysis</h3>
+                    <p>Gemini 2.5 Pro AI analyzes all collected articles and selects the top 5-7 most relevant pieces based on trading priority. The AI generates institutional-grade summaries with market context.</p>
+                    <div class="step-features">
+                        <span>✓ Article relevance scoring</span>
+                        <span>✓ Trading thesis generation</span>
+                        <span>✓ Risk/reward analysis</span>
+                        <span>✓ Historical comparison</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="step-section">
+                <div class="step-number">03</div>
+                <div class="step-content">
+                    <h3>Smart Caching & Performance</h3>
+                    <p>Multi-level caching system ensures lightning-fast performance. 8-hour news cache, 6-hour summary cache, and 7-day logo cache optimize API usage and reduce costs to $0/month.</p>
+                    <div class="step-features">
+                        <span>✓ Instant data access</span>
+                        <span>✓ 80% API reduction</span>
+                        <span>✓ Automatic cleanup</span>
+                        <span>✓ 100 ticker support</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="step-section">
+                <div class="step-number">04</div>
+                <div class="step-content">
+                    <h3>Professional Visualization</h3>
+                    <p>Interactive charts, financial statements, and entity highlighting provide comprehensive market view. ApexCharts candlestick charts and Chart.js financial visualizations offer professional-grade analysis tools.</p>
+                    <div class="step-features">
+                        <span>✓ Multiple timeframes</span>
+                        <span>✓ Financial statements</span>
+                        <span>✓ YoY growth analysis</span>
+                        <span>✓ Entity recognition</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="benefits-section">
+            <h2>Why Choose Our Platform?</h2>
+            <div class="benefits-grid">
+                <div class="benefit-card">
+                    <div class="benefit-icon">💰</div>
+                    <h4>Zero Cost</h4>
+                    <p>Operates entirely on free API tiers vs $50-200/month for traditional solutions</p>
+                </div>
+                <div class="benefit-card">
+                    <div class="benefit-icon">⚡</div>
+                    <h4>Lightning Fast</h4>
+                    <p>Multi-level caching provides instant access to analysis and market data</p>
+                </div>
+                <div class="benefit-card">
+                    <div class="benefit-icon">🎯</div>
+                    <h4>Institutional Grade</h4>
+                    <p>AI-powered analysis delivers professional-quality market intelligence</p>
+                </div>
+                <div class="benefit-card">
+                    <div class="benefit-icon">📊</div>
+                    <h4>Comprehensive</h4>
+                    <p>Complete financial data, charts, and news analysis in one platform</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="demo-section">
+            <h2>See It In Action</h2>
+            <div class="demo-steps">
+                <div class="demo-step">
+                    <div class="demo-number">1</div>
+                    <p>Add any stock ticker (AAPL, TSLA, MSFT)</p>
+                </div>
+                <div class="demo-arrow">→</div>
+                <div class="demo-step">
+                    <div class="demo-number">2</div>
+                    <p>AI analyzes 30-50 news articles instantly</p>
+                </div>
+                <div class="demo-arrow">→</div>
+                <div class="demo-step">
+                    <div class="demo-number">3</div>
+                    <p>Get professional trading insights & charts</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="cta-section">
+            <div class="cta-content">
+                <h2>Ready to Start Trading Smarter?</h2>
+                <p>Join thousands using AI for better investment decisions</p>
+                <div class="cta-buttons">
+                    <a href="/" class="btn-primary">Try It Now</a>
+                    <a href="/features" class="btn-outline">View All Features</a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        function toggleTheme() {
+            document.body.classList.toggle('light-mode');
+            const toggle = document.querySelector('.theme-toggle');
+            toggle.textContent = document.body.classList.contains('light-mode') ? '☀️' : '🌙';
+        }
+
+        // Animate sections on scroll
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('animate-in');
+                }
+            });
+        }, observerOptions);
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('.step-section, .benefit-card, .demo-step').forEach(el => {
+                observer.observe(el);
+            });
+        });
+    </script>
+</body>
+</html>
