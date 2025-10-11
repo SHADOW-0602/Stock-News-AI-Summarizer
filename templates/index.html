@@ -68,37 +68,37 @@
         </div>
         <div class="features-grid">
             <div class="feature-card">
-                <div class="feature-icon-large">📰</div>
+                <div class="feature-icon-large"><img src="" data-pexels="newspaper financial news" alt="News" style="width: 60px; height: 60px; border-radius: 8px;"></div>
                 <h3>Multi-Source News Analysis</h3>
                 <p>AI processes news from 15+ premium sources including TradingView, Benzinga, Reuters, and more to
                     deliver comprehensive market insights</p>
             </div>
             <div class="feature-card">
-                <div class="feature-icon-large">🤖</div>
+                <div class="feature-icon-large"><img src="" data-pexels="artificial intelligence robot" alt="AI" style="width: 60px; height: 60px; border-radius: 8px;"></div>
                 <h3>Gemini AI Summaries</h3>
                 <p>Advanced AI curates and summarizes the most relevant news articles, highlighting key market-moving
                     events and trading opportunities</p>
             </div>
             <div class="feature-card">
-                <div class="feature-icon-large">📈</div>
+                <div class="feature-icon-large"><img src="" data-pexels="stock market chart graph" alt="Charts" style="width: 60px; height: 60px; border-radius: 8px;"></div>
                 <h3>Real-Time Price Charts</h3>
                 <p>Interactive charts with multiple timeframes, technical indicators, and price predictions powered by
                     machine learning algorithms</p>
             </div>
             <div class="feature-card">
-                <div class="feature-icon-large">🎯</div>
+                <div class="feature-icon-large"><img src="" data-pexels="target bullseye accuracy" alt="Target" style="width: 60px; height: 60px; border-radius: 8px;"></div>
                 <h3>Sentiment Analysis</h3>
                 <p>NLP-powered sentiment scoring from news headlines and content to gauge market mood and predict price
                     movements</p>
             </div>
             <div class="feature-card">
-                <div class="feature-icon-large">🔍</div>
+                <div class="feature-icon-large"><img src="" data-pexels="magnifying glass search" alt="Search" style="width: 60px; height: 60px; border-radius: 8px;"></div>
                 <h3>Entity Recognition</h3>
                 <p>Automatically highlights financial metrics, company names, and key terms in summaries for quick
                     scanning and analysis</p>
             </div>
             <div class="feature-card">
-                <div class="feature-icon-large">⏱️</div>
+                <div class="feature-icon-large"><img src="" data-pexels="clock time speed" alt="Time" style="width: 60px; height: 60px; border-radius: 8px;"></div>
                 <h3>Smart Caching</h3>
                 <p>8-hour news cache and 6-hour summary cache with 7-day logo storage for lightning-fast portfolio
                     management</p>
@@ -270,8 +270,36 @@
             }
         }
 
+        // Load Pexels images
+        async function loadPexelsImage(query, imgElement) {
+            try {
+                const response = await fetch(`/api/pexels-image?query=${encodeURIComponent(query)}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.image) {
+                        imgElement.src = data.image;
+                    }
+                }
+            } catch (error) {
+                console.log('Pexels image load failed:', error);
+            }
+        }
+
+        // Initialize Pexels images
+        function initPexelsImages() {
+            document.querySelectorAll('[data-pexels]').forEach(img => {
+                const query = img.getAttribute('data-pexels');
+                loadPexelsImage(query, img);
+            });
+            
+
+        }
+
         // Load tickers when page loads
-        document.addEventListener('DOMContentLoaded', loadTickers);
+        document.addEventListener('DOMContentLoaded', () => {
+            loadTickers();
+            initPexelsImages();
+        });
 
         // Add ticker on Enter key
         document.addEventListener('DOMContentLoaded', () => {

@@ -244,6 +244,20 @@ class Cache:
         except Exception as e:
             logger.error(f"Cache clear error for {ticker}: {e}")
     
+    def clear_chart_data(self, ticker, period):
+        """Clear specific chart cache for ticker and period"""
+        try:
+            cache_key = f"chart:{ticker}:{period}"
+            if self.redis_client:
+                self.redis_client.delete(cache_key)
+                logger.debug(f"Cleared Redis chart cache for {ticker} ({period})")
+            else:
+                if cache_key in self.fallback_chart_cache:
+                    del self.fallback_chart_cache[cache_key]
+                logger.debug(f"Cleared memory chart cache for {ticker} ({period})")
+        except Exception as e:
+            logger.error(f"Chart cache clear error for {ticker}: {e}")
+    
     def cleanup_expired(self):
         """Clean up expired cache entries"""
         if not self.redis_client:

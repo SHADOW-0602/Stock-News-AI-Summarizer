@@ -37,7 +37,7 @@
 
         <section class="features-detailed">
             <div class="feature-detail">
-                <div class="feature-icon">📰</div>
+                <div class="feature-icon"><img src="" data-pexels="newspaper financial news" alt="News" style="width: 40px; height: 40px; border-radius: 6px;"></div>
                 <div class="feature-content">
                     <h3>Multi-Source Intelligence</h3>
                     <p>Aggregates news from 8+ reliable sources including TradingView, Finviz, MarketWatch, Motley Fool, and more. Our system achieves 100% source success rate with enhanced error handling.</p>
@@ -51,7 +51,7 @@
             </div>
 
             <div class="feature-detail">
-                <div class="feature-icon">🤖</div>
+                <div class="feature-icon"><img src="" data-pexels="artificial intelligence robot" alt="AI" style="width: 40px; height: 40px; border-radius: 6px;"></div>
                 <div class="feature-content">
                     <h3>Gemini 2.5 Pro AI Analysis</h3>
                     <p>Advanced AI curates and summarizes the most relevant news articles, highlighting key market-moving events and trading opportunities with institutional-grade analysis.</p>
@@ -65,7 +65,7 @@
             </div>
 
             <div class="feature-detail">
-                <div class="feature-icon">📈</div>
+                <div class="feature-icon"><img src="" data-pexels="stock market chart graph" alt="Charts" style="width: 40px; height: 40px; border-radius: 6px;"></div>
                 <div class="feature-content">
                     <h3>Interactive Price Charts</h3>
                     <p>Professional ApexCharts candlestick charts with multiple timeframes, volume analysis, and Chart.js powered financial visualizations.</p>
@@ -79,7 +79,7 @@
             </div>
 
             <div class="feature-detail">
-                <div class="feature-icon">💰</div>
+                <div class="feature-icon"><img src="" data-pexels="money dollar finance" alt="Money" style="width: 40px; height: 40px; border-radius: 6px;"></div>
                 <div class="feature-content">
                     <h3>Financial Statements Integration</h3>
                     <p>Complete Yahoo Finance integration providing income statements, balance sheets, and cash flow data with dynamic visualization.</p>
@@ -93,7 +93,7 @@
             </div>
 
             <div class="feature-detail">
-                <div class="feature-icon">🎯</div>
+                <div class="feature-icon"><img src="" data-pexels="target bullseye accuracy" alt="Target" style="width: 40px; height: 40px; border-radius: 6px;"></div>
                 <div class="feature-content">
                     <h3>Smart Caching & Performance</h3>
                     <p>Optimized multi-level caching system for lightning-fast performance and efficient API usage management.</p>
@@ -107,7 +107,7 @@
             </div>
 
             <div class="feature-detail">
-                <div class="feature-icon">🔍</div>
+                <div class="feature-icon"><img src="" data-pexels="magnifying glass search" alt="Search" style="width: 40px; height: 40px; border-radius: 6px;"></div>
                 <div class="feature-content">
                     <h3>Entity Recognition & Highlighting</h3>
                     <p>Automatically highlights financial metrics, company names, and key terms in summaries for quick scanning and analysis.</p>
@@ -140,6 +140,31 @@
             toggle.textContent = document.body.classList.contains('light-mode') ? '☀️' : '🌙';
         }
 
+        // Load Pexels images
+        async function loadPexelsImage(query, imgElement) {
+            try {
+                const response = await fetch(`/api/pexels-image?query=${encodeURIComponent(query)}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.image) {
+                        imgElement.src = data.image;
+                    }
+                }
+            } catch (error) {
+                console.log('Pexels image load failed:', error);
+            }
+        }
+
+        // Initialize Pexels images
+        function initPexelsImages() {
+            document.querySelectorAll('[data-pexels]').forEach(img => {
+                const query = img.getAttribute('data-pexels');
+                loadPexelsImage(query, img);
+            });
+            
+
+        }
+
         // Animate features on scroll
         const observerOptions = {
             threshold: 0.1,
@@ -158,6 +183,7 @@
             document.querySelectorAll('.feature-detail').forEach(el => {
                 observer.observe(el);
             });
+            initPexelsImages();
         });
     </script>
 </body>

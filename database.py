@@ -33,26 +33,29 @@ class Database:
         self._init_client()
     
     def _init_client(self):
-        """Initialize Supabase client with connection pooling"""
+        """Initialize Supabase client with error handling"""
         url = os.getenv('SUPABASE_URL')
         key = os.getenv('SUPABASE_ANON_KEY')
         
-        logger.debug(f"Supabase URL: {url[:30]}..." if url else "No URL")
-        logger.debug(f"Supabase Key: {key[:30]}..." if key else "No Key")
+        if not url or not key or url == 'your-supabase-url':
+            logger.error("Supabase credentials not configured")
+            return
         
-        try:
-            if url and key and url != 'your-supabase-url':
-                # Add connection options for better stability
-                options = {
-                    'auto_refresh_token': True,
-                    'persist_session': True
-                }
+        for attempt in range(3):
+            try:
                 self.client = create_client(url, key)
                 logger.info("Supabase client initialized successfully")
-            else:
-                logger.error(f"Supabase credentials not configured properly. URL: {bool(url)}, Key: {bool(key)}")
-        except Exception as e:
-            logger.error(f"Failed to initialize Supabase: {e}")
+                return
+            except KeyboardInterrupt:
+                logger.warning("Initialization interrupted by user")
+                break
+            except Exception as e:
+                if attempt < 2:
+                    logger.warning(f"Supabase init attempt {attempt + 1} failed, retrying...")
+                    import time
+                    time.sleep(1)
+                else:
+                    logger.error(f"Failed to initialize Supabase after 3 attempts: {e}")
     
     def test_connection(self):
         """Test database connection and validate schema"""
@@ -361,26 +364,19 @@ class Database:
         logger.info(f"Deleted financial data for {ticker}")
     
     def save_financial_statement(self, ticker, statement_type, period, fiscal_date, data):
-        """Save financial statement with fiscal date (only last 7 days)"""
+        """Save financial statement with fiscal date"""
         if not self.client:
             return
         
-        from datetime import datetime, timedelta
-        cutoff_date = (datetime.now() - timedelta(days=7)).date()
-        
-        # Only save if within last 7 days
-        if datetime.fromisoformat(fiscal_date).date() >= cutoff_date:
-            import json
-            self.client.table('financial_statements').upsert({
-                'ticker': ticker,
-                'statement_type': statement_type,
-                'period': period,
-                'fiscal_date': fiscal_date,
-                'data': json.dumps(data) if isinstance(data, dict) else data
-            }, on_conflict='ticker,statement_type,period,fiscal_date').execute()
-        
-        # Clean up old records
-        self.client.table('financial_statements').delete().eq('ticker', ticker).lt('fiscal_date', cutoff_date.isoformat()).execute()
+        import json
+        self.client.table('financial_statements').upsert({
+            'ticker': ticker,
+            'statement_type': statement_type,
+            'period': period,
+            'fiscal_date': fiscal_date,
+            'data': json.dumps(data) if isinstance(data, dict) else data,
+            'created_at': datetime.now().isoformat()
+        }, on_conflict='ticker,statement_type,period,fiscal_date').execute()
     
     def get_recent_financials(self, ticker, days=7):
         """Get financial statements saved in last 7 days"""
@@ -417,12 +413,20 @@ class Database:
             return []
 
 # Global database instance with safe initialization
-db = Database()
+try:
+    db = Database()
+except KeyboardInterrupt:
+    logger.warning("Database initialization interrupted")
+    db = None
+except Exception as e:
+    logger.error(f"Database initialization failed: {e}")
+    db = None
 
-# Force initialization with error handling
-if not db.client:
-    try:
-        db._init_client()
-    except Exception as e:
-        logger.error(f"Database initialization failed: {e}")
-        # Continue without database - app will handle gracefully
+# Ensure db object exists even if initialization failed
+if db is None:
+    class MockDatabase:
+        def __init__(self):
+            self.client = None
+        def __getattr__(self, name):
+            return lambda *args, **kwargs: None
+    db = MockDatabase()

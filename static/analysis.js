@@ -85,7 +85,7 @@ async function loadChartData() {
 
         data.prices = validPrices;
         renderCandlestickChart(data);
-        updateChartStats(data);
+        await updateChartStats(data);
 
         // Show data source info
         const sourceInfo = document.getElementById('chart-source-info');
@@ -359,13 +359,40 @@ function generateSampleChartData() {
     };
 }
 
-function updateChartStats(data) {
-    const prices = data.prices.map(p => p.close);
-    const volumes = data.prices.map(p => p.volume);
+async function updateChartStats(data) {
+    // Get real stock metrics from Yahoo Finance
+    try {
+        const response = await fetch(`/api/stock-metrics/${ticker}`);
+        if (response.ok) {
+            const metrics = await response.json();
 
-    document.getElementById('week-52-high').textContent = `$${Math.max(...prices).toFixed(2)}`;
-    document.getElementById('week-52-low').textContent = `$${Math.min(...prices).toFixed(2)}`;
-    document.getElementById('avg-volume').textContent = formatNumber(volumes.reduce((a, b) => a + b, 0) / volumes.length);
+            document.getElementById('week-52-high').textContent =
+                metrics.week_52_high ? `$${metrics.week_52_high.toFixed(2)}` : '--';
+            document.getElementById('week-52-low').textContent =
+                metrics.week_52_low ? `$${metrics.week_52_low.toFixed(2)}` : '--';
+            document.getElementById('avg-volume').textContent =
+                metrics.avg_volume || '--';
+        } else {
+            // Fallback to chart data if API fails
+            const prices = data.prices.map(p => p.close);
+            const volumes = data.prices.map(p => p.volume);
+
+            document.getElementById('week-52-high').textContent = `$${Math.max(...prices).toFixed(2)}`;
+            document.getElementById('week-52-low').textContent = `$${Math.min(...prices).toFixed(2)}`;
+            document.getElementById('avg-volume').textContent = formatNumber(volumes.reduce((a, b) => a + b, 0) / volumes.length);
+        }
+    } catch (error) {
+        console.error('Error fetching stock metrics:', error);
+        // Fallback to chart data
+        const prices = data.prices.map(p => p.close);
+        const volumes = data.prices.map(p => p.volume);
+
+        document.getElementById('week-52-high').textContent = `$${Math.max(...prices).toFixed(2)}`;
+        document.getElementById('week-52-low').textContent = `$${Math.min(...prices).toFixed(2)}`;
+        document.getElementById('avg-volume').textContent = formatNumber(volumes.reduce((a, b) => a + b, 0) / volumes.length);
+    }
+
+    // Market cap from chart data
     document.getElementById('market-cap').textContent = data.marketCap || '--';
 }
 
@@ -424,7 +451,7 @@ async function loadNewsData() {
         let historyData = [];
         if (data.current_summary && data.current_summary.what_changed) {
             historyData.push({
-                date: data.current_summary.date || new Date().toISOString(),
+                date: data.current_summary.date || new Date().toISOString().split('T')[0],
                 what_changed: data.current_summary.what_changed
             });
         }
@@ -618,13 +645,26 @@ function renderWhatChangedTimeline(history) {
 
     const timelineHTML = uniqueHistory.map((item, index) => {
         const date = new Date(item.date || item.created_at);
-        const dayLabel = index === 0 ? 'Today' : index === 1 ? 'Yesterday' : `${index} days ago`;
+        const today = new Date();
+        const diffTime = today.getTime() - date.getTime();
+        const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+        let dayLabel;
+        if (diffDays === 0) {
+            dayLabel = `Today (${date.toLocaleDateString()})`;
+        } else if (diffDays === 1) {
+            dayLabel = `Yesterday (${date.toLocaleDateString()})`;
+        } else {
+            dayLabel = `${diffDays} days ago (${date.toLocaleDateString()})`;
+        }
+
         const whatChanged = decodeHtmlEntities(item.what_changed || 'No changes recorded');
+        const shortContent = whatChanged.length > 150 ? whatChanged.substring(0, 150) + '...' : whatChanged;
 
         return `
-            <div class="timeline-item">
+            <div class="timeline-item" title="${whatChanged.replace(/"/g, '&quot;')}">
                 <div class="timeline-date">${dayLabel}</div>
-                <div class="timeline-content">${whatChanged}</div>
+                <div class="timeline-content">${shortContent}</div>
             </div>
         `;
     }).join('');
@@ -693,10 +733,14 @@ async function loadFinancialData() {
 
         // Extract the actual financial statements from the API response
         const statements = data.stored_statements || data.statements || [];
-        const availableDates = data.available_dates || [];
+        financialData.allStatements = statements;
 
+        // Update UI availability
+        updateFinancialAvailability(statements);
+
+        // Cache filtered data
         financialData[`${currentStatement}_${currentPeriod}`] = statements;
-        
+
         if (currentFinancialView === 'table') {
             renderFinancialTable(statements);
         } else {
@@ -706,6 +750,66 @@ async function loadFinancialData() {
         console.error('Error loading financial data:', error);
         document.getElementById('financial-data').innerHTML =
             '<div style="text-align: center; color: #666; padding: 2rem;">Financial data unavailable</div>';
+    }
+}
+
+function updateFinancialAvailability(statements) {
+    // Check availability for each statement type and period
+    const statementTypes = ['income', 'balance', 'cashflow'];
+    const periods = ['quarterly', 'annual'];
+
+    statementTypes.forEach(type => {
+        const btn = document.querySelector(`[data-statement="${type}"]`);
+        if (btn) {
+            const hasData = statements.some(s => s.statement_type === type);
+            btn.style.opacity = hasData ? '1' : '0.5';
+            btn.disabled = !hasData;
+            if (!hasData) btn.title = `No ${type} data available`;
+        }
+    });
+
+    periods.forEach(period => {
+        const btn = document.querySelector(`[data-period="${period}"]`);
+        if (btn) {
+            const hasData = statements.some(s => s.period === period);
+            btn.style.opacity = hasData ? '1' : '0.5';
+            btn.disabled = !hasData;
+            if (!hasData) btn.title = `No ${period} data available`;
+        }
+    });
+}
+
+function updateStatementAvailability() {
+    if (!financialData.allStatements) return;
+    const hasData = financialData.allStatements.some(s =>
+        s.statement_type === currentStatement && s.period === currentPeriod
+    );
+    if (!hasData) {
+        // Find first available period for this statement
+        const availablePeriod = financialData.allStatements.find(s =>
+            s.statement_type === currentStatement
+        )?.period;
+        if (availablePeriod) {
+            currentPeriod = availablePeriod;
+            document.querySelector(`[data-period="${availablePeriod}"]`).click();
+        }
+    }
+}
+
+function updatePeriodAvailability() {
+    if (!financialData.allStatements) return;
+    const hasData = financialData.allStatements.some(s =>
+        s.statement_type === currentStatement && s.period === currentPeriod
+    );
+    if (!hasData) {
+        // Find first available statement for this period
+        const availableStatement = financialData.allStatements.find(s =>
+            s.period === currentPeriod
+        )?.statement_type;
+        if (availableStatement) {
+            currentStatement = availableStatement;
+            document.querySelector(`[data-statement="${availableStatement}"]`).click();
+        }
     }
 }
 
@@ -880,12 +984,183 @@ function renderFinancialTable(data) {
 }
 
 function renderFinancialCharts(data) {
-    if (typeof financialCharts !== 'undefined') {
-        financialCharts.fetchAndRenderYahooCharts(ticker);
-    } else {
-        document.getElementById('financial-data').innerHTML = 
-            '<div style="text-align: center; color: #666; padding: 2rem;">Charts loading...</div>';
+    console.log(`Rendering charts for ${currentStatement} ${currentPeriod}`);
+
+    // Filter data by current statement type and period
+    let filteredData = data.filter(item =>
+        item.statement_type === currentStatement &&
+        item.period === currentPeriod
+    );
+
+    if (filteredData.length === 0) {
+        document.getElementById('financial-data').innerHTML =
+            `<div style="text-align: center; color: #666; padding: 2rem;">No ${currentStatement} ${currentPeriod} chart data available</div>`;
+        return;
     }
+
+    // Extract financial data and create charts based on statement type
+    const reports = filteredData.map(item => {
+        const financialData = typeof item.data === 'string' ? JSON.parse(item.data) : item.data;
+        return {
+            ...financialData,
+            fiscalDate: item.fiscal_date
+        };
+    }).sort((a, b) => new Date(a.fiscalDate) - new Date(b.fiscalDate));
+
+    // Get all available metrics from the data and find the best matches
+    const allMetrics = new Set();
+    reports.forEach(report => {
+        Object.keys(report).forEach(key => {
+            if (key !== 'fiscalDate' && key !== 'fiscalDateEnding') {
+                allMetrics.add(key);
+            }
+        });
+    });
+
+    console.log('Available metrics:', Array.from(allMetrics));
+
+    // Define flexible metric patterns based on statement type
+    let metricPatterns = [];
+    if (currentStatement === 'income') {
+        metricPatterns = [
+            ['Total Revenue', 'totalRevenue', 'revenue', 'Revenue'],
+            ['Net Income', 'netIncome', 'Net Income Common Stockholders'],
+            ['Gross Profit', 'grossProfit', 'Gross Profit'],
+            ['Operating Income', 'operatingIncome', 'Operating Income']
+        ];
+    } else if (currentStatement === 'balance') {
+        metricPatterns = [
+            ['Total Assets', 'totalAssets', 'Total Assets'],
+            ['Total Stockholder Equity', 'totalStockholderEquity', 'Stockholders Equity', 'Total Equity Gross Minority Interest'],
+            ['Total Debt', 'totalDebt', 'Total Debt', 'Net Debt'],
+            ['Total Current Assets', 'totalCurrentAssets', 'Current Assets']
+        ];
+    } else if (currentStatement === 'cashflow') {
+        metricPatterns = [
+            ['Operating Cash Flow', 'operatingCashFlow', 'Operating Cash Flow', 'Cash Flow From Continuing Operating Activities'],
+            ['Free Cash Flow', 'freeCashFlow', 'Free Cash Flow'],
+            ['Capital Expenditures', 'capitalExpenditures', 'Capital Expenditure'],
+            ['Net Cash Flow', 'netCashFlow', 'Changes In Cash']
+        ];
+    }
+
+    // Find actual metrics that match our patterns
+    const metricsToChart = [];
+    metricPatterns.forEach(patterns => {
+        for (const pattern of patterns) {
+            if (allMetrics.has(pattern)) {
+                metricsToChart.push(pattern);
+                break;
+            }
+        }
+    });
+
+    // Filter metrics that actually exist in the data with valid values
+    const availableMetrics = metricsToChart.filter(metric =>
+        reports.some(report => {
+            const value = report[metric];
+            return value !== null && value !== undefined && value !== 0 && value !== 'None' && !isNaN(parseFloat(value));
+        })
+    );
+
+    console.log('Metrics to chart:', metricsToChart);
+    console.log('Available metrics with data:', availableMetrics);
+
+    if (availableMetrics.length === 0) {
+        document.getElementById('financial-data').innerHTML =
+            `<div style="text-align: center; color: #666; padding: 2rem;">No chartable metrics found for ${currentStatement}</div>`;
+        return;
+    }
+
+    // Create chart HTML
+    const chartHTML = `
+        <div style="margin-bottom: 1rem; color: #ccc; font-size: 0.9rem;">
+            ${currentStatement.charAt(0).toUpperCase() + currentStatement.slice(1)} Statement Charts (${currentPeriod})
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem;">
+            ${availableMetrics.map(metric => `
+                <div style="background: rgba(255, 255, 255, 0.03); border-radius: 8px; padding: 1rem;">
+                    <h4 style="color: #00d4ff; margin-bottom: 1rem;">${formatMetricName(metric)}</h4>
+                    <div style="height: 300px;"><canvas id="chart-${metric}"></canvas></div>
+                </div>
+            `).join('')}
+        </div>
+    `;
+
+    document.getElementById('financial-data').innerHTML = chartHTML;
+
+    // Wait for DOM to update, then create charts
+    setTimeout(() => {
+        availableMetrics.forEach(metric => {
+            const canvas = document.getElementById(`chart-${metric}`);
+            if (!canvas) {
+                console.error(`Canvas not found for metric: ${metric}`);
+                return;
+            }
+
+            const ctx = canvas.getContext('2d');
+            const chartData = reports.map(report => {
+                const value = parseFloat(report[metric]);
+                return {
+                    x: report.fiscalDate,
+                    y: isNaN(value) ? 0 : value
+                };
+            }).filter(point => point.y !== 0);
+
+            if (chartData.length === 0) {
+                console.log(`No valid data for ${metric}`);
+                return;
+            }
+
+            try {
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: chartData.map(point => point.x),
+                        datasets: [{
+                            label: formatMetricName(metric),
+                            data: chartData.map(point => point.y),
+                            borderColor: '#00d4ff',
+                            backgroundColor: 'rgba(0, 212, 255, 0.1)',
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        layout: {
+                            padding: 10
+                        },
+                        scales: {
+                            x: {
+                                grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                                ticks: { color: '#cccccc' }
+                            },
+                            y: {
+                                grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                                ticks: {
+                                    color: '#cccccc',
+                                    callback: function (value) {
+                                        return formatFinancialNumber(value);
+                                    }
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                labels: { color: '#cccccc' }
+                            }
+                        }
+                    }
+                });
+                console.log(`Chart created successfully for ${metric}`);
+            } catch (error) {
+                console.error(`Error creating chart for ${metric}:`, error);
+            }
+        });
+    }, 100);
 }
 
 // Trade Ideas Tab Functions
@@ -895,6 +1170,7 @@ async function loadTradeIdeas() {
         if (response.ok) {
             const ideas = await response.json();
             renderTradeIdeas(ideas);
+            setTimeout(initPexelsImages, 100);
         }
     } catch (error) {
         console.error('Error loading trade ideas:', error);
@@ -932,7 +1208,7 @@ function generateAdvancedMLAnalysis(data) {
         return `
             <div class="ml-dashboard">
                 <div class="ml-section">
-                    <h4>⚠️ Trade Ideas Unavailable</h4>
+                    <h4><img src="" data-pexels="warning alert sign" alt="Warning" style="width: 24px; height: 24px; vertical-align: middle; margin-right: 8px;"> Trade Ideas Unavailable</h4>
                     <div style="text-align: center; padding: 2rem; color: #ef4444;">
                         <p><strong>Price data unavailable for ${ticker}</strong></p>
                         <p style="color: #666; margin-top: 1rem;">Unable to generate trade ideas without current price information. Please try again later or verify the ticker symbol.</p>
@@ -949,6 +1225,7 @@ function generateAdvancedMLAnalysis(data) {
                 <div class="trade-ideas-list">
                     ${data.trade_ideas.map(idea => `
                         <div class="trade-idea-card">
+                            ${idea.image ? `<div class="idea-image"><img src="${idea.image}" alt="${idea.strategy}" /></div>` : ''}
                             <div class="idea-header">
                                 <span class="strategy-name">${idea.strategy}</span>
                                 <span class="action-badge ${idea.action.toLowerCase().replace('/', '-')}">${idea.action}</span>
@@ -974,6 +1251,9 @@ function generateAdvancedMLAnalysis(data) {
             
             <div class="ml-section">
                 <h4>📊 ML Technical Analysis</h4>
+                <div class="idea-image">
+                    <img src="" data-pexels="stock market technical analysis charts" alt="Technical Analysis" />
+                </div>
                 <div class="ml-analysis-summary">
                     ${data.technical_analysis.ml_forecast ? `
                         <div class="forecast-item">
@@ -1002,6 +1282,9 @@ function generateAdvancedMLAnalysis(data) {
             
             <div class="ml-section">
                 <h4>⚠️ Risk Assessment</h4>
+                <div class="idea-image">
+                    <img src="" data-pexels="financial risk management warning" alt="Risk Assessment" />
+                </div>
                 <div class="risk-assessment">
                     <div class="risk-level">
                         <span class="risk-badge ${data.risk_assessment.level.toLowerCase()}">
@@ -1177,6 +1460,21 @@ style.textContent = `
         border-radius: 8px;
         padding: 1rem;
         border-left: 4px solid #00d4ff;
+        position: relative;
+        overflow: hidden;
+    }
+    .idea-image {
+        width: 100%;
+        height: 120px;
+        margin-bottom: 1rem;
+        border-radius: 6px;
+        overflow: hidden;
+    }
+    .idea-image img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        opacity: 0.8;
     }
     .idea-header {
         display: flex;
@@ -1276,6 +1574,35 @@ style.textContent = `
     .news-pagination {
         margin-top: 2rem;
     }
+    .timeline-item {
+        margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .timeline-item:last-child {
+        border-bottom: none;
+        margin-bottom: 0;
+    }
+    .timeline-date {
+        font-weight: 600;
+        color: #00d4ff;
+        margin-bottom: 0.5rem;
+        font-size: 0.9rem;
+    }
+    .timeline-content {
+        line-height: 1.5;
+        color: #ccc;
+    }
+    .timeline-item {
+        cursor: help;
+    }
+    .timeline-item:hover {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 8px;
+        padding: 0.75rem;
+        margin: -0.25rem;
+        transition: all 0.2s ease;
+    }
     .pagination-controls {
         display: flex;
         justify-content: center;
@@ -1315,8 +1642,32 @@ style.textContent = `
 `;
 document.head.appendChild(style);
 
+// Load Pexels images
+async function loadPexelsImage(query, imgElement) {
+    try {
+        const response = await fetch(`/api/pexels-image?query=${encodeURIComponent(query)}`);
+        if (response.ok) {
+            const data = await response.json();
+            if (data.image) {
+                imgElement.src = data.image;
+            }
+        }
+    } catch (error) {
+        console.log('Pexels image load failed:', error);
+    }
+}
+
+// Initialize Pexels images
+function initPexelsImages() {
+    document.querySelectorAll('[data-pexels]').forEach(img => {
+        const query = img.getAttribute('data-pexels');
+        loadPexelsImage(query, img);
+    });
+}
+
 // Event Listeners
 document.addEventListener('DOMContentLoaded', () => {
+    initPexelsImages();
     // Timeframe selector
     document.querySelectorAll('.timeframe-btn').forEach(btn => {
         btn.addEventListener('click', () => {
@@ -1327,22 +1678,24 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // Statement selector
+    // Statement selector with availability check
     document.querySelectorAll('.statement-btn').forEach(btn => {
         btn.addEventListener('click', () => {
             document.querySelectorAll('.statement-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             currentStatement = btn.dataset.statement;
+            updateStatementAvailability();
             loadFinancialData();
         });
     });
 
-    // Period selector
+    // Period selector with availability check
     document.querySelectorAll('.period-btn').forEach(btn => {
         btn.addEventListener('click', () => {
             document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             currentPeriod = btn.dataset.period;
+            updatePeriodAvailability();
             loadFinancialData();
         });
     });
@@ -1355,8 +1708,8 @@ document.addEventListener('DOMContentLoaded', () => {
             document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             currentFinancialView = btn.dataset.view;
-            
-            const statements = financialData[`${currentStatement}_${currentPeriod}`] || [];
+
+            const statements = financialData.allStatements || financialData[`${currentStatement}_${currentPeriod}`] || [];
             if (currentFinancialView === 'table') {
                 renderFinancialTable(statements);
             } else {
@@ -1388,6 +1741,30 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('Error refreshing analysis:', error);
         } finally {
             btn.textContent = '🔄 Refresh Analysis';
+            btn.disabled = false;
+        }
+    });
+
+    // Refresh chart
+    document.getElementById('refresh-chart').addEventListener('click', async () => {
+        const btn = document.getElementById('refresh-chart');
+        btn.textContent = '🔄 Refreshing...';
+        btn.disabled = true;
+
+        try {
+            // Clear chart cache by adding timestamp
+            const response = await fetch(`/api/chart-data/${ticker}?period=${currentTimeframe}&refresh=${Date.now()}`);
+            if (response.ok) {
+                const data = await response.json();
+                renderCandlestickChart(data);
+                updateChartStats(data);
+            } else {
+                console.error('Chart refresh failed:', await response.text());
+            }
+        } catch (error) {
+            console.error('Error refreshing chart:', error);
+        } finally {
+            btn.textContent = '🔄 Refresh';
             btn.disabled = false;
         }
     });

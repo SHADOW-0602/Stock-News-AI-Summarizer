@@ -3,7 +3,6 @@ from flask_cors import CORS
 import requests
 from bs4 import BeautifulSoup
 import os
-import pandas as pd
 from datetime import datetime, timedelta
 from chart_generator import ChartGenerator
 from ml_analysis import MLAnalyzer
@@ -26,8 +25,6 @@ from cache import cache
 from financial_data import financial_data
 import warnings
 import math
-import json
-import random
 warnings.filterwarnings('ignore', category=UserWarning)
 
 def clean_nan_values(obj):
@@ -96,7 +93,7 @@ NEWSAPI_KEY = os.getenv('NEWSAPI_KEY')
 IEX_API_KEY = os.getenv('IEX_API_KEY')
 QUANDL_API_KEY = os.getenv('QUANDL_API_KEY')
 FMP_API_KEY = os.getenv('FMP_API_KEY')
-
+PEXELS_API_KEY = os.getenv('PEXELS_API_KEY')
 
 logger.info("Stock News AI Summarizer started")
 
@@ -1941,6 +1938,19 @@ def remove_ticker(ticker):
         logger.error(f"Error removing ticker {ticker}: {e}")
         return jsonify({'success': True})
 
+@app.route('/api/pexels-image')
+def get_pexels_image_endpoint():
+    """Get Pexels image by query"""
+    query = request.args.get('query', '')
+    if not query:
+        return jsonify({'error': 'Query required'}), 400
+    
+    image_url = get_pexels_image(query)
+    if image_url:
+        return jsonify({'image': image_url})
+    else:
+        return jsonify({'error': 'Image not found'}), 404
+
 @app.route('/api/logo/<ticker>')
 def get_company_logo(ticker):
     """Get company logo from database or API Ninjas"""
@@ -2067,7 +2077,6 @@ class AlpacaIntegration:
         if not self.headers:
             return None
         try:
-            import time
             time.sleep(0.5)
             
             url = f"{self.data_url}/v2/stocks/{ticker}/quotes/latest"
@@ -2371,578 +2380,363 @@ def refresh_ticker(ticker):
 
 @app.route('/api/yahoo-financials/<ticker>')
 def get_yahoo_financials(ticker):
-    """Get financial data from Yahoo Finance"""
-    try:
-        import yfinance as yf
-        
-        ticker = ticker.upper().strip()
-        stock = yf.Ticker(ticker)
-        
-        result = {}
-        
-        # Try to get basic info first
-        info = stock.info
-        if not info or 'symbol' not in info:
-            return jsonify({'error': 'Invalid ticker'}), 404
-        
-        # Get historical data for basic chart
-        hist = stock.history(period='2y')
-        if not hist.empty:
-            # Create quarterly revenue approximation from market cap changes
-            quarterly_data = hist.resample('QE').last()
-            result['price_history'] = [{
-                'date': str(date.date()),
-                'value': float(row['Close'])
-            } for date, row in quarterly_data.iterrows()]
-        
-        # Try to get financials
+    """Get financial data from Yahoo Finance with retry logic"""
+    ticker = ticker.upper().strip()
+    
+    for attempt in range(2):
         try:
-            financials = stock.financials
-            if not financials.empty:
-                # Look for revenue row with different possible names
-                revenue_row = None
-                for row_name in ['Total Revenue', 'Revenue', 'Net Sales', 'Sales']:
-                    if row_name in financials.index:
-                        revenue_row = financials.loc[row_name].dropna()
-                        break
-                
-                if revenue_row is not None and len(revenue_row) > 0:
-                    revenue_data = [{
+            import yfinance as yf
+            
+            stock = yf.Ticker(ticker)
+            result = {}
+            
+            # Try to get basic info first
+            try:
+                info = stock.info
+                if not info or ('symbol' not in info and 'shortName' not in info):
+                    if attempt == 0:
+                        time.sleep(3)
+                        continue
+                    return jsonify({'error': 'Invalid ticker'}), 404
+            except Exception:
+                if attempt == 0:
+                    time.sleep(3)
+                    continue
+                return jsonify({'error': 'Ticker info unavailable'}), 404
+            
+            # Get historical data for basic chart
+            try:
+                hist = stock.history(period='2y')
+                if not hist.empty:
+                    # Create quarterly revenue approximation from market cap changes
+                    quarterly_data = hist.resample('QE').last()
+                    result['price_history'] = [{
                         'date': str(date.date()),
-                        'value': float(value)
-                    } for date, value in revenue_row.items()]
+                        'value': float(row['Close'])
+                    } for date, row in quarterly_data.iterrows()]
+            except Exception:
+                pass
+            
+            # Try to get financials
+            try:
+                financials = stock.financials
+                if not financials.empty:
+                    # Look for revenue row with different possible names
+                    revenue_row = None
+                    for row_name in ['Total Revenue', 'Revenue', 'Net Sales', 'Sales']:
+                        if row_name in financials.index:
+                            revenue_row = financials.loc[row_name].dropna()
+                            break
                     
-                    result['annual_revenue'] = revenue_data
-                    
-                    # Calculate YoY growth (reverse order since data is newest first)
-                    if len(revenue_data) > 1:
-                        yoy_growth = []
-                        # Sort by date to ensure proper chronological order
-                        sorted_revenue = sorted(revenue_data, key=lambda x: x['date'])
-                        for i in range(1, len(sorted_revenue)):
-                            current = sorted_revenue[i]['value']
-                            previous = sorted_revenue[i-1]['value']
-                            if previous != 0:
-                                growth = ((current - previous) / previous) * 100
-                                yoy_growth.append({
-                                    'date': sorted_revenue[i]['date'],
-                                    'value': growth
-                                })
-                        result['yoy_growth'] = yoy_growth
-        except:
-            pass
-        
-        # Add basic company info
-        result['company_info'] = {
-            'name': info.get('longName', ticker),
-            'sector': info.get('sector', 'Unknown'),
-            'market_cap': info.get('marketCap', 0)
-        }
-        
-        return jsonify(result)
-        
-    except Exception as e:
-        logger.error(f"Yahoo Finance financials error for {ticker}: {e}")
-        return jsonify({'error': str(e)}), 500
+                    if revenue_row is not None and len(revenue_row) > 0:
+                        revenue_data = [{
+                            'date': str(date.date()),
+                            'value': float(value)
+                        } for date, value in revenue_row.items()]
+                        
+                        result['annual_revenue'] = revenue_data
+                        
+                        # Calculate YoY growth (reverse order since data is newest first)
+                        if len(revenue_data) > 1:
+                            yoy_growth = []
+                            # Sort by date to ensure proper chronological order
+                            sorted_revenue = sorted(revenue_data, key=lambda x: x['date'])
+                            for i in range(1, len(sorted_revenue)):
+                                current = sorted_revenue[i]['value']
+                                previous = sorted_revenue[i-1]['value']
+                                if previous != 0:
+                                    growth = ((current - previous) / previous) * 100
+                                    yoy_growth.append({
+                                        'date': sorted_revenue[i]['date'],
+                                        'value': growth
+                                    })
+                            result['yoy_growth'] = yoy_growth
+            except Exception:
+                pass
+            
+            # Add basic company info
+            result['company_info'] = {
+                'name': info.get('longName', info.get('shortName', ticker)),
+                'sector': info.get('sector', 'Unknown'),
+                'market_cap': info.get('marketCap', 0)
+            }
+            
+            return jsonify(result)
+            
+        except Exception as e:
+            if attempt == 0:
+                logger.warning(f"Yahoo Finance financials attempt 1 failed for {ticker}: {e}")
+                time.sleep(3)
+                continue
+            else:
+                logger.error(f"Yahoo Finance financials error for {ticker} after 2 attempts: {e}")
+                return jsonify({'error': 'Financial data service temporarily unavailable'}), 500
 
 @app.route('/api/price/<ticker>')
 def get_price_data(ticker):
-    """Get current stock price and change using Yahoo Finance"""
-    try:
-        import yfinance as yf
-        
-        ticker = ticker.upper().strip()
-        stock = yf.Ticker(ticker)
-        info = stock.info
-        
-        # Get current price
-        current_price = info.get('currentPrice') or info.get('regularMarketPrice') or info.get('previousClose')
-        if not current_price:
-            hist = stock.history(period='2d')
-            if not hist.empty:
-                current_price = float(hist['Close'].iloc[-1])
-        
-        # Get previous close for change calculation
-        prev_close = info.get('previousClose')
-        if not prev_close and not hist.empty and len(hist) > 1:
-            prev_close = float(hist['Close'].iloc[-2])
-        
-        if current_price and prev_close:
-            change = current_price - prev_close
-            change_percent = (change / prev_close) * 100
+    """Get current stock price and change using Yahoo Finance with retry logic"""
+    ticker = ticker.upper().strip()
+    
+    for attempt in range(3):
+        try:
+            import yfinance as yf
+            
+            stock = yf.Ticker(ticker)
+            
+            # Try to get info
+            try:
+                info = stock.info
+            except Exception:
+                info = {}
+            
+            # Get current price
+            current_price = info.get('currentPrice') or info.get('regularMarketPrice') or info.get('previousClose')
+            
+            if not current_price:
+                try:
+                    hist = stock.history(period='2d')
+                    if not hist.empty:
+                        current_price = float(hist['Close'].iloc[-1])
+                except Exception:
+                    pass
+            
+            # Get previous close for change calculation
+            prev_close = info.get('previousClose')
+            if not prev_close:
+                try:
+                    if 'hist' not in locals():
+                        hist = stock.history(period='2d')
+                    if not hist.empty and len(hist) > 1:
+                        prev_close = float(hist['Close'].iloc[-2])
+                except Exception:
+                    pass
+            
+            if current_price and prev_close:
+                change = current_price - prev_close
+                change_percent = (change / prev_close) * 100
+                
+                return jsonify({
+                    'price': float(current_price),
+                    'change': float(change),
+                    'changePercent': float(change_percent)
+                })
+            
+            if current_price:
+                return jsonify({
+                    'price': float(current_price),
+                    'change': 0,
+                    'changePercent': 0
+                })
+            
+            if attempt < 2:
+                logger.warning(f"Yahoo Finance attempt {attempt + 1} failed for {ticker}, retrying...")
+                time.sleep(2)
+                continue
+            
+            return jsonify({'error': 'Price data unavailable'}), 404
+            
+        except Exception as e:
+            if attempt < 2:
+                logger.warning(f"Yahoo Finance price error for {ticker} (attempt {attempt + 1}): {e}")
+                time.sleep(2)
+                continue
+            else:
+                logger.error(f"Yahoo Finance price error for {ticker} (final attempt): {e}")
+                return jsonify({'error': 'Price service error'}), 500
+
+@app.route('/api/stock-metrics/<ticker>')
+def get_stock_metrics(ticker):
+    """Get real stock metrics (52W High/Low, Volume) from Yahoo Finance"""
+    ticker = ticker.upper().strip()
+    
+    for attempt in range(2):
+        try:
+            import yfinance as yf
+            
+            stock = yf.Ticker(ticker)
+            
+            # Get info and historical data
+            info = stock.info
+            hist = stock.history(period='1y')
+            
+            # Get 52-week high/low from info or calculate from history
+            week_52_high = info.get('fiftyTwoWeekHigh')
+            week_52_low = info.get('fiftyTwoWeekLow')
+            
+            if not week_52_high or not week_52_low:
+                if not hist.empty:
+                    week_52_high = float(hist['High'].max())
+                    week_52_low = float(hist['Low'].min())
+            
+            # Get volume data
+            avg_volume = info.get('averageVolume') or info.get('averageVolume10days')
+            recent_volume = info.get('volume')
+            
+            if not avg_volume and not hist.empty:
+                avg_volume = int(hist['Volume'].mean())
+            
+            if not recent_volume and not hist.empty:
+                recent_volume = int(hist['Volume'].iloc[-1])
+            
+            # Format volume
+            def format_volume(vol):
+                if vol >= 1e9:
+                    return f"{vol/1e9:.1f}B"
+                elif vol >= 1e6:
+                    return f"{vol/1e6:.1f}M"
+                elif vol >= 1e3:
+                    return f"{vol/1e3:.1f}K"
+                return str(vol)
             
             return jsonify({
-                'price': float(current_price),
-                'change': float(change),
-                'changePercent': float(change_percent)
+                'week_52_high': float(week_52_high) if week_52_high else None,
+                'week_52_low': float(week_52_low) if week_52_low else None,
+                'avg_volume': format_volume(avg_volume) if avg_volume else None,
+                'recent_volume': format_volume(recent_volume) if recent_volume else None
             })
-        
-        return jsonify({'error': 'Price data unavailable'}), 404
-        
-    except Exception as e:
-        logger.error(f"Yahoo Finance price error for {ticker}: {e}")
-        return jsonify({'error': 'Price service error'}), 500
+            
+        except Exception as e:
+            if attempt == 0:
+                logger.warning(f"Stock metrics attempt 1 failed for {ticker}: {e}")
+                time.sleep(2)
+                continue
+            else:
+                logger.error(f"Stock metrics error for {ticker}: {e}")
+                return jsonify({'error': 'Stock metrics unavailable'}), 500
 
 @app.route('/api/chart-data/<ticker>')
 def get_chart_data_detailed(ticker):
-    """Get detailed chart data for candlestick chart with caching and multiple fallbacks"""
+    """Get detailed chart data for candlestick chart using Yahoo Finance only"""
     try:
         ticker = ticker.upper().strip()
         period = request.args.get('period', '1M')
+        refresh = request.args.get('refresh')
         
-        logger.info(f"Chart data request for {ticker}, period: {period}")
+        logger.info(f"Chart data request for {ticker}, period: {period}, refresh: {bool(refresh)}")
         
-        def safe_float(value):
-            """Convert to float and filter NaN/Inf values"""
-            try:
-                f = float(value)
-                if math.isnan(f) or math.isinf(f) or f <= 0:
-                    return None
-                return round(f, 2)
-            except (ValueError, TypeError):
-                return None
-        
-        def validate_price_data(prices_list):
-            """Filter out invalid price data"""
-            valid_prices = []
-            for price in prices_list:
-                # Check all required fields exist and are valid numbers
-                required_fields = ['open', 'high', 'low', 'close']
-                if all(price.get(key) is not None and 
-                      isinstance(price.get(key), (int, float)) and 
-                      not math.isnan(float(price.get(key))) and 
-                      not math.isinf(float(price.get(key))) and
-                      float(price.get(key)) > 0 for key in required_fields):
-                    valid_prices.append(price)
-                else:
-                    logger.debug(f"Filtered invalid price data: {price}")
-            return valid_prices
+        # Skip cache if refresh requested
+        if refresh:
+            cache.clear_chart_data(ticker, period)
         
         # Check cache first
         cached_data = cache.get_chart_data(ticker, period)
         if cached_data:
             logger.info(f"Returning cached chart data for {ticker} ({period})")
             return jsonify(cached_data)
-        logger.debug(f"Available APIs: Alpha Vantage ({'OK' if ALPHA_VANTAGE_API_KEY else 'NO'}), Twelve Data ({'OK' if TWELVE_DATA_API_KEY else 'NO'}), Yahoo Finance (OK), Polygon ({'OK' if POLYGON_API_KEY else 'NO'}), Finnhub ({'OK' if FINNHUB_API_KEY else 'NO'})")
         
-        # Try Alpha Vantage first
-        if ALPHA_VANTAGE_API_KEY and ALPHA_VANTAGE_API_KEY != 'your-alpha-vantage-api-key':
+        # Use Yahoo Finance with retry logic
+        for attempt in range(2):
             try:
-                url = "https://www.alphavantage.co/query"
-                params = {
-                    'function': 'TIME_SERIES_DAILY',
-                    'symbol': ticker,
-                    'apikey': ALPHA_VANTAGE_API_KEY,
-                    'outputsize': 'compact'
+                import yfinance as yf
+                
+                stock = yf.Ticker(ticker)
+                
+                # Map period to yfinance period and interval
+                period_map = {
+                    '1D': ('1d', '5m'),
+                    '5D': ('5d', '15m'), 
+                    '1M': ('1mo', '1d'),
+                    '3M': ('3mo', '1d'),
+                    '6M': ('6mo', '1d'),
+                    '1Y': ('1y', '1d'),
+                    '2Y': ('2y', '1d')
                 }
                 
-                response = requests.get(url, params=params, timeout=15)
-                if response.status_code == 200:
-                    data = response.json()
-                    logger.debug(f"Alpha Vantage response keys: {list(data.keys())}")
-                    
-                    # Check for API limit or error messages
-                    if 'Note' in data:
-                        logger.warning(f"Alpha Vantage API limit: {data['Note']}")
-                    elif 'Error Message' in data:
-                        logger.warning(f"Alpha Vantage error: {data['Error Message']}")
-                    elif 'Time Series (Daily)' in data:
-                        time_series = data['Time Series (Daily)']
-                        prices = []
-                        
-                        for date_str, values in sorted(time_series.items()):
-                            try:
-                                open_val = safe_float(values['1. open'])
-                                high_val = safe_float(values['2. high'])
-                                low_val = safe_float(values['3. low'])
-                                close_val = safe_float(values['4. close'])
-                                volume_val = int(values['5. volume'])
-                                
-                                # Skip if any price is invalid
-                                if any(x is None for x in [open_val, high_val, low_val, close_val]):
-                                    continue
-                                    
-                                prices.append({
-                                    'date': date_str,
-                                    'open': open_val,
-                                    'high': high_val,
-                                    'low': low_val,
-                                    'close': close_val,
-                                    'volume': volume_val
-                                })
-                            except (ValueError, TypeError, OverflowError):
-                                continue
-                        
-                        # Get market cap - simplified approach
-                        market_cap = f"${random.randint(10, 500)}.{random.randint(0, 9)}B"
-                        
-                        logger.info(f"Alpha Vantage: Found {len(prices)} price points for {ticker}")
-                        # Filter data based on period and validate
-                        period_days = {'1D': 1, '5D': 5, '1M': 30, '3M': 90, '6M': 180, '1Y': 365, '2Y': 730}
-                        days_needed = period_days.get(period, 30)
-                        filtered_prices = prices[-days_needed:] if len(prices) > days_needed else prices
-                        validated_prices = validate_price_data(filtered_prices)
-                        
-                        if not validated_prices:
-                            logger.warning(f"Alpha Vantage: No valid price data for {ticker}")
-                        else:
-                            result = {
-                                'prices': validated_prices,
-                                'marketCap': market_cap,
-                                'source': 'Alpha Vantage'
-                            }
+                yf_period, interval = period_map.get(period, ('3mo', '1d'))
+                
+                # Get history
+                hist = stock.history(period=yf_period, interval=interval)
+                
+                if not hist.empty:
+                    prices = []
+                    for date, row in hist.iterrows():
+                        try:
+                            # Validate price data - ensure all values are reasonable stock prices
+                            open_price = float(row['Open'])
+                            high_price = float(row['High'])
+                            low_price = float(row['Low'])
+                            close_price = float(row['Close'])
+                            volume = int(row['Volume'])
                             
-                            cache.set_chart_data(ticker, period, result)
-                            return jsonify(result)
-            except Exception as av_error:
-                logger.warning(f"Alpha Vantage failed for {ticker}: {av_error}")
-        
-        # Try Twelve Data
-        if TWELVE_DATA_API_KEY:
-            try:
-                url = "https://api.twelvedata.com/time_series"
-                params = {
-                    'symbol': ticker,
-                    'interval': '1day',
-                    'apikey': TWELVE_DATA_API_KEY,
-                    'outputsize': 90
-                }
-                
-                response = requests.get(url, params=params, timeout=15)
-                if response.status_code == 200:
-                    data = response.json()
-                    logger.debug(f"Twelve Data response status: {data.get('status', 'ok')}")
-                    
-                    # Check for errors
-                    if 'status' in data and data['status'] == 'error':
-                        logger.warning(f"Twelve Data error: {data.get('message', 'Unknown error')}")
-                    elif 'values' in data and data['values']:
-                        prices = []
-                        for item in reversed(data['values']):
-                            try:
-                                open_val = float(item['open'])
-                                high_val = float(item['high'])
-                                low_val = float(item['low'])
-                                close_val = float(item['close'])
-                                volume_val = int(item['volume'])
-                                
-                                # Skip invalid data (NaN, None, or negative values)
-                                if (any(x != x for x in [open_val, high_val, low_val, close_val]) or  # NaN check
-                                    any(x is None for x in [open_val, high_val, low_val, close_val]) or
-                                    any(x <= 0 for x in [open_val, high_val, low_val, close_val])):
-                                    continue
-                                    
-                                prices.append({
-                                    'date': item['datetime'],
-                                    'open': round(open_val, 2),
-                                    'high': round(high_val, 2),
-                                    'low': round(low_val, 2),
-                                    'close': round(close_val, 2),
-                                    'volume': volume_val
-                                })
-                            except (ValueError, TypeError, OverflowError):
+                            # Skip invalid price data (prices should be between $0.01 and $10,000)
+                            if not (0.01 <= open_price <= 10000 and 0.01 <= high_price <= 10000 and 
+                                   0.01 <= low_price <= 10000 and 0.01 <= close_price <= 10000):
                                 continue
+                                
+                            prices.append({
+                                'date': date.strftime('%Y-%m-%d'),
+                                'open': round(open_price, 2),
+                                'high': round(high_price, 2),
+                                'low': round(low_price, 2),
+                                'close': round(close_price, 2),
+                                'volume': volume
+                            })
+                        except (ValueError, TypeError) as e:
+                            logger.debug(f"Skipping invalid price data for {date}: {e}")
+                            continue
+                    
+                    # Get market cap with proper validation
+                    market_cap = "N/A"
+                    try:
+                        info = stock.info
+                        mc = info.get('marketCap', 0)
                         
-                        # Get market cap - simplified approach
-                        market_cap = f"${random.randint(10, 500)}.{random.randint(0, 9)}B"
-                        
-                        logger.info(f"Twelve Data: Found {len(prices)} price points for {ticker}")
-                        # Filter data based on period
-                        period_days = {'1D': 1, '5D': 5, '1M': 30, '3M': 90, '6M': 180, '1Y': 365, '2Y': 730}
-                        days_needed = period_days.get(period, 30)
-                        filtered_prices = prices[-days_needed:] if len(prices) > days_needed else prices
-                        
+                        # Validate market cap is reasonable (not zero or negative)
+                        if mc and mc > 0:
+                            if mc > 1e12:
+                                market_cap = f"${mc/1e12:.1f}T"
+                            elif mc > 1e9:
+                                market_cap = f"${mc/1e9:.1f}B"
+                            elif mc > 1e6:
+                                market_cap = f"${mc/1e6:.1f}M"
+                            else:
+                                market_cap = f"${mc/1e3:.1f}K"
+                        else:
+                            # Try alternative calculation only if marketCap is missing
+                            shares = info.get('sharesOutstanding', 0)
+                            price = info.get('currentPrice', 0) or info.get('regularMarketPrice', 0)
+                            if shares and price and shares > 0 and price > 0:
+                                mc = shares * price
+                                # Validate calculated market cap
+                                if mc > 1e12:
+                                    market_cap = f"${mc/1e12:.1f}T"
+                                elif mc > 1e9:
+                                    market_cap = f"${mc/1e9:.1f}B"
+                                elif mc > 1e6:
+                                    market_cap = f"${mc/1e6:.1f}M"
+                    except Exception as e:
+                        logger.debug(f"Market cap calculation error for {ticker}: {e}")
+                        market_cap = "N/A"
+                    
+                    if prices:
+                        logger.info(f"Yahoo Finance: Found {len(prices)} price points for {period}")
                         result = {
-                            'prices': filtered_prices,
+                            'prices': prices,
                             'marketCap': market_cap,
-                            'source': 'Twelve Data'
+                            'source': 'Yahoo Finance'
                         }
                         
-                        # Clean NaN values before JSON serialization
                         result = clean_nan_values(result)
                         cache.set_chart_data(ticker, period, result)
                         return jsonify(result)
-            except Exception as td_error:
-                logger.warning(f"Twelve Data failed for {ticker}: {td_error}")
-        
-        # Try Yahoo Finance (free, no API key needed)
-        try:
-            import yfinance as yf
-            stock = yf.Ticker(ticker)
-            
-            # Map period to yfinance period and interval
-            period_map = {
-                '1D': ('1d', '5m'),
-                '5D': ('5d', '15m'), 
-                '1M': ('1mo', '1d'),
-                '3M': ('3mo', '1d'),
-                '6M': ('6mo', '1d'),
-                '1Y': ('1y', '1d'),
-                '2Y': ('2y', '1d')
-            }
-            
-            yf_period, interval = period_map.get(period, ('3mo', '1d'))
-            hist = stock.history(period=yf_period, interval=interval)
-            
-            if not hist.empty:
-                prices = []
-                for date, row in hist.iterrows():
-                    prices.append({
-                        'date': date.strftime('%Y-%m-%d'),
-                        'open': round(float(row['Open']), 2),
-                        'high': round(float(row['High']), 2),
-                        'low': round(float(row['Low']), 2),
-                        'close': round(float(row['Close']), 2),
-                        'volume': int(row['Volume'])
-                    })
                 
-                # Get market cap
-                try:
-                    info = stock.info
-                    market_cap = info.get('marketCap', 0)
-                    if market_cap > 1e9:
-                        market_cap = f"${market_cap/1e9:.1f}B"
-                    elif market_cap > 1e6:
-                        market_cap = f"${market_cap/1e6:.1f}M"
-                    else:
-                        market_cap = f"${random.randint(10, 500)}.{random.randint(0, 9)}B"
-                except:
-                    market_cap = f"${random.randint(10, 500)}.{random.randint(0, 9)}B"
-                
-                logger.info(f"Yahoo Finance: Found {len(prices)} price points for {period}")
-                result = {
-                    'prices': prices,
-                    'marketCap': market_cap,
-                    'source': 'Yahoo Finance'
-                }
-                
-                # Clean NaN values before JSON serialization
-                result = clean_nan_values(result)
-                cache.set_chart_data(ticker, period, result)
-                return jsonify(result)
-        except Exception as yf_error:
-            logger.warning(f"Yahoo Finance failed for {ticker}: {yf_error}")
-        
-        # Try Polygon API (if available)
-        if POLYGON_API_KEY and POLYGON_API_KEY != 'your-polygon-api-key':
-            try:
-                from datetime import datetime, timedelta
-                
-                # Map period to days
-                period_days = {'1D': 1, '5D': 5, '1M': 30, '3M': 90, '6M': 180, '1Y': 365, '2Y': 730}
-                days_needed = period_days.get(period, 30)
-                
-                end_date = datetime.now().strftime('%Y-%m-%d')
-                start_date = (datetime.now() - timedelta(days=days_needed + 10)).strftime('%Y-%m-%d')
-                
-                # Set timespan based on period
-                if period == '1D':
-                    timespan = 'minute'
-                    multiplier = 5
+                if attempt == 0:
+                    logger.warning(f"Yahoo Finance attempt 1 failed for {ticker}, retrying...")
+                    time.sleep(3)
+                    continue
+                    
+            except Exception as yf_error:
+                if attempt == 0:
+                    logger.warning(f"Yahoo Finance attempt 1 failed for {ticker}: {yf_error}")
+                    time.sleep(3)
+                    continue
                 else:
-                    timespan = 'day'
-                    multiplier = 1
-                
-                url = f"https://api.polygon.io/v2/aggs/ticker/{ticker}/range/{multiplier}/{timespan}/{start_date}/{end_date}"
-                params = {'apikey': POLYGON_API_KEY}
-                
-                response = requests.get(url, params=params, timeout=15)
-                if response.status_code == 200:
-                    data = response.json()
-                    
-                    if data.get('results'):
-                        prices = []
-                        results = data['results'][-days_needed:] if len(data['results']) > days_needed else data['results']
-                        
-                        for item in results:
-                            try:
-                                open_val = float(item['o'])
-                                high_val = float(item['h'])
-                                low_val = float(item['l'])
-                                close_val = float(item['c'])
-                                volume_val = int(item['v'])
-                                
-                                # Skip invalid data (NaN, None, or negative values)
-                                if (any(x != x for x in [open_val, high_val, low_val, close_val]) or  # NaN check
-                                    any(x is None for x in [open_val, high_val, low_val, close_val]) or
-                                    any(x <= 0 for x in [open_val, high_val, low_val, close_val])):
-                                    continue
-                                    
-                                date_obj = datetime.fromtimestamp(item['t'] / 1000)
-                                prices.append({
-                                    'date': date_obj.strftime('%Y-%m-%d'),
-                                    'open': round(open_val, 2),
-                                    'high': round(high_val, 2),
-                                    'low': round(low_val, 2),
-                                    'close': round(close_val, 2),
-                                    'volume': volume_val
-                                })
-                            except (ValueError, TypeError, OverflowError):
-                                continue
-                        
-                        market_cap = f"${random.randint(10, 500)}.{random.randint(0, 9)}B"
-                        
-                        logger.info(f"Polygon: Found {len(prices)} price points for {period}")
-                        result = {
-                            'prices': prices,
-                            'marketCap': market_cap,
-                            'source': 'Polygon'
-                        }
-                        
-                        # Clean NaN values before JSON serialization
-                        result = clean_nan_values(result)
-                        cache.set_chart_data(ticker, period, result)
-                        return jsonify(result)
-            except Exception as poly_error:
-                logger.warning(f"Polygon failed for {ticker}: {poly_error}")
+                    logger.warning(f"Yahoo Finance failed for {ticker} after 2 attempts: {yf_error}")
+                    break
         
-        # Try Finnhub as additional fallback
-        if FINNHUB_API_KEY:
-            try:
-                import time
-                from datetime import datetime, timedelta
-                
-                end_date = datetime.now()
-                start_date = end_date - timedelta(days=90)
-                
-                url = "https://finnhub.io/api/v1/stock/candle"
-                params = {
-                    'symbol': ticker,
-                    'resolution': 'D',
-                    'from': int(start_date.timestamp()),
-                    'to': int(end_date.timestamp()),
-                    'token': FINNHUB_API_KEY
-                }
-                
-                response = requests.get(url, params=params, timeout=15)
-                if response.status_code == 200:
-                    data = response.json()
-                    
-                    # Check for errors
-                    if data.get('s') == 'no_data':
-                        logger.warning(f"Finnhub: No data available for {ticker}")
-                    elif data.get('s') == 'ok' and 'c' in data:
-                        prices = []
-                        for i in range(len(data['c'])):
-                            try:
-                                open_val = float(data['o'][i])
-                                high_val = float(data['h'][i])
-                                low_val = float(data['l'][i])
-                                close_val = float(data['c'][i])
-                                volume_val = int(data['v'][i])
-                                
-                                # Skip invalid data (NaN, None, or negative values)
-                                if (any(x != x for x in [open_val, high_val, low_val, close_val]) or  # NaN check
-                                    any(x is None for x in [open_val, high_val, low_val, close_val]) or
-                                    any(x <= 0 for x in [open_val, high_val, low_val, close_val])):
-                                    continue
-                                    
-                                date_obj = datetime.fromtimestamp(data['t'][i])
-                                prices.append({
-                                    'date': date_obj.strftime('%Y-%m-%d'),
-                                    'open': round(open_val, 2),
-                                    'high': round(high_val, 2),
-                                    'low': round(low_val, 2),
-                                    'close': round(close_val, 2),
-                                    'volume': volume_val
-                                })
-                            except (ValueError, TypeError, OverflowError):
-                                continue
-                        
-                        # Get market cap - simplified approach
-                        market_cap = f"${random.randint(10, 500)}.{random.randint(0, 9)}B"
-                        
-                        logger.info(f"Finnhub: Found {len(prices)} price points for {ticker}")
-                        result = {
-                            'prices': prices,
-                            'marketCap': market_cap,
-                            'source': 'Finnhub'
-                        }
-                        
-                        # Clean NaN values before JSON serialization
-                        result = clean_nan_values(result)
-                        cache.set_chart_data(ticker, period, result)
-                        return jsonify(result)
-                    else:
-                        logger.warning(f"Finnhub unexpected response: {data}")
-            except Exception as fh_error:
-                logger.warning(f"Finnhub failed for {ticker}: {fh_error}")
-        
-        # Generate sample data as last resort
-        logger.warning(f"All 5 chart APIs failed for {ticker}: Alpha Vantage, Twelve Data, Yahoo Finance, Polygon, Finnhub. Generating sample data.")
-        import random
-        from datetime import datetime, timedelta
-        
-        # Map period to days and intervals
-        period_map = {
-            '1D': (1, 'hours', 24),
-            '5D': (5, 'days', 5), 
-            '1M': (30, 'days', 30),
-            '3M': (90, 'days', 90),
-            '6M': (180, 'days', 180),
-            '1Y': (365, 'days', 365),
-            '2Y': (730, 'days', 730)
-        }
-        
-        days, unit, data_points = period_map.get(period, (30, 'days', 30))
-        
-        base_price = 100 + random.uniform(-50, 200)
-        prices = []
-        
-        if unit == 'hours':
-            current_date = datetime.now() - timedelta(hours=data_points)
-            for i in range(data_points):
-                open_price = base_price + random.uniform(-2, 2)
-                close_price = open_price + random.uniform(-3, 3)
-                high_price = max(open_price, close_price) + random.uniform(0, 2)
-                low_price = min(open_price, close_price) - random.uniform(0, 2)
-                volume = random.randint(50000, 2000000)
-                
-                prices.append({
-                    'date': current_date.strftime('%Y-%m-%d %H:%M:%S'),
-                    'open': round(open_price, 2),
-                    'high': round(high_price, 2),
-                    'low': round(low_price, 2),
-                    'close': round(close_price, 2),
-                    'volume': volume
-                })
-                
-                base_price = close_price
-                current_date += timedelta(hours=1)
-        else:
-            current_date = datetime.now() - timedelta(days=data_points)
-            for i in range(data_points):
-                open_price = base_price + random.uniform(-5, 5)
-                close_price = open_price + random.uniform(-10, 10)
-                high_price = max(open_price, close_price) + random.uniform(0, 5)
-                low_price = min(open_price, close_price) - random.uniform(0, 5)
-                volume = random.randint(100000, 10000000)
-                
-                prices.append({
-                    'date': current_date.strftime('%Y-%m-%d'),
-                    'open': round(open_price, 2),
-                    'high': round(high_price, 2),
-                    'low': round(low_price, 2),
-                    'close': round(close_price, 2),
-                    'volume': volume
-                })
-                
-                base_price = close_price
-                current_date += timedelta(days=1)
-        
-        # Generate realistic market cap for sample data
-        sample_market_cap = f"${random.randint(5, 500)}.{random.randint(0, 9)}B"
-        
-        logger.info(f"Generated {len(prices)} sample price points for {ticker}")
-        result = {
-            'prices': prices,
-            'marketCap': sample_market_cap,
-            'source': 'Sample Data (APIs unavailable)'
-        }
-        
-        # Cache sample data for 1 hour only
-        cache.set_chart_data(ticker, period, result)
-        return safe_jsonify(result)
+        # Return error if Yahoo Finance fails
+        logger.error(f"Yahoo Finance failed for {ticker}")
+        return jsonify({'error': 'Chart data unavailable'}), 404
         
     except Exception as e:
         logger.error(f"Chart data error for {ticker}: {e}")
@@ -3126,6 +2920,24 @@ def get_trade_ideas(ticker):
         logger.error(f"Trade ideas error for {ticker}: {e}")
         return jsonify({'error': 'Trade ideas service error'}), 500
 
+def get_pexels_image(query, size='medium'):
+    """Get image from Pexels API"""
+    if not PEXELS_API_KEY:
+        return None
+    try:
+        headers = {'Authorization': PEXELS_API_KEY}
+        response = requests.get(
+            f'https://api.pexels.com/v1/search?query={query}&per_page=1&size={size}',
+            headers=headers, timeout=5
+        )
+        if response.status_code == 200:
+            data = response.json()
+            if data.get('photos'):
+                return data['photos'][0]['src'][size]
+    except Exception as e:
+        logger.debug(f'Pexels API error: {e}')
+    return None
+
 def generate_advanced_trade_ideas(ticker, current_price, price_forecast, sentiment_analysis, articles):
     """Generate comprehensive trade ideas using ML analysis"""
     trade_ideas = []
@@ -3140,35 +2952,56 @@ def generate_advanced_trade_ideas(ticker, current_price, price_forecast, sentime
             'status': 'error'
         }
     
-    # Price-based strategy
-    if price_forecast:
+    logger.info(f"Generating trade ideas for {ticker}: price=${current_price}, forecast={price_forecast}, sentiment={sentiment_analysis}")
+    
+    # Price-based strategy using real ML predictions
+    if price_forecast and price_forecast.get('predicted_price'):
         predicted_price = price_forecast.get('predicted_price', current_price)
         change_percent = price_forecast.get('change_percent', 0)
         confidence = price_forecast.get('confidence', 'Medium')
+        model_used = price_forecast.get('model_used', 'ML')
         
-        if change_percent > 5:
+        logger.info(f"ML Forecast for {ticker}: {model_used} model predicts {change_percent}% change")
+        
+        if change_percent > 3:
             trade_ideas.append({
-                'strategy': 'Momentum Breakout Strategy',
-                'action': 'LONG',
+                'strategy': f'ML {model_used.upper()} Momentum Strategy',
+                'action': 'BUY',
                 'confidence': confidence,
                 'entry_price': current_price,
                 'target_price': predicted_price,
-                'stop_loss': current_price * 0.95,
-                'reasoning': 'Technical indicators suggest potential upward momentum with strong volume confirmation.',
-                'timeframe': '5-10 days',
-                'risk_reward': f'1:{abs(change_percent/5):.1f}'
+                'stop_loss': current_price * 0.96,
+                'reasoning': f'{model_used.upper()} model predicts {change_percent:.1f}% upside with {confidence.lower()} confidence based on technical patterns.',
+                'timeframe': price_forecast.get('timeframe', '5 days'),
+                'risk_reward': f'1:{abs(change_percent/4):.1f}',
+                'image': get_pexels_image('stock market bull trend')
             })
-        elif change_percent < -5:
+        elif change_percent < -3:
             trade_ideas.append({
-                'strategy': 'Breakdown Play',
-                'action': 'SHORT',
+                'strategy': f'ML {model_used.upper()} Bearish Signal',
+                'action': 'SHORT/AVOID',
                 'confidence': confidence,
                 'entry_price': current_price,
                 'target_price': predicted_price,
-                'stop_loss': current_price * 1.05,
-                'reasoning': f'ML model predicts {abs(change_percent):.1f}% downside with technical breakdown pattern.',
-                'timeframe': '5-10 days',
-                'risk_reward': f'1:{abs(change_percent/5):.1f}'
+                'stop_loss': current_price * 1.04,
+                'reasoning': f'{model_used.upper()} model predicts {abs(change_percent):.1f}% downside with {confidence.lower()} confidence.',
+                'timeframe': price_forecast.get('timeframe', '5 days'),
+                'risk_reward': f'1:{abs(change_percent/4):.1f}',
+                'image': get_pexels_image('stock market bear decline')
+            })
+        else:
+            # Neutral ML prediction
+            trade_ideas.append({
+                'strategy': f'ML {model_used.upper()} Range Trading',
+                'action': 'HOLD',
+                'confidence': confidence,
+                'entry_price': current_price,
+                'target_price': predicted_price,
+                'stop_loss': current_price * 0.98,
+                'reasoning': f'{model_used.upper()} model shows minimal price movement ({change_percent:.1f}%), suggesting range-bound trading.',
+                'timeframe': price_forecast.get('timeframe', '5 days'),
+                'risk_reward': '1:1.5',
+                'image': get_pexels_image('financial chart analysis')
             })
     
     # Sentiment-based strategy
@@ -3257,24 +3090,41 @@ def generate_advanced_trade_ideas(ticker, current_price, price_forecast, sentime
     }
 
 def get_current_price(ticker):
-    """Get current stock price from Yahoo Finance"""
-    try:
-        import yfinance as yf
-        stock = yf.Ticker(ticker)
-        info = stock.info
-        
-        # Try multiple price fields
-        price = info.get('currentPrice') or info.get('regularMarketPrice') or info.get('previousClose')
-        if price and price > 0:
-            return float(price)
-        
-        # Fallback to recent history
-        hist = stock.history(period='1d')
-        if not hist.empty:
-            return float(hist['Close'].iloc[-1])
+    """Get current stock price from Yahoo Finance with retry logic"""
+    for attempt in range(3):
+        try:
+            import yfinance as yf
             
-    except Exception as e:
-        logger.debug(f"Price fetch failed for {ticker}: {e}")
+            stock = yf.Ticker(ticker)
+            
+            # Try to get info
+            try:
+                info = stock.info
+                price = info.get('currentPrice') or info.get('regularMarketPrice') or info.get('previousClose')
+                if price and price > 0:
+                    return float(price)
+            except Exception:
+                pass
+            
+            # Fallback to recent history
+            try:
+                hist = stock.history(period='1d')
+                if not hist.empty:
+                    return float(hist['Close'].iloc[-1])
+            except Exception:
+                pass
+                
+            if attempt < 2:
+                time.sleep(1)
+                continue
+                
+        except Exception as e:
+            if attempt < 2:
+                logger.debug(f"Price fetch attempt {attempt + 1} failed for {ticker}: {e}")
+                time.sleep(1)
+                continue
+            else:
+                logger.debug(f"Price fetch failed for {ticker} after 3 attempts: {e}")
     
     return None
 
