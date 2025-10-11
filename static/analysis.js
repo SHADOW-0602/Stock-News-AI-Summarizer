@@ -1595,13 +1595,23 @@ style.textContent = `
     }
     .timeline-item {
         cursor: help;
+        padding: 0.75rem;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+        position: relative;
     }
     .timeline-item:hover {
-        background: rgba(255, 255, 255, 0.05);
-        border-radius: 8px;
-        padding: 0.75rem;
-        margin: -0.25rem;
-        transition: all 0.2s ease;
+        background: rgba(0, 212, 255, 0.1);
+        border-left: 3px solid #00d4ff;
+        transform: translateX(5px);
+        box-shadow: 0 4px 12px rgba(0, 212, 255, 0.2);
+    }
+    .timeline-item:hover .timeline-date {
+        color: #ffffff;
+        font-weight: 700;
+    }
+    .timeline-item:hover .timeline-content {
+        color: #ffffff;
     }
     .pagination-controls {
         display: flex;
