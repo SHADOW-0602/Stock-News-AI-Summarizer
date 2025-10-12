@@ -26,6 +26,7 @@ logger = logging.getLogger(__name__)
 CACHE_DURATION = 8 * 3600  # 8 hours
 SUMMARY_CACHE_DURATION = 6 * 3600  # 6 hours
 CHART_CACHE_DURATION = 4 * 3600  # 4 hours
+IMAGE_CACHE_DURATION = 7 * 24 * 3600  # 7 days
 
 class UpstashRedis:
     def __init__(self, url, token):
@@ -76,6 +77,7 @@ class Cache:
         self.fallback_news_cache = {}
         self.fallback_summary_cache = {}
         self.fallback_chart_cache = {}
+        self.fallback_image_cache = {}
         self._init_redis()
     
     def _init_redis(self):
@@ -281,10 +283,57 @@ class Cache:
             for key in expired_charts:
                 del self.fallback_chart_cache[key]
             
-            if expired_news or expired_summaries or expired_charts:
-                logger.info(f"Cleaned {len(expired_news)} news + {len(expired_summaries)} summaries + {len(expired_charts)} chart entries")
+            # Clean image cache
+            expired_images = [key for key, data in self.fallback_image_cache.items()
+                             if (current_time - data['timestamp']).total_seconds() > IMAGE_CACHE_DURATION]
+            for key in expired_images:
+                del self.fallback_image_cache[key]
+            
+            if expired_news or expired_summaries or expired_charts or expired_images:
+                logger.info(f"Cleaned {len(expired_news)} news + {len(expired_summaries)} summaries + {len(expired_charts)} chart + {len(expired_images)} image entries")
         else:
             logger.debug("Redis handles cache expiry automatically")
+    
+    def get_image(self, query):
+        """Get cached Pexels image"""
+        try:
+            cache_key = f"image:{query}"
+            if self.redis_client:
+                cached_data = self.redis_client.get(cache_key)
+                if cached_data:
+                    cache_entry = json.loads(cached_data.decode('utf-8'))
+                    logger.debug(f"Using cached image for {query}")
+                    return cache_entry['url']
+            else:
+                if cache_key in self.fallback_image_cache:
+                    cache_entry = self.fallback_image_cache[cache_key]
+                    if (datetime.now() - cache_entry['timestamp']).total_seconds() < IMAGE_CACHE_DURATION:
+                        logger.debug(f"Using fallback cached image for {query}")
+                        return cache_entry['url']
+        except Exception as e:
+            logger.debug(f"Image cache read error for {query}: {e}")
+        return None
+    
+    def set_image(self, query, image_url):
+        """Cache Pexels image for 7 days"""
+        try:
+            cache_key = f"image:{query}"
+            cache_data = {
+                'url': image_url,
+                'timestamp': datetime.now().isoformat()
+            }
+            
+            if self.redis_client:
+                self.redis_client.setex(cache_key, IMAGE_CACHE_DURATION, json.dumps(cache_data))
+                logger.debug(f"Cached image for {query} (7 days)")
+            else:
+                self.fallback_image_cache[cache_key] = {
+                    'url': image_url,
+                    'timestamp': datetime.now()
+                }
+                logger.debug(f"Cached image for {query} in memory (7 days)")
+        except Exception as e:
+            logger.debug(f"Image cache write error for {query}: {e}")
     
     def get_status(self):
         """Get cache status"""
@@ -322,7 +371,8 @@ class Cache:
         status['cache_durations'] = {
             'news_cache': f'{CACHE_DURATION // 3600} hours ({CACHE_DURATION} seconds)',
             'summary_cache': f'{SUMMARY_CACHE_DURATION // 3600} hours ({SUMMARY_CACHE_DURATION} seconds)',
-            'chart_cache': f'{CHART_CACHE_DURATION // 3600} hours ({CHART_CACHE_DURATION} seconds)'
+            'chart_cache': f'{CHART_CACHE_DURATION // 3600} hours ({CHART_CACHE_DURATION} seconds)',
+            'image_cache': f'{IMAGE_CACHE_DURATION // (24 * 3600)} days ({IMAGE_CACHE_DURATION} seconds)'
         }
         
         return status

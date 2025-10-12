@@ -164,14 +164,14 @@ if genai and GEMINI_API_KEY and GEMINI_API_KEY.strip() != '' and GEMINI_API_KEY 
         logger.info("Attempting to configure Gemini client...")
         genai.configure(api_key=GEMINI_API_KEY)
         client = genai
-        logger.info(f"✅ Gemini client configured successfully with key: {GEMINI_API_KEY[:10]}...{GEMINI_API_KEY[-5:]}")
+        logger.info(f"Gemini client configured successfully with key: {GEMINI_API_KEY[:10]}...{GEMINI_API_KEY[-5:]}")
     except Exception as e:
-        logger.error(f"❌ Failed to configure Gemini client: {e}")
+        logger.error(f"Failed to configure Gemini client: {e}")
         logger.error(f"Error type: {type(e).__name__}")
         client = None
 else:
     client = None
-    logger.error(f"❌ Gemini not available - library: {bool(genai)}, key present: {bool(GEMINI_API_KEY)}, key valid: {GEMINI_API_KEY != 'your-gemini-api-key' if GEMINI_API_KEY else False}")
+    logger.error(f"Gemini not available - library: {bool(genai)}, key present: {bool(GEMINI_API_KEY)}, key valid: {GEMINI_API_KEY != 'your-gemini-api-key' if GEMINI_API_KEY else False}")
 
 # Initialize scheduler for cache cleanup
 scheduler = BackgroundScheduler()
@@ -187,6 +187,104 @@ class NewsCollector:
         self.session.headers.update({
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
         })
+        # Optimize session for parallel requests
+        adapter = requests.adapters.HTTPAdapter(
+            pool_connections=10,
+            pool_maxsize=20,
+            max_retries=2
+        )
+        self.session.mount('http://', adapter)
+        self.session.mount('https://', adapter)
+    
+    def get_tradingview_news(self, ticker):
+        """Get TradingView news using HTTP requests (no Selenium)"""
+        logger.debug(f"Starting TradingView HTTP scraping for {ticker}")
+        try:
+            articles = []
+            
+            # Method 1: TradingView RSS feeds
+            rss_feeds = [
+                "https://www.tradingview.com/feed/",
+                "https://www.tradingview.com/blog/feed/"
+            ]
+            
+            for feed_url in rss_feeds:
+                try:
+                    response = self.session.get(feed_url, timeout=10)
+                    if response.status_code == 200:
+                        soup = BeautifulSoup(response.content, 'xml')
+                        items = soup.find_all('item')[:5]
+                        
+                        for item in items:
+                            try:
+                                title_elem = item.find('title')
+                                link_elem = item.find('link')
+                                desc_elem = item.find('description')
+                                
+                                if title_elem and link_elem:
+                                    title = title_elem.get_text(strip=True)
+                                    url = link_elem.get_text(strip=True)
+                                    desc = desc_elem.get_text(strip=True) if desc_elem else title
+                                    
+                                    # Accept all TradingView content (it's already financial)
+                                    if title and len(title) > 15:
+                                        articles.append({
+                                            'title': title,
+                                            'url': url,
+                                            'source': 'TradingView',
+                                            'content': desc[:200],
+                                            'date': datetime.now().isoformat()
+                                        })
+                            except Exception:
+                                continue
+                        
+                        if articles:  # If we got articles from this feed, stop
+                            break
+                            
+                except Exception:
+                    continue
+            
+            # Method 2: Financial news aggregators (TradingView alternatives)
+            if len(articles) < 3:
+                try:
+                    # Use Investing.com as TradingView alternative
+                    inv_url = f"https://www.investing.com/search/?q={ticker}&tab=news"
+                    response = self.session.get(inv_url, timeout=10)
+                    
+                    if response.status_code == 200:
+                        soup = BeautifulSoup(response.content, 'html.parser')
+                        news_links = soup.find_all('a', href=True)[:20]
+                        
+                        for link in news_links:
+                            title = link.get_text(strip=True)
+                            href = link.get('href', '')
+                            
+                            if (title and len(title) > 20 and href and
+                                '/news/' in href and
+                                any(word in title.lower() for word in [ticker.lower(), 'stock', 'market'])):
+                                
+                                if not href.startswith('http'):
+                                    href = f"https://www.investing.com{href}"
+                                
+                                articles.append({
+                                    'title': title,
+                                    'url': href,
+                                    'source': 'TradingView (Investing.com)',
+                                    'content': title,
+                                    'date': datetime.now().isoformat()
+                                })
+                                
+                                if len(articles) >= 8:
+                                    break
+                except Exception:
+                    pass
+            
+            logger.info(f"TradingView: Found {len(articles)} articles for {ticker}")
+            return articles
+            
+        except Exception as e:
+            logger.error(f"TradingView HTTP scraping error for {ticker}: {e}")
+            return []
     
     def get_company_name(self, ticker):
         """Get company name for better search results"""
@@ -439,128 +537,92 @@ class NewsCollector:
                 return []
             raise e
     
-    def get_tradingview_news(self, ticker):
-        """Scrape TradingView news using Selenium"""
-        logger.debug(f"Starting TradingView Selenium scraping for {ticker}")
-        
-        # Check if Chrome is available before attempting Selenium
-        chrome_paths = [
-            os.environ.get('CHROME_BIN'),
-            '/usr/bin/google-chrome',
-            '/usr/bin/chromium-browser',
-            '/opt/google/chrome/chrome',
-            'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
-            'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe'
-        ]
-        
-        chrome_binary = None
-        for path in chrome_paths:
-            if path and os.path.exists(path):
-                chrome_binary = path
-                break
-        
-        if not chrome_binary:
-            logger.warning(f"TradingView: Chrome not found on system, skipping Selenium scraping for {ticker}")
-            return []
-        
+    def get_yahoo_ticker_news(self, ticker):
+        """Get ticker-specific news from Yahoo Finance (Cloud-compatible)"""
+        logger.debug(f"Starting Yahoo Finance ticker news for {ticker}")
         try:
-            from selenium import webdriver
-            from selenium.webdriver.chrome.options import Options
-            from selenium.webdriver.common.by import By
-            from selenium.webdriver.support.ui import WebDriverWait
-            from selenium.webdriver.support import expected_conditions as EC
-            from webdriver_manager.chrome import ChromeDriverManager
-            from selenium.webdriver.chrome.service import Service
+            # Use Yahoo Finance RSS feed for better reliability
+            rss_url = f"https://feeds.finance.yahoo.com/rss/2.0/headline?s={ticker}&region=US&lang=en-US"
             
-            chrome_options = Options()
-            chrome_options.add_argument('--headless')
-            chrome_options.add_argument('--no-sandbox')
-            chrome_options.add_argument('--disable-dev-shm-usage')
-            chrome_options.add_argument('--disable-gpu')
-            chrome_options.add_argument('--disable-web-security')
-            chrome_options.add_argument('--disable-features=VizDisplayCompositor')
-            chrome_options.add_argument('--window-size=1920,1080')
-            chrome_options.add_argument('--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36')
-            chrome_options.binary_location = chrome_binary
-            
-            service = Service(ChromeDriverManager().install())
-            driver = webdriver.Chrome(service=service, options=chrome_options)
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+            }
             
             articles = []
-            urls = [
-                f"https://www.tradingview.com/symbols/NASDAQ-{ticker}/news/",
-                f"https://www.tradingview.com/symbols/NYSE-{ticker}/news/"
-            ]
             
-            for url in urls:
-                try:
-                    logger.debug(f"Accessing TradingView URL: {url}")
-                    driver.get(url)
-                    WebDriverWait(driver, 15).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
-                    time.sleep(5)  # Increased wait time
+            try:
+                # Try RSS feed first
+                response = self.session.get(rss_url, headers=headers, timeout=10)
+                if response.status_code == 200:
+                    soup = BeautifulSoup(response.content, 'xml')
+                    items = soup.find_all('item')[:10]
                     
-                    # Multiple selector strategies
-                    selectors = [
-                        "[class*='article']",
-                        "[data-name='news-item']",
-                        ".js-news-item",
-                        "[class*='news']",
-                        "a[href*='/news/']"
-                    ]
-                    
-                    for selector in selectors:
+                    for item in items:
                         try:
-                            article_elements = driver.find_elements(By.CSS_SELECTOR, selector)
-                            logger.debug(f"Found {len(article_elements)} elements with selector: {selector}")
+                            title_elem = item.find('title')
+                            link_elem = item.find('link')
+                            desc_elem = item.find('description')
                             
-                            if article_elements:
-                                for element in article_elements[:8]:
-                                    try:
-                                        # Get title text from the article element
-                                        title = element.text.strip()
-                                        
-                                        # Try to find a link within the element
-                                        try:
-                                            link_elem = element.find_element(By.CSS_SELECTOR, "a")
-                                            link = link_elem.get_attribute('href')
-                                        except:
-                                            link = element.get_attribute('href') if element.tag_name == 'a' else url
-                                        
-                                        # Filter out sign-in prompts and short text
-                                        if (title and len(title) > 20 and 
-                                            'sign in' not in title.lower() and
-                                            'more in news' not in title.lower() and
-                                            'loading' not in title.lower()):
-                                            articles.append({
-                                                'title': title,
-                                                'url': link or url,
-                                                'source': 'TradingView',
-                                                'content': title,
-                                                'date': datetime.now().isoformat()
-                                            })
-                                    except Exception as elem_error:
-                                        logger.debug(f"Element processing error: {elem_error}")
-                                        continue
+                            if title_elem and link_elem:
+                                title = title_elem.get_text(strip=True)
+                                url = link_elem.get_text(strip=True)
+                                desc = desc_elem.get_text(strip=True) if desc_elem else title
                                 
-                                if articles:
-                                    break
-                        except Exception as selector_error:
-                            logger.debug(f"Selector {selector} failed: {selector_error}")
+                                if title and len(title) > 15:
+                                    articles.append({
+                                        'title': title,
+                                        'url': url,
+                                        'source': 'Yahoo Finance (RSS)',
+                                        'content': desc[:200],
+                                        'date': datetime.now().isoformat()
+                                    })
+                        except Exception:
                             continue
-                    
-                    if articles:
-                        break
-                        
-                except Exception as url_error:
-                    logger.debug(f"TradingView URL error {url}: {url_error}")
-                    continue
+            except Exception:
+                pass
             
-            driver.quit()
-            logger.info(f"TradingView: Found {len(articles)} articles for {ticker}")
+            # Fallback to web scraping if RSS fails
+            if not articles:
+                try:
+                    web_url = f"https://finance.yahoo.com/quote/{ticker}/news"
+                    response = self.session.get(web_url, headers=headers, timeout=15)
+                    
+                    if response.status_code == 200:
+                        soup = BeautifulSoup(response.content, 'html.parser')
+                        
+                        # Look for news with improved selectors
+                        news_links = soup.find_all('a', href=True)
+                        
+                        for link in news_links[:50]:
+                            title = link.get_text(strip=True)
+                            href = link.get('href', '')
+                            
+                            # Better filtering for Yahoo Finance news
+                            if (title and len(title) > 25 and href and
+                                '/news/' in href and
+                                any(word in title.lower() for word in ['stock', 'market', 'earnings', 'financial', ticker.lower()])):
+                                
+                                if not href.startswith('http'):
+                                    href = f"https://finance.yahoo.com{href}"
+                                
+                                articles.append({
+                                    'title': title,
+                                    'url': href,
+                                    'source': 'Yahoo Finance',
+                                    'content': title,
+                                    'date': datetime.now().isoformat()
+                                })
+                                
+                                if len(articles) >= 5:
+                                    break
+                except Exception:
+                    pass
+            
+            logger.info(f"Yahoo Finance: Found {len(articles)} articles for {ticker}")
             return articles
             
         except Exception as e:
-            logger.warning(f"TradingView Selenium failed for {ticker}: {str(e)[:100]}")
+            logger.warning(f"Yahoo Finance ticker news failed for {ticker}: {str(e)[:100]}")
             return []
     
     def get_finviz_news(self, ticker):
@@ -1640,10 +1702,6 @@ def stock_analysis(ticker):
     ticker = ticker.upper().strip()
     return render_template('stock_analysis.html', ticker=ticker)
 
-
-
-
-
 @app.route('/api/chart/<ticker>')
 @app.route('/api/chart/<ticker>/<period>')
 def get_chart_data(ticker, period='30d'):
@@ -1668,8 +1726,6 @@ def get_chart_data(ticker, period='30d'):
     except Exception as e:
         logger.error(f"Chart endpoint error for {ticker}: {e}")
         return jsonify({'error': str(e)}), 500
-
-
 
 @app.route('/api/market-status')
 def get_market_status():
@@ -2260,8 +2316,9 @@ class AlpacaIntegration:
 alpaca = AlpacaIntegration()
 
 def process_ticker_news(ticker):
-    """Process news for a single ticker with caching"""
-    logger.info(f"=== Starting news processing for {ticker} ===")
+    """Process news for a single ticker with optimized parallel processing"""
+    logger.info(f"=== Starting optimized news processing for {ticker} ===")
+    start_time = time.time()
     
     # Get Alpaca quote for context
     alpaca_quote = alpaca.get_quote(ticker)
@@ -2281,22 +2338,22 @@ def process_ticker_news(ticker):
         all_articles = []
         source_counts = {}
         
-        # Priority sources first
+        # Priority sources first (cloud-compatible only)
         priority_tasks = [
-            ('Motley Fool', collector.get_motley_fool_news, ticker),
-            ('StockStory', collector.get_stockstory_news, ticker),
-            ('Reuters (RSS)', collector.get_reuters_rss, ticker),
-            ('TechCrunch', collector.get_techcrunch_news, ticker)
-        ]
-        
-        # Secondary sources
-        secondary_tasks = [
             ('TradingView', collector.get_tradingview_news, ticker),
             ('Finviz', collector.get_finviz_news, ticker),
+            ('Yahoo Finance', collector.get_yahoo_ticker_news, ticker),
+            ('Motley Fool', collector.get_motley_fool_news, ticker)
+        ]
+        
+        # Secondary sources (RSS feeds and web scraping)
+        secondary_tasks = [
             ('99Bitcoins', collector.get_99bitcoins_news, ticker),
-            ('MarketWatch', collector.get_marketwatch_news, ticker),
+            ('Seeking Alpha', collector.get_seeking_alpha_rss, ticker),
             ('Invezz (RSS)', collector.get_invezz_rss, ticker),
-            ('Seeking Alpha', collector.get_seeking_alpha_rss, ticker)
+            ('Reuters (RSS)', collector.get_reuters_rss, ticker),
+            ('TechCrunch', collector.get_techcrunch_news, ticker),
+            ('MarketWatch', collector.get_marketwatch_news, ticker)
         ]
         
         # API sources with quota checks
@@ -2315,13 +2372,13 @@ def process_ticker_news(ticker):
         
         # Execute priority sources first
         logger.info(f"Processing {len(priority_tasks)} priority sources first...")
-        with ThreadPoolExecutor(max_workers=3) as executor:
+        with ThreadPoolExecutor(max_workers=4) as executor:
             priority_futures = {executor.submit(task[1], task[2]): task[0] for task in priority_tasks}
             
-            for future in as_completed(priority_futures, timeout=45):
+            for future in as_completed(priority_futures, timeout=60):
                 source_name = priority_futures[future]
                 try:
-                    articles = future.result(timeout=30)
+                    articles = future.result(timeout=15)  # Reduced individual timeout
                     if articles:
                         all_articles.extend(articles)
                         source_counts[source_name] = len(articles)
@@ -2333,16 +2390,19 @@ def process_ticker_news(ticker):
                     logger.error(f"PRIORITY {source_name}: FAILED - {str(e)[:50]}")
                     source_counts[source_name] = 0
         
-        # Execute remaining sources
+        # Execute remaining sources with better error handling
         remaining_tasks = api_tasks + secondary_tasks
         logger.info(f"Processing {len(remaining_tasks)} remaining sources...")
-        with ThreadPoolExecutor(max_workers=4) as executor:
+        with ThreadPoolExecutor(max_workers=6) as executor:
             future_to_source = {executor.submit(task[1], task[2]): task[0] for task in remaining_tasks}
             
-            for future in as_completed(future_to_source, timeout=60):
+            # Process completed futures without strict timeout
+            completed_count = 0
+            for future in as_completed(future_to_source, timeout=90):
                 source_name = future_to_source[future]
+                completed_count += 1
                 try:
-                    articles = future.result(timeout=45)
+                    articles = future.result(timeout=20)  # Individual timeout
                     if articles:
                         all_articles.extend(articles)
                         source_counts[source_name] = len(articles)
@@ -2353,20 +2413,11 @@ def process_ticker_news(ticker):
                 except Exception as e:
                     logger.error(f"{source_name}: FAILED - {str(e)[:50]}")
                     source_counts[source_name] = 0
-                    
-                    # Retry failed sources once
-                    if source_name not in ['Polygon', 'Alpha Vantage', 'NewsAPI', 'TradingView']:  # Don't retry API/Selenium sources
-                        try:
-                            logger.info(f"Retrying {source_name}...")
-                            retry_task = next((t for t in tasks if t[0] == source_name), None)
-                            if retry_task:
-                                retry_articles = retry_task[1](retry_task[2])
-                                if retry_articles:
-                                    all_articles.extend(retry_articles)
-                                    source_counts[source_name] = len(retry_articles)
-                                    logger.info(f"{source_name}: RETRY SUCCESS - {len(retry_articles)} articles")
-                        except Exception as retry_error:
-                            logger.error(f"{source_name}: RETRY FAILED - {str(retry_error)[:50]}")
+            
+            # Handle any remaining unfinished futures
+            unfinished = len(remaining_tasks) - completed_count
+            if unfinished > 0:
+                logger.warning(f"{unfinished} sources did not complete in time")
         
         # Add Alpaca news (sequential due to authentication)
         try:
@@ -2477,7 +2528,9 @@ def process_ticker_news(ticker):
     else:
         logger.error(f"PARTIAL SUCCESS: {ticker} - {len(all_articles)} articles, {articles_saved} saved, AI summary FAILED")
     
-    logger.info(f"=== Completed processing for {ticker} ===")
+    end_time = time.time()
+    processing_time = end_time - start_time
+    logger.info(f"=== Completed processing for {ticker} in {processing_time:.1f}s ===")
 
 @app.route('/api/refresh/<ticker>', methods=['GET', 'POST'])
 def refresh_ticker(ticker):
@@ -2492,13 +2545,17 @@ def refresh_ticker(ticker):
         # Clear ALL cache for fresh data
         cache.clear(ticker)
         
-        # Process the ticker to generate new summary
-        process_ticker_news(ticker)
-        return jsonify({'success': True, 'message': f'Successfully refreshed {ticker}'})
+        # Process the ticker with timeout handling
+        try:
+            process_ticker_news(ticker)
+            return jsonify({'success': True, 'message': f'Successfully refreshed {ticker}'})
+        except Exception as process_error:
+            logger.error(f"Processing error for {ticker}: {process_error}")
+            return jsonify({'error': f'Processing failed: {str(process_error)[:100]}'}), 500
         
     except Exception as e:
         logger.error(f"Refresh error for {ticker}: {e}")
-        return jsonify({'error': f'Failed to refresh {ticker}: {str(e)}'}), 500
+        return jsonify({'error': f'Failed to refresh {ticker}: {str(e)[:100]}'}), 500
 
 @app.route('/api/yahoo-financials/<ticker>')
 def get_yahoo_financials(ticker):
@@ -3045,9 +3102,15 @@ def get_trade_ideas(ticker):
         return jsonify({'error': 'Trade ideas service error'}), 500
 
 def get_pexels_image(query, size='medium'):
-    """Get image from Pexels API"""
+    """Get image from Pexels API with 7-day Redis caching"""
     if not PEXELS_API_KEY:
         return None
+    
+    # Check cache first
+    cached_url = cache.get_image(query)
+    if cached_url:
+        return cached_url
+    
     try:
         headers = {'Authorization': PEXELS_API_KEY}
         response = requests.get(
@@ -3057,7 +3120,10 @@ def get_pexels_image(query, size='medium'):
         if response.status_code == 200:
             data = response.json()
             if data.get('photos'):
-                return data['photos'][0]['src'][size]
+                image_url = data['photos'][0]['src'][size]
+                # Cache for 7 days
+                cache.set_image(query, image_url)
+                return image_url
     except Exception as e:
         logger.debug(f'Pexels API error: {e}')
     return None
