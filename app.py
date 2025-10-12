@@ -456,13 +456,32 @@ class NewsCollector:
             chrome_options.add_argument('--no-sandbox')
             chrome_options.add_argument('--disable-dev-shm-usage')
             chrome_options.add_argument('--disable-gpu')
+            chrome_options.add_argument('--disable-web-security')
+            chrome_options.add_argument('--disable-features=VizDisplayCompositor')
             chrome_options.add_argument('--window-size=1920,1080')
             chrome_options.add_argument('--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36')
             
-            # Set Chrome binary path for Render
-            chrome_bin = os.environ.get('CHROME_BIN', '/usr/bin/google-chrome')
-            if os.path.exists(chrome_bin):
-                chrome_options.binary_location = chrome_bin
+            # Chrome binary detection for different environments
+            chrome_paths = [
+                os.environ.get('CHROME_BIN'),  # Render environment variable
+                '/usr/bin/google-chrome',      # Standard Linux path
+                '/usr/bin/chromium-browser',   # Alternative Linux path
+                '/opt/google/chrome/chrome',   # Docker path
+                'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',  # Windows
+                'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe'  # Windows x86
+            ]
+            
+            chrome_binary = None
+            for path in chrome_paths:
+                if path and os.path.exists(path):
+                    chrome_binary = path
+                    logger.debug(f"Found Chrome binary at: {path}")
+                    break
+            
+            if chrome_binary:
+                chrome_options.binary_location = chrome_binary
+            else:
+                logger.warning("Chrome binary not found, using system default")
             
             service = Service(ChromeDriverManager().install())
             driver = webdriver.Chrome(service=service, options=chrome_options)
@@ -541,7 +560,12 @@ class NewsCollector:
             return articles
             
         except Exception as e:
-            logger.error(f"TradingView Selenium error for {ticker}: {e}")
+            error_msg = str(e)
+            if 'chrome' in error_msg.lower() or 'binary' in error_msg.lower():
+                logger.error(f"TradingView Chrome binary error for {ticker}: {error_msg}")
+                logger.info("Chrome paths checked: /usr/bin/google-chrome, /usr/bin/chromium-browser, /opt/google/chrome/chrome")
+            else:
+                logger.error(f"TradingView Selenium error for {ticker}: {e}")
             return []
     
     def get_finviz_news(self, ticker):
