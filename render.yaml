@@ -16,3 +16,5 @@ services:
         value: /usr/bin/google-chrome
       - key: CHROMEDRIVER_PATH
         value: /usr/bin/chromedriver
+      - key: GEMINI_API_KEY
+        fromService: true

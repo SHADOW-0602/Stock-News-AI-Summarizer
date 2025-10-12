@@ -1455,7 +1455,7 @@ Return only numbers separated by commas (e.g., 1,3,5,7,9):
             market_context = f"\nCurrent Price: ${alpaca_quote['price']:.2f} (Bid: ${alpaca_quote['bid']:.2f}, Ask: ${alpaca_quote['ask']:.2f})\n"
         
         try:
-            if not self.client or GEMINI_API_KEY == 'your-gemini-api-key':
+            if not self.client or not GEMINI_API_KEY or GEMINI_API_KEY.strip() == '':
                 logger.error(f"SUMMARY GENERATION: Gemini API not configured for {ticker}")
                 return {
                     'summary': f"**{ticker} ANALYSIS** - AI summary unavailable (API not configured). {len(selected_articles)} articles collected from multiple sources. Manual review recommended for trading decisions.",
@@ -1467,11 +1467,31 @@ Return only numbers separated by commas (e.g., 1,3,5,7,9):
                 for art in selected_articles[:5]  # Limit to 5 articles to avoid token limits
             ])
             
+            # Clean up old data first (older than 7 days) for this ticker
+            db.cleanup_old_data(ticker, days=7)
+            
+            # Get exactly last 7 days of historical summaries for comparison
+            recent_history = db.get_summaries_last_7_days_only(ticker)
+            logger.info(f"Retrieved {len(recent_history)} summaries from exactly last 7 days for {ticker}")
+            
             # Format historical data properly with dates
-            history_text = "\n".join([
-                f"{summary.get('date', f'Day {i+1}')}: {summary.get('what_changed', 'No changes')}"
-                for i, summary in enumerate(historical_summaries[-7:])  # Last 7 days
-            ]) if historical_summaries else "No historical data available."
+            if recent_history:
+                history_entries = []
+                for summary in recent_history:
+                    date_str = summary.get('date', summary.get('created_at', ''))
+                    summary_text = summary.get('summary', '')
+                    what_changed = summary.get('what_changed', '')
+                    
+                    if summary_text:
+                        # Include both summary and what_changed for better context
+                        entry = f"{date_str}: {summary_text[:150]}..."
+                        if what_changed:
+                            entry += f" | Changes: {what_changed[:100]}..."
+                        history_entries.append(entry)
+                
+                history_text = "\n".join(history_entries) if history_entries else "No detailed historical data available."
+            else:
+                history_text = "No historical data available."
             
             prompt = f"""
 Analyze {ticker} for trading decisions:
@@ -1498,7 +1518,14 @@ Bull/bear case with price catalysts.
 • Technical levels
 
 **WHAT CHANGED TODAY**
-Compare today's news against the last 7 days history above. Identify what is genuinely NEW today vs what was already known. Focus on material changes, new developments, or shifts in sentiment/fundamentals that weren't present in recent history.
+Carefully compare today's news against the 7-day history provided above. Identify what is genuinely NEW or DIFFERENT today versus what was already covered in recent days. Look for:
+- New earnings/financial results not mentioned before
+- Fresh regulatory/legal developments
+- New partnerships, acquisitions, or strategic moves
+- Management changes or insider activity
+- Shifts in analyst sentiment or price targets
+- Market events affecting the stock differently than before
+If nothing materially new happened, state "No significant new developments beyond ongoing themes."
 
 Keep under 400 words, focus on actionable insights.
 """
@@ -1665,7 +1692,10 @@ def debug_apis():
             'apis': {
                 'gemini': {
                     'configured': bool(GEMINI_API_KEY and GEMINI_API_KEY != 'your-gemini-api-key'),
-                    'key_preview': f"{GEMINI_API_KEY[:10]}...{GEMINI_API_KEY[-5:]}" if GEMINI_API_KEY else 'Not set'
+                    'key_preview': f"{GEMINI_API_KEY[:10]}...{GEMINI_API_KEY[-5:]}" if GEMINI_API_KEY else 'Not set',
+                    'client_initialized': bool(client),
+                    'env_var_exists': 'GEMINI_API_KEY' in os.environ,
+                    'env_var_value': os.environ.get('GEMINI_API_KEY', 'NOT_FOUND')[:15] + '...' if os.environ.get('GEMINI_API_KEY') else 'NOT_FOUND'
                 },
                 'polygon': {
                     'configured': bool(POLYGON_API_KEY and POLYGON_API_KEY != 'your-polygon-api-key'),
@@ -1692,6 +1722,10 @@ def debug_apis():
                     'key_preview': f"{ALPACA_API_KEY[:10]}...{ALPACA_API_KEY[-5:]}" if ALPACA_API_KEY else 'Not set'
                 }
             },
+            'environment': {
+                'all_env_vars': [key for key in os.environ.keys() if 'API' in key or 'KEY' in key],
+                'dotenv_loaded': os.path.exists('.env')
+            },
             'usage': api_usage,
             'limits': DAILY_LIMITS,
             'quota_status': {
@@ -1713,6 +1747,43 @@ def cache_status():
             'error': str(e),
             'cache_type': 'Error',
             'connection_test': False
+        }), 500
+
+@app.route('/api/debug/gemini')
+def debug_gemini():
+    """Test Gemini API directly"""
+    try:
+        if not GEMINI_API_KEY:
+            return jsonify({
+                'error': 'Gemini API key not found',
+                'env_check': os.environ.get('GEMINI_API_KEY', 'NOT_SET'),
+                'client_status': bool(client)
+            }), 400
+        
+        if not client:
+            return jsonify({
+                'error': 'Gemini client not initialized',
+                'api_key_exists': bool(GEMINI_API_KEY),
+                'api_key_preview': f"{GEMINI_API_KEY[:10]}..." if GEMINI_API_KEY else None
+            }), 400
+        
+        # Test API call
+        model = client.GenerativeModel('gemini-2.5-pro')
+        response = model.generate_content("Say 'API test successful' in exactly 3 words.")
+        
+        return jsonify({
+            'success': True,
+            'response': response.text,
+            'api_key_preview': f"{GEMINI_API_KEY[:10]}...",
+            'client_type': str(type(client))
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'error': str(e),
+            'api_key_exists': bool(GEMINI_API_KEY),
+            'client_exists': bool(client),
+            'error_type': type(e).__name__
         }), 500
 
 @app.route('/api/debug/chart-apis/<ticker>')
@@ -1997,6 +2068,9 @@ def get_summary(ticker):
         
         if not ticker or len(ticker) > 10:
             return jsonify({'error': 'Invalid ticker format'}), 400
+        
+        # Clean up old data first
+        db.cleanup_old_data(ticker, days=7)
         
         # Get latest summary
         summary_data = db.get_summary(ticker)
@@ -2300,13 +2374,15 @@ def process_ticker_news(ticker):
         summary_result = cached_summary
         selected_articles = all_articles[:5]  # Use first 5 for database storage
     else:
-        # Get historical summaries first
+        # Get historical summaries first (this is for backward compatibility)
         history = db.get_history(ticker)
         historical_summaries = [{
             'date': item.get('date', ''),
             'summary': item.get('summary', ''),
             'what_changed': item.get('what_changed', '')
         } for item in history]
+        
+        logger.debug(f"Retrieved {len(historical_summaries)} historical summaries for {ticker}")
         
         # AI article selection
         logger.info(f"AI PROCESSING: Starting article selection for {ticker}")
@@ -2883,6 +2959,8 @@ def collect_financial_data(ticker):
         logger.error(f"Manual collection error for {ticker}: {e}")
         return jsonify({'error': str(e)}), 500
 
+
+
 @app.route('/api/trade-ideas/<ticker>')
 def get_trade_ideas(ticker):
     """Generate advanced ML-based trade ideas"""
@@ -3208,12 +3286,22 @@ if __name__ == '__main__':
     
     # Financial data is fetched on-demand from Yahoo Finance
     
-    # Optional: Add weekend summary generation
+    # Daily cleanup of old data (older than 7 days)
+    def daily_cleanup():
+        """Clean up data older than 7 days from all tables"""
+        logger.info("Starting daily cleanup of data older than 7 days")
+        try:
+            db.cleanup_old_data(ticker=None, days=7)  # Clean all tickers
+            cache.cleanup_expired()  # Clean cache
+            logger.info("Daily cleanup completed successfully")
+        except Exception as e:
+            logger.error(f"Daily cleanup failed: {e}")
+    
     scheduler.add_job(
-        func=cache.cleanup_expired,
+        func=daily_cleanup,
         trigger="cron",
         hour=0,  # Midnight cleanup
-        minute=0,
+        minute=30,  # 30 minutes after midnight
         timezone='Asia/Kolkata'
     )
     

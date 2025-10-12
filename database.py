@@ -248,6 +248,33 @@ class Database:
             # Return empty list on any database error to prevent crashes
             return []
     
+    def get_summaries_since_date(self, ticker, since_date):
+        """Get summaries for ticker since a specific date"""
+        if not self.client:
+            return []
+        
+        try:
+            since_str = since_date.isoformat()
+            logger.debug(f"Getting summaries for {ticker} since {since_str}")
+            
+            result = self.client.table('daily_summaries').select(
+                'date, summary, what_changed, created_at'
+            ).eq('ticker', ticker).gte('date', since_str).order('date', desc=True).execute()
+            
+            summaries = [{
+                'date': row.get('date', ''),
+                'summary': row.get('summary', ''),
+                'what_changed': row.get('what_changed', ''),
+                'created_at': row.get('created_at', row.get('date', ''))
+            } for row in result.data] if result.data else []
+            
+            logger.debug(f"Retrieved {len(summaries)} summaries for {ticker} since {since_str}")
+            return summaries
+            
+        except Exception as e:
+            logger.error(f"Error getting summaries since {since_date} for {ticker}: {e}")
+            return []
+    
     @safe_db_operation(default_return=[])
     def get_recent_articles(self, ticker, limit=50):
         """Get recent articles safely"""
@@ -410,6 +437,66 @@ class Database:
             return sorted(dates, reverse=True)
         except Exception as e:
             logger.error(f"Error getting financial dates for {ticker}: {e}")
+            return []
+    
+    def cleanup_old_data(self, ticker=None, days=7):
+        """Remove data older than specified days (default 7 days)"""
+        if not self.client:
+            return
+        
+        try:
+            from datetime import datetime, timedelta
+            cutoff_date = (datetime.now() - timedelta(days=days)).isoformat()
+            
+            # Clean up old summaries
+            if ticker:
+                summaries_result = self.client.table('daily_summaries').delete().eq('ticker', ticker).lt('date', cutoff_date[:10]).execute()
+                articles_result = self.client.table('news_articles').delete().eq('ticker', ticker).lt('date', cutoff_date).execute()
+                financials_result = self.client.table('financial_statements').delete().eq('ticker', ticker).lt('created_at', cutoff_date).execute()
+                
+                logger.info(f"Cleaned up old data for {ticker}: summaries, articles, and financials older than {days} days")
+            else:
+                # Clean up for all tickers
+                summaries_result = self.client.table('daily_summaries').delete().lt('date', cutoff_date[:10]).execute()
+                articles_result = self.client.table('news_articles').delete().lt('date', cutoff_date).execute()
+                financials_result = self.client.table('financial_statements').delete().lt('created_at', cutoff_date).execute()
+                
+                logger.info(f"Cleaned up old data for all tickers: summaries, articles, and financials older than {days} days")
+                
+        except Exception as e:
+            logger.error(f"Error cleaning up old data: {e}")
+    
+    def get_summaries_last_7_days_only(self, ticker):
+        """Get summaries for ticker from exactly last 7 days only (excluding today)"""
+        if not self.client:
+            return []
+        
+        try:
+            from datetime import datetime, timedelta
+            
+            # Calculate exact 7-day window (including today)
+            today = datetime.now().date()
+            end_date = today  # Today
+            start_date = today - timedelta(days=7)  # 7 days ago
+            
+            logger.debug(f"Getting summaries for {ticker} from {start_date} to {end_date} (including today)")
+            
+            result = self.client.table('daily_summaries').select(
+                'date, summary, what_changed, created_at'
+            ).eq('ticker', ticker).gte('date', start_date.isoformat()).lte('date', end_date.isoformat()).order('date', desc=True).execute()
+            
+            summaries = [{
+                'date': row.get('date', ''),
+                'summary': row.get('summary', ''),
+                'what_changed': row.get('what_changed', ''),
+                'created_at': row.get('created_at', row.get('date', ''))
+            } for row in result.data] if result.data else []
+            
+            logger.debug(f"Retrieved {len(summaries)} summaries for {ticker} from last 7 days (including today)")
+            return summaries
+            
+        except Exception as e:
+            logger.error(f"Error getting 7-day summaries for {ticker}: {e}")
             return []
 
 # Global database instance with safe initialization
