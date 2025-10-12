@@ -482,14 +482,14 @@ class Database:
             logger.debug(f"Getting summaries for {ticker} from {start_date} to {end_date} (including today)")
             
             result = self.client.table('daily_summaries').select(
-                'date, summary, what_changed, created_at'
+                'date, summary, what_changed'
             ).eq('ticker', ticker).gte('date', start_date.isoformat()).lte('date', end_date.isoformat()).order('date', desc=True).execute()
             
             summaries = [{
                 'date': row.get('date', ''),
                 'summary': row.get('summary', ''),
                 'what_changed': row.get('what_changed', ''),
-                'created_at': row.get('created_at', row.get('date', ''))
+                'created_at': row.get('date', '')
             } for row in result.data] if result.data else []
             
             logger.debug(f"Retrieved {len(summaries)} summaries for {ticker} from last 7 days (including today)")

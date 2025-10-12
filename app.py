@@ -459,6 +459,11 @@ class NewsCollector:
             chrome_options.add_argument('--window-size=1920,1080')
             chrome_options.add_argument('--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36')
             
+            # Set Chrome binary path for Render
+            chrome_bin = os.environ.get('CHROME_BIN', '/usr/bin/google-chrome')
+            if os.path.exists(chrome_bin):
+                chrome_options.binary_location = chrome_bin
+            
             service = Service(ChromeDriverManager().install())
             driver = webdriver.Chrome(service=service, options=chrome_options)
             
