@@ -442,6 +442,27 @@ class NewsCollector:
     def get_tradingview_news(self, ticker):
         """Scrape TradingView news using Selenium"""
         logger.debug(f"Starting TradingView Selenium scraping for {ticker}")
+        
+        # Check if Chrome is available before attempting Selenium
+        chrome_paths = [
+            os.environ.get('CHROME_BIN'),
+            '/usr/bin/google-chrome',
+            '/usr/bin/chromium-browser',
+            '/opt/google/chrome/chrome',
+            'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+            'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe'
+        ]
+        
+        chrome_binary = None
+        for path in chrome_paths:
+            if path and os.path.exists(path):
+                chrome_binary = path
+                break
+        
+        if not chrome_binary:
+            logger.warning(f"TradingView: Chrome not found on system, skipping Selenium scraping for {ticker}")
+            return []
+        
         try:
             from selenium import webdriver
             from selenium.webdriver.chrome.options import Options
@@ -460,28 +481,7 @@ class NewsCollector:
             chrome_options.add_argument('--disable-features=VizDisplayCompositor')
             chrome_options.add_argument('--window-size=1920,1080')
             chrome_options.add_argument('--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36')
-            
-            # Chrome binary detection for different environments
-            chrome_paths = [
-                os.environ.get('CHROME_BIN'),  # Render environment variable
-                '/usr/bin/google-chrome',      # Standard Linux path
-                '/usr/bin/chromium-browser',   # Alternative Linux path
-                '/opt/google/chrome/chrome',   # Docker path
-                'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',  # Windows
-                'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe'  # Windows x86
-            ]
-            
-            chrome_binary = None
-            for path in chrome_paths:
-                if path and os.path.exists(path):
-                    chrome_binary = path
-                    logger.debug(f"Found Chrome binary at: {path}")
-                    break
-            
-            if chrome_binary:
-                chrome_options.binary_location = chrome_binary
-            else:
-                logger.warning("Chrome binary not found, using system default")
+            chrome_options.binary_location = chrome_binary
             
             service = Service(ChromeDriverManager().install())
             driver = webdriver.Chrome(service=service, options=chrome_options)
@@ -560,12 +560,7 @@ class NewsCollector:
             return articles
             
         except Exception as e:
-            error_msg = str(e)
-            if 'chrome' in error_msg.lower() or 'binary' in error_msg.lower():
-                logger.error(f"TradingView Chrome binary error for {ticker}: {error_msg}")
-                logger.info("Chrome paths checked: /usr/bin/google-chrome, /usr/bin/chromium-browser, /opt/google/chrome/chrome")
-            else:
-                logger.error(f"TradingView Selenium error for {ticker}: {e}")
+            logger.warning(f"TradingView Selenium failed for {ticker}: {str(e)[:100]}")
             return []
     
     def get_finviz_news(self, ticker):
@@ -2153,6 +2148,14 @@ def get_summary(ticker):
                         logger.debug(f"Logo fetched and saved for {ticker}: {logo_url}")
             except Exception as e:
                 logger.debug(f"Logo fetch failed for {ticker}: {e}")
+        
+        # Show "No data available" if no summary exists
+        if not summary_data or not summary_data.get('summary'):
+            summary_data = {
+                'summary': 'No data available',
+                'what_changed': 'No data available',
+                'date': datetime.now().isoformat()
+            }
         
         return jsonify({
             'current_summary': summary_data,
