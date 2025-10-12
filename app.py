@@ -155,17 +155,23 @@ def increment_api_usage(service):
     api_usage[service]['calls'] += 1
 
 # Initialize Gemini client
-if genai and GEMINI_API_KEY:
+logger.info(f"Gemini initialization - Library: {bool(genai)}, Key exists: {bool(GEMINI_API_KEY)}, Key length: {len(GEMINI_API_KEY) if GEMINI_API_KEY else 0}")
+if GEMINI_API_KEY:
+    logger.info(f"Gemini API key preview: {GEMINI_API_KEY[:15]}...{GEMINI_API_KEY[-5:]}")
+
+if genai and GEMINI_API_KEY and GEMINI_API_KEY.strip() != '' and GEMINI_API_KEY != 'your-gemini-api-key':
     try:
+        logger.info("Attempting to configure Gemini client...")
         genai.configure(api_key=GEMINI_API_KEY)
         client = genai
-        logger.info("Gemini client configured successfully")
+        logger.info(f"✅ Gemini client configured successfully with key: {GEMINI_API_KEY[:10]}...{GEMINI_API_KEY[-5:]}")
     except Exception as e:
-        logger.error(f"Failed to configure Gemini client: {e}")
+        logger.error(f"❌ Failed to configure Gemini client: {e}")
+        logger.error(f"Error type: {type(e).__name__}")
         client = None
 else:
     client = None
-    logger.error("Gemini not available - missing library or API key")
+    logger.error(f"❌ Gemini not available - library: {bool(genai)}, key present: {bool(GEMINI_API_KEY)}, key valid: {GEMINI_API_KEY != 'your-gemini-api-key' if GEMINI_API_KEY else False}")
 
 # Initialize scheduler for cache cleanup
 scheduler = BackgroundScheduler()
@@ -1411,8 +1417,8 @@ Return only numbers separated by commas (e.g., 1,3,5,7,9):
             
             logger.info(f"GEMINI ARTICLE SELECTION: Calling API for {ticker}")
             
-            if not self.client or GEMINI_API_KEY == 'your-gemini-api-key':
-                logger.warning("GEMINI ARTICLE SELECTION: API not configured, using first 5")
+            if not self.client or not GEMINI_API_KEY or GEMINI_API_KEY.strip() == '' or GEMINI_API_KEY == 'your-gemini-api-key':
+                logger.warning(f"GEMINI ARTICLE SELECTION: API not configured (key present: {bool(GEMINI_API_KEY)}, client: {bool(self.client)}), using first 5")
                 return articles[:5]
             
             response = self._call_gemini_with_fallback(prompt, None)
@@ -1455,8 +1461,8 @@ Return only numbers separated by commas (e.g., 1,3,5,7,9):
             market_context = f"\nCurrent Price: ${alpaca_quote['price']:.2f} (Bid: ${alpaca_quote['bid']:.2f}, Ask: ${alpaca_quote['ask']:.2f})\n"
         
         try:
-            if not self.client or not GEMINI_API_KEY or GEMINI_API_KEY.strip() == '':
-                logger.error(f"SUMMARY GENERATION: Gemini API not configured for {ticker}")
+            if not self.client or not GEMINI_API_KEY or GEMINI_API_KEY.strip() == '' or GEMINI_API_KEY == 'your-gemini-api-key':
+                logger.error(f"SUMMARY GENERATION: Gemini API not configured for {ticker} (key present: {bool(GEMINI_API_KEY)}, client: {bool(self.client)})")
                 return {
                     'summary': f"**{ticker} ANALYSIS** - AI summary unavailable (API not configured). {len(selected_articles)} articles collected from multiple sources. Manual review recommended for trading decisions.",
                     'what_changed': "AI analysis unavailable - check articles manually for developments."
@@ -1691,11 +1697,19 @@ def debug_apis():
         status = {
             'apis': {
                 'gemini': {
-                    'configured': bool(GEMINI_API_KEY and GEMINI_API_KEY != 'your-gemini-api-key'),
+                    'configured': bool(GEMINI_API_KEY and GEMINI_API_KEY != 'your-gemini-api-key' and GEMINI_API_KEY.strip() != ''),
                     'key_preview': f"{GEMINI_API_KEY[:10]}...{GEMINI_API_KEY[-5:]}" if GEMINI_API_KEY else 'Not set',
+                    'key_length': len(GEMINI_API_KEY) if GEMINI_API_KEY else 0,
                     'client_initialized': bool(client),
+                    'genai_library': bool(genai),
                     'env_var_exists': 'GEMINI_API_KEY' in os.environ,
-                    'env_var_value': os.environ.get('GEMINI_API_KEY', 'NOT_FOUND')[:15] + '...' if os.environ.get('GEMINI_API_KEY') else 'NOT_FOUND'
+                    'env_var_value': os.environ.get('GEMINI_API_KEY', 'NOT_FOUND')[:15] + '...' if os.environ.get('GEMINI_API_KEY') else 'NOT_FOUND',
+                    'validation_checks': {
+                        'key_exists': bool(GEMINI_API_KEY),
+                        'not_placeholder': GEMINI_API_KEY != 'your-gemini-api-key' if GEMINI_API_KEY else False,
+                        'not_empty': GEMINI_API_KEY.strip() != '' if GEMINI_API_KEY else False,
+                        'proper_format': GEMINI_API_KEY.startswith('AIza') if GEMINI_API_KEY else False
+                    }
                 },
                 'polygon': {
                     'configured': bool(POLYGON_API_KEY and POLYGON_API_KEY != 'your-polygon-api-key'),
