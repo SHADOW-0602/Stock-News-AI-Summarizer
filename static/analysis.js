@@ -184,148 +184,107 @@ function renderChart(data) {
 
 function renderCandlestickChart(data) {
     if (chartInstance) {
-        chartInstance.destroy();
+        chartInstance.remove();
     }
 
     if (!data || !data.prices || data.prices.length === 0) {
         data = generateSampleChartData();
     }
 
-    // Prepare candlestick data
+    // Prepare candlestick data for lightweight-charts
     const candlestickData = data.prices.map(item => {
+        const time = new Date(item.date).getTime() / 1000; // Convert to seconds
         return {
-            x: new Date(item.date).getTime(),
-            y: [item.open, item.high, item.low, item.close]
+            time: time,
+            open: item.open,
+            high: item.high,
+            low: item.low,
+            close: item.close
         };
-    });
+    }).sort((a, b) => a.time - b.time);
 
     // Prepare volume data
     const volumeData = data.prices.map(item => {
+        const time = new Date(item.date).getTime() / 1000;
         return {
-            x: new Date(item.date).getTime(),
-            y: item.volume || 0
+            time: time,
+            value: item.volume || 0,
+            color: item.close >= item.open ? 'rgba(0, 212, 255, 0.8)' : 'rgba(255, 107, 107, 0.8)'
         };
+    }).sort((a, b) => a.time - b.time);
+
+    // Create chart container
+    const chartContainer = document.getElementById('candlestick-chart');
+    chartContainer.innerHTML = ''; // Clear existing content
+    
+    // Create main chart
+    chartInstance = window.LightweightCharts.createChart(chartContainer, {
+        width: chartContainer.clientWidth || 800,
+        height: 400,
+        layout: {
+            backgroundColor: 'transparent',
+            textColor: '#cccccc',
+        },
+        grid: {
+            vertLines: { color: 'rgba(255, 255, 255, 0.1)' },
+            horzLines: { color: 'rgba(255, 255, 255, 0.1)' },
+        },
+        crosshair: {
+            mode: window.LightweightCharts.CrosshairMode.Normal,
+        },
+        rightPriceScale: {
+            borderColor: 'rgba(255, 255, 255, 0.2)',
+        },
+        timeScale: {
+            borderColor: 'rgba(255, 255, 255, 0.2)',
+            timeVisible: true,
+            secondsVisible: false,
+        },
     });
 
-    const options = {
-        series: [{
-            name: 'Price',
-            type: 'candlestick',
-            data: candlestickData
-        }, {
-            name: 'Volume',
-            type: 'column',
-            data: volumeData,
-            yAxisIndex: 1
-        }],
-        chart: {
-            type: 'candlestick',
-            height: 400,
-            background: 'transparent',
-            toolbar: {
-                show: true,
-                tools: {
-                    download: true,
-                    selection: true,
-                    zoom: true,
-                    zoomin: true,
-                    zoomout: true,
-                    pan: true,
-                    reset: true
-                }
-            },
-            zoom: {
-                enabled: true,
-                type: 'x',
-                autoScaleYaxis: true
-            }
+    // Add candlestick series
+    const candlestickSeries = chartInstance.addCandlestickSeries({
+        upColor: '#00d4ff',
+        downColor: '#ff6b6b',
+        borderDownColor: '#ff6b6b',
+        borderUpColor: '#00d4ff',
+        wickDownColor: '#ff6b6b',
+        wickUpColor: '#00d4ff',
+    });
+
+    // Add volume series
+    const volumeSeries = chartInstance.addHistogramSeries({
+        color: '#26a69a',
+        priceFormat: {
+            type: 'volume',
         },
-        theme: {
-            mode: 'dark'
+        priceScaleId: 'volume',
+    });
+
+    // Set data
+    candlestickSeries.setData(candlestickData);
+    volumeSeries.setData(volumeData);
+
+    // Configure volume price scale
+    chartInstance.priceScale('volume').applyOptions({
+        scaleMargins: {
+            top: 0.8,
+            bottom: 0,
         },
-        title: {
-            text: `${ticker} Stock Price`,
-            align: 'left',
-            style: {
-                color: '#ffffff'
-            }
-        },
-        xaxis: {
-            type: 'datetime',
-            labels: {
-                style: {
-                    colors: '#cccccc'
-                }
-            },
-            axisBorder: {
-                color: '#333'
-            },
-            axisTicks: {
-                color: '#333'
-            }
-        },
-        yaxis: [{
-            tooltip: {
-                enabled: true
-            },
-            labels: {
-                style: {
-                    colors: '#cccccc'
-                },
-                formatter: function (val) {
-                    return '$' + val.toFixed(2);
-                }
-            }
-        }, {
-            opposite: true,
-            tooltip: {
-                enabled: true
-            },
-            labels: {
-                style: {
-                    colors: '#cccccc'
-                },
-                formatter: function (val) {
-                    return formatNumber(val);
-                }
-            }
-        }],
-        grid: {
-            borderColor: '#333',
-            strokeDashArray: 3
-        },
-        plotOptions: {
-            candlestick: {
-                colors: {
-                    upward: '#00d4ff',
-                    downward: '#ff6b6b'
-                }
-            },
-            bar: {
-                columnWidth: '80%'
-            }
-        },
-        tooltip: {
-            theme: 'dark'
-        },
-        rangeSelector: {
-            enabled: true,
-            buttons: [
-                { text: '1D', timePeriod: 1, timeUnit: 'day' },
-                { text: '5D', timePeriod: 5, timeUnit: 'day' },
-                { text: '1M', timePeriod: 1, timeUnit: 'month' },
-                { text: '3M', timePeriod: 3, timeUnit: 'month' },
-                { text: '6M', timePeriod: 6, timeUnit: 'month' },
-                { text: '1Y', timePeriod: 1, timeUnit: 'year' },
-                { text: 'All', timePeriod: 'all' }
-            ]
+    });
+
+    // Fit content properly
+    chartInstance.timeScale().fitContent();
+
+    // Handle resize
+    const resizeObserver = new ResizeObserver(entries => {
+        if (chartInstance) {
+            chartInstance.applyOptions({ width: entries[0].contentRect.width });
         }
-    };
+    });
+    resizeObserver.observe(chartContainer);
 
-    chartInstance = new ApexCharts(document.querySelector('#candlestick-chart'), options);
-    chartInstance.render();
-
-    console.log('ApexCharts candlestick chart rendered successfully');
+    console.log('Lightweight Charts candlestick chart rendered successfully');
 }
 
 

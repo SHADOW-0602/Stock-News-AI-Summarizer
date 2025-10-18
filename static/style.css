@@ -703,6 +703,107 @@ body.light-mode #add-btn {
     }
 }
 
+/* Newsletter Section */
+.newsletter-section {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 3rem 2rem;
+    margin: 4rem 0;
+    text-align: center;
+}
+
+body.light-mode .newsletter-section {
+    background: rgba(255, 255, 255, 0.8);
+}
+
+.newsletter-content h3 {
+    font-size: 1.8rem;
+    font-weight: 600;
+    color: #ffffff;
+    margin-bottom: 1rem;
+}
+
+body.light-mode .newsletter-content h3 {
+    color: #333;
+}
+
+.newsletter-content p {
+    font-size: 1.1rem;
+    color: #cccccc;
+    margin-bottom: 2rem;
+}
+
+body.light-mode .newsletter-content p {
+    color: #666;
+}
+
+.newsletter-form {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+}
+
+#newsletter-email {
+    padding: 0.8rem 1.5rem;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: 25px;
+    background: rgba(255, 255, 255, 0.1);
+    color: #f9fafb;
+    font-size: 1rem;
+    min-width: 250px;
+}
+
+body.light-mode #newsletter-email {
+    background: rgba(255, 255, 255, 0.9);
+    color: #111827;
+    border-color: rgba(0, 0, 0, 0.2);
+}
+
+#newsletter-email:focus {
+    outline: none;
+    border-color: #ffffff;
+}
+
+body.light-mode #newsletter-email:focus {
+    border-color: #333;
+}
+
+#subscribe-btn {
+    padding: 0.8rem 2rem;
+    background: #00ff88;
+    color: #000000;
+    border: none;
+    border-radius: 25px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+body.light-mode #subscribe-btn {
+    background: #28a745;
+    color: #ffffff;
+}
+
+#subscribe-btn:hover {
+    transform: translateY(-2px);
+    background: #00cc6a;
+}
+
+body.light-mode #subscribe-btn:hover {
+    background: #218838;
+}
+
+.newsletter-note {
+    font-size: 0.9rem;
+    color: #9ca3af;
+    margin-top: 1rem;
+}
+
+body.light-mode .newsletter-note {
+    color: #6b7280;
+}
+
 /* Mobile Responsive */
 @media (max-width: 768px) {
     .navbar {
@@ -744,5 +845,14 @@ body.light-mode #add-btn {
     
     .stocks-section h2 {
         font-size: 2rem;
+    }
+    
+    .newsletter-form {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    #newsletter-email {
+        min-width: 280px;
     }
 }

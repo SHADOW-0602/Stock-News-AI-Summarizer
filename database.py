@@ -498,6 +498,50 @@ class Database:
         except Exception as e:
             logger.error(f"Error getting 7-day summaries for {ticker}: {e}")
             return []
+    
+
+    
+    def add_subscription(self, email):
+        """Add email subscription for daily reports"""
+        if not self.client:
+            return False
+        
+        try:
+            self.client.table('email_subscriptions').upsert({
+                'email': email,
+                'subscribed_at': datetime.now().isoformat(),
+                'active': True
+            }, on_conflict='email').execute()
+            logger.info(f"Added email subscription: {email}")
+            return True
+        except Exception as e:
+            logger.error(f"Error adding subscription: {e}")
+            return False
+    
+    def remove_subscription(self, email):
+        """Remove email subscription"""
+        if not self.client:
+            return False
+        
+        try:
+            self.client.table('email_subscriptions').delete().eq('email', email).execute()
+            logger.info(f"Removed email subscription: {email}")
+            return True
+        except Exception as e:
+            logger.error(f"Error removing subscription: {e}")
+            return False
+    
+    def get_subscriptions(self):
+        """Get all active email subscriptions"""
+        if not self.client:
+            return []
+        
+        try:
+            result = self.client.table('email_subscriptions').select('email, subscribed_at').eq('active', True).execute()
+            return [row['email'] for row in result.data] if result.data else []
+        except Exception as e:
+            logger.error(f"Error getting subscriptions: {e}")
+            return []
 
 # Global database instance with safe initialization
 try:

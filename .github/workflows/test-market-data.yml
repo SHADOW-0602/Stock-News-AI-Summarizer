@@ -1,0 +1,29 @@
+name: Test Market Data
+
+on:
+  workflow_dispatch: # Manual trigger only
+
+jobs:
+  test-data-fetch:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        
+    - name: Install dependencies
+      run: |
+        pip install -r requirements_free.txt
+        
+    - name: Test market data fetching
+      run: |
+        python free_market_data.py
+        
+    - name: Test email generation
+      run: |
+        python test_weekly_report.py

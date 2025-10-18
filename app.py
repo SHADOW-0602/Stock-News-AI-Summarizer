@@ -3062,7 +3062,65 @@ def collect_financial_data(ticker):
         logger.error(f"Manual collection error for {ticker}: {e}")
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/subscribe', methods=['POST'])
+def subscribe_email():
+    """Subscribe email for daily reports"""
+    try:
+        data = request.json
+        email = data.get('email', '').strip().lower()
+        
+        if not email or '@' not in email:
+            return jsonify({'error': 'Valid email required'}), 400
+        
+        # Store subscription in database
+        db.add_subscription(email)
+        
+        return jsonify({
+            'success': True,
+            'message': 'Successfully subscribed to daily reports',
+            'email': email
+        })
+        
+    except Exception as e:
+        logger.error(f"Subscription error: {e}")
+        return jsonify({'error': 'Subscription failed'}), 500
 
+@app.route('/api/unsubscribe', methods=['POST'])
+def unsubscribe_email():
+    """Unsubscribe email from daily reports"""
+    try:
+        data = request.json
+        email = data.get('email', '').strip().lower()
+        
+        if not email:
+            return jsonify({'error': 'Email required'}), 400
+        
+        # Remove subscription from database
+        db.remove_subscription(email)
+        
+        return jsonify({
+            'success': True,
+            'message': 'Successfully unsubscribed from daily reports'
+        })
+        
+    except Exception as e:
+        logger.error(f"Unsubscribe error: {e}")
+        return jsonify({'error': 'Unsubscribe failed'}), 500
+
+
+
+@app.route('/api/subscriptions', methods=['GET'])
+def get_subscriptions():
+    """Get all email subscriptions (admin only)"""
+    try:
+        subscriptions = db.get_subscriptions()
+        return jsonify({
+            'subscriptions': subscriptions,
+            'count': len(subscriptions)
+        })
+    except Exception as e:
+        logger.error(f"Get subscriptions error: {e}")
+        return jsonify({'error': 'Failed to get subscriptions'}), 500
 
 @app.route('/api/trade-ideas/<ticker>')
 def get_trade_ideas(ticker):
