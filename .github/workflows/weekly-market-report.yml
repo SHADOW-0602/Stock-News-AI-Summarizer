@@ -2,31 +2,29 @@ name: Weekly Market Report
 
 on:
   schedule:
-    # Runs every Saturday at 9:00 AM UTC (adjust timezone as needed)
-    - cron: '0 9 * * 6'
-  workflow_dispatch: # Allows manual trigger
+    - cron: '0 9 * * 6'  # Runs every Saturday at 9:00 AM UTC
+  workflow_dispatch:  # Allows manual trigger
 
 jobs:
   send-weekly-report:
     runs-on: ubuntu-latest
     
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.11'
+      - name: Checkout code
+        uses: actions/checkout@v4
         
-    - name: Install dependencies
-      run: |
-        pip install -r requirements_free.txt
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          
+      - name: Install dependencies
+        run: pip install -r requirements_free.txt
         
-    - name: Send weekly market report
-      env:
-        SENDER_EMAIL: ${{ secrets.SENDER_EMAIL }}
-        SENDER_PASSWORD: ${{ secrets.SENDER_PASSWORD }}
-        SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-        SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
-      run: python weekly_market_report.py
+      - name: Send weekly market report
+        env:
+          SENDER_EMAIL: ${{ secrets.SENDER_EMAIL }}
+          SENDER_PASSWORD: ${{ secrets.SENDER_PASSWORD }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: python weekly_market_report.py
