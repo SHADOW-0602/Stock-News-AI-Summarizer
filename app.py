@@ -351,63 +351,208 @@ class NewsCollector:
         return []
     
     def get_reuters_rss(self, ticker):
-        """Get Reuters news via RSS feeds"""
+        """Get Reuters news via RSS feeds with improved connection handling"""
         try:
-            # Try Reuters RSS feeds
+            # Updated working Reuters RSS feeds with fallbacks
             rss_urls = [
                 "https://feeds.reuters.com/reuters/businessNews",
+                "https://feeds.reuters.com/reuters/companyNews",
                 "https://feeds.reuters.com/reuters/technologyNews",
-                "https://feeds.reuters.com/reuters/companyNews"
+                "https://feeds.reuters.com/reuters/topNews"
             ]
             
             company_name = self.get_company_name(ticker)
             articles = []
             
+            # Enhanced headers to avoid blocking
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Accept': 'application/rss+xml, application/xml, text/xml, */*',
+                'Accept-Language': 'en-US,en;q=0.9',
+                'Accept-Encoding': 'gzip, deflate, br',
+                'Connection': 'keep-alive',
+                'Cache-Control': 'no-cache',
+                'Pragma': 'no-cache',
+                'Sec-Fetch-Dest': 'document',
+                'Sec-Fetch-Mode': 'navigate',
+                'Sec-Fetch-Site': 'none',
+                'Upgrade-Insecure-Requests': '1'
+            }
+            
             for rss_url in rss_urls:
                 try:
-                    response = requests.get(rss_url, timeout=10)
+                    # Use requests directly with better timeout and retry
+                    response = requests.get(rss_url, headers=headers, timeout=20, allow_redirects=True)
+                    
                     if response.status_code == 200:
-                        soup = BeautifulSoup(response.content, 'xml')
-                        items = soup.find_all('item')[:15]
-                        
-                        for item in items:
-                            try:
-                                title_elem = item.find('title')
-                                link_elem = item.find('link')
-                                desc_elem = item.find('description')
-                                
-                                if title_elem and link_elem:
-                                    title = title_elem.get_text(strip=True)
-                                    url = link_elem.get_text(strip=True)
-                                    desc = desc_elem.get_text(strip=True) if desc_elem else title
-                                    
-                                    # Check relevance
-                                    if (title and len(title) > 20 and
-                                        (ticker.lower() in title.lower() or 
-                                         company_name.lower() in title.lower() or
-                                         any(word in title.lower() for word in ['stock', 'market', 'earnings', 'financial', 'business']))):
-                                        
-                                        articles.append({
-                                            'title': title,
-                                            'url': url,
-                                            'source': 'Reuters (RSS)',
-                                            'content': desc[:200],
-                                            'date': datetime.now().isoformat()
-                                        })
-                                        
-                            except Exception as item_error:
-                                continue
-                        
-                        if len(articles) >= 5:
-                            break
+                        # Try feedparser first for better RSS handling
+                        try:
+                            import feedparser
+                            feed = feedparser.parse(response.content)
                             
-                except Exception as feed_error:
+                            if feed.entries:
+                                for entry in feed.entries[:5]:
+                                    try:
+                                        title = entry.get('title', '')
+                                        url = entry.get('link', rss_url)
+                                        desc = entry.get('summary', entry.get('description', title))
+                                        
+                                        if title and len(title) > 15:
+                                            articles.append({
+                                                'title': title,
+                                                'url': url,
+                                                'source': 'Reuters (RSS)',
+                                                'content': desc[:200],
+                                                'date': datetime.now().isoformat()
+                                            })
+                                    except Exception:
+                                        continue
+                        except ImportError:
+                            # Fallback to BeautifulSoup if feedparser not available
+                            soup = BeautifulSoup(response.content, 'xml')
+                            items = soup.find_all('item')[:5]
+                            
+                            for item in items:
+                                try:
+                                    title_elem = item.find('title')
+                                    link_elem = item.find('link')
+                                    desc_elem = item.find('description')
+                                    
+                                    if title_elem:
+                                        title = title_elem.get_text(strip=True)
+                                        url = link_elem.get_text(strip=True) if link_elem else rss_url
+                                        desc = desc_elem.get_text(strip=True) if desc_elem else title
+                                        
+                                        if title and len(title) > 15:
+                                            articles.append({
+                                                'title': title,
+                                                'url': url,
+                                                'source': 'Reuters (RSS)',
+                                                'content': desc[:200],
+                                                'date': datetime.now().isoformat()
+                                            })
+                                except Exception:
+                                    continue
+                        
+                        if articles:
+                            logger.info(f"Reuters RSS: Successfully collected {len(articles)} articles from {rss_url}")
+                            break
+                    else:
+                        logger.debug(f"Reuters RSS: HTTP {response.status_code} for {rss_url}")
+                        
+                except requests.exceptions.Timeout:
+                    logger.debug(f"Reuters RSS: Timeout for {rss_url}")
+                    continue
+                except requests.exceptions.ConnectionError:
+                    logger.debug(f"Reuters RSS: Connection error for {rss_url}")
+                    continue
+                except Exception as e:
+                    logger.debug(f"Reuters RSS: Error for {rss_url}: {str(e)[:50]}")
                     continue
             
-            return articles[:5]
+            # If no RSS feeds work, try alternative Reuters sources
+            if not articles:
+                # Fallback 1: Try Reuters via Google News RSS
+                try:
+                    google_reuters_url = "https://news.google.com/rss/search?q=Reuters+business&hl=en-US&gl=US&ceid=US:en"
+                    response = requests.get(google_reuters_url, headers=headers, timeout=15)
+                    
+                    if response.status_code == 200:
+                        try:
+                            import feedparser
+                            feed = feedparser.parse(response.content)
+                            
+                            for entry in feed.entries[:3]:
+                                title = entry.get('title', '')
+                                if 'reuters' in title.lower() and len(title) > 15:
+                                    articles.append({
+                                        'title': title,
+                                        'url': entry.get('link', ''),
+                                        'source': 'Reuters (via Google)',
+                                        'content': title,
+                                        'date': datetime.now().isoformat()
+                                    })
+                        except ImportError:
+                            pass
+                except Exception:
+                    pass
+                
+                # Fallback 2: Try Yahoo Finance Reuters content
+                if not articles:
+                    try:
+                        yahoo_url = "https://finance.yahoo.com/news/"
+                        response = requests.get(yahoo_url, headers=headers, timeout=15)
+                        
+                        if response.status_code == 200:
+                            soup = BeautifulSoup(response.content, 'html.parser')
+                            links = soup.find_all('a', href=True)
+                            
+                            for link in links[:30]:
+                                title = link.get_text(strip=True)
+                                href = link.get('href', '')
+                                
+                                if (title and len(title) > 20 and 
+                                    ('reuters' in title.lower() or 'reuters' in href.lower()) and
+                                    any(word in title.lower() for word in ['stock', 'market', 'business', 'financial'])):
+                                    
+                                    if not href.startswith('http'):
+                                        href = f"https://finance.yahoo.com{href}"
+                                    
+                                    articles.append({
+                                        'title': title,
+                                        'url': href,
+                                        'source': 'Reuters (via Yahoo)',
+                                        'content': title,
+                                        'date': datetime.now().isoformat()
+                                    })
+                                    
+                                    if len(articles) >= 2:
+                                        break
+                    except Exception:
+                        pass
+                
+                # Fallback 3: General business news as Reuters substitute
+                if not articles:
+                    try:
+                        # Use MSN Money business news as final fallback
+                        msn_url = "https://www.msn.com/en-us/money/news"
+                        response = requests.get(msn_url, headers=headers, timeout=15)
+                        
+                        if response.status_code == 200:
+                            soup = BeautifulSoup(response.content, 'html.parser')
+                            links = soup.find_all('a', href=True)
+                            
+                            for link in links[:20]:
+                                title = link.get_text(strip=True)
+                                href = link.get('href', '')
+                                
+                                if (title and len(title) > 25 and
+                                    any(word in title.lower() for word in ['stock', 'market', 'business', 'earnings'])):
+                                    
+                                    if not href.startswith('http'):
+                                        href = f"https://www.msn.com{href}"
+                                    
+                                    articles.append({
+                                        'title': title,
+                                        'url': href,
+                                        'source': 'Business News (Reuters alt)',
+                                        'content': title,
+                                        'date': datetime.now().isoformat()
+                                    })
+                                    
+                                    if len(articles) >= 2:
+                                        break
+                    except Exception:
+                        pass
+            
+            if articles:
+                logger.info(f"Reuters RSS: Successfully found {len(articles)} articles for {ticker}")
+            else:
+                logger.warning(f"Reuters RSS: No articles found for {ticker} - all sources failed")
+            return articles[:3]
             
         except Exception as e:
-            print(f"Reuters RSS error: {e}")
+            logger.debug(f"Reuters RSS error: {e}")
         return []
     
     def get_invezz_rss(self, ticker):
@@ -744,34 +889,72 @@ class NewsCollector:
             return []
     
     def get_twelve_data_news(self, ticker):
-        """Get news-like data from Twelve Data using earnings and profile endpoints"""
-        logger.debug(f"Starting Twelve Data earnings/profile collection for {ticker}")
+        """Get news-like data from Twelve Data with improved error handling"""
+        logger.debug(f"Starting Twelve Data collection for {ticker}")
         try:
+            if not TWELVE_DATA_API_KEY:
+                logger.debug("Twelve Data API key not configured")
+                return []
+            
+            if not check_api_quota('twelve_data'):
+                logger.debug("Twelve Data quota exhausted")
+                return []
+            
             articles = []
             
-            # Get earnings data (acts as news)
-            earnings_url = "https://api.twelvedata.com/earnings"
-            earnings_params = {
+            # Try quote endpoint first (more reliable)
+            quote_url = "https://api.twelvedata.com/quote"
+            quote_params = {
                 'symbol': ticker,
                 'apikey': TWELVE_DATA_API_KEY
             }
             
-            response = self.session.get(earnings_url, params=earnings_params, timeout=15)
+            try:
+                response = self.session.get(quote_url, params=quote_params, timeout=10)
+                increment_api_usage('twelve_data')
+                
+                if response.status_code == 200:
+                    data = response.json()
+                    if 'symbol' in data and 'name' in data:
+                        company_name = data.get('name', ticker)
+                        price = data.get('close', 'N/A')
+                        change = data.get('change', 'N/A')
+                        
+                        title = f"{company_name} ({ticker}) Market Update"
+                        content = f"Latest market data for {company_name}. Price: ${price}, Change: {change}"
+                        
+                        articles.append({
+                            'title': title,
+                            'url': f"https://twelvedata.com/stocks/{ticker.lower()}",
+                            'source': 'Twelve Data',
+                            'content': content,
+                            'date': datetime.now().isoformat()
+                        })
+            except Exception as e:
+                logger.debug(f"Twelve Data quote error: {e}")
             
-            if response.status_code == 200:
-                data = response.json()
-                if 'earnings' in data and data['earnings']:
-                    for earning in data['earnings'][:3]:  # Latest 3 earnings
-                        try:
+            # Try earnings if available
+            if len(articles) == 0:
+                try:
+                    earnings_url = "https://api.twelvedata.com/earnings"
+                    earnings_params = {
+                        'symbol': ticker,
+                        'apikey': TWELVE_DATA_API_KEY
+                    }
+                    
+                    response = self.session.get(earnings_url, params=earnings_params, timeout=10)
+                    increment_api_usage('twelve_data')
+                    
+                    if response.status_code == 200:
+                        data = response.json()
+                        if 'earnings' in data and data['earnings']:
+                            earning = data['earnings'][0]  # Latest earning
                             date = earning.get('date', '')
-                            eps_estimate = earning.get('eps_estimate', 'N/A')
                             eps_actual = earning.get('eps_actual', 'N/A')
-                            revenue_estimate = earning.get('revenue_estimate', 'N/A')
-                            revenue_actual = earning.get('revenue_actual', 'N/A')
                             
                             if date:
-                                title = f"{ticker} Earnings Report - {date}: EPS ${eps_actual} vs ${eps_estimate} est"
-                                content = f"Earnings data for {ticker} on {date}. EPS: ${eps_actual} (est: ${eps_estimate}), Revenue: ${revenue_actual} (est: ${revenue_estimate})"
+                                title = f"{ticker} Latest Earnings - {date}"
+                                content = f"Recent earnings data for {ticker}. EPS: ${eps_actual}"
                                 
                                 articles.append({
                                     'title': title,
@@ -780,43 +963,14 @@ class NewsCollector:
                                     'content': content,
                                     'date': date
                                 })
-                        except Exception as item_error:
-                            logger.debug(f"Error processing Twelve Data earnings item: {item_error}")
-                            continue
+                except Exception as e:
+                    logger.debug(f"Twelve Data earnings error: {e}")
             
-            # Get company profile (acts as company news)
-            profile_url = "https://api.twelvedata.com/profile"
-            profile_params = {
-                'symbol': ticker,
-                'apikey': TWELVE_DATA_API_KEY
-            }
-            
-            response = self.session.get(profile_url, params=profile_params, timeout=15)
-            
-            if response.status_code == 200:
-                data = response.json()
-                if 'name' in data and 'description' in data:
-                    company_name = data.get('name', ticker)
-                    description = data.get('description', '')[:200] + '...' if len(data.get('description', '')) > 200 else data.get('description', '')
-                    sector = data.get('sector', 'Unknown')
-                    industry = data.get('industry', 'Unknown')
-                    
-                    title = f"{company_name} ({ticker}) Company Profile Update"
-                    content = f"Company: {company_name}. Sector: {sector}, Industry: {industry}. {description}"
-                    
-                    articles.append({
-                        'title': title,
-                        'url': f"https://twelvedata.com/stocks/{ticker.lower()}",
-                        'source': 'Twelve Data',
-                        'content': content,
-                        'date': datetime.now().isoformat()
-                    })
-            
-            logger.info(f"Twelve Data: Found {len(articles)} earnings/profile items for {ticker}")
+            logger.info(f"Twelve Data: Found {len(articles)} items for {ticker}")
             return articles
             
         except Exception as e:
-            logger.error(f"Twelve Data earnings/profile error for {ticker}: {e}")
+            logger.error(f"Twelve Data error for {ticker}: {e}")
             return []
     
     def get_finnhub_news(self, ticker):
@@ -1142,53 +1296,138 @@ class NewsCollector:
             return []
     
     def get_newsapi_reuters(self, ticker):
-        """Get Reuters content via NewsAPI"""
+        """Get news via NewsAPI with improved search strategy"""
         try:
             if not NEWSAPI_KEY or NEWSAPI_KEY == 'your-newsapi-key':
+                logger.debug("NewsAPI key not configured")
                 return []
             
             if not check_api_quota('newsapi'):
+                logger.debug("NewsAPI quota exhausted")
                 return []
             
-            company_name = self.get_company_name(ticker)
-            
-            # Target Reuters specifically
-            url = "https://newsapi.org/v2/everything"
-            params = {
-                'q': f'{company_name} OR {ticker}',
-                'sources': 'reuters',
-                'language': 'en',
-                'sortBy': 'publishedAt',
-                'pageSize': 10,
-                'apiKey': NEWSAPI_KEY
+            # Enhanced company name mapping
+            company_names = {
+                'AAPL': 'Apple Inc',
+                'GOOGL': 'Google Alphabet',
+                'MSFT': 'Microsoft',
+                'TSLA': 'Tesla',
+                'AMZN': 'Amazon',
+                'META': 'Meta Facebook',
+                'NVDA': 'Nvidia',
+                'NFLX': 'Netflix',
+                'WMT': 'Walmart',
+                'ADBE': 'Adobe',
+                'CRM': 'Salesforce',
+                'ORCL': 'Oracle',
+                'IBM': 'IBM',
+                'INTC': 'Intel',
+                'AMD': 'AMD',
+                'PYPL': 'PayPal',
+                'DIS': 'Disney',
+                'V': 'Visa',
+                'MA': 'Mastercard',
+                'JPM': 'JPMorgan Chase'
             }
             
-            response = self.session.get(url, params=params, timeout=15)
-            increment_api_usage('newsapi')
+            company_name = company_names.get(ticker, ticker)
+            articles = []
             
-            if response.status_code == 200:
-                data = response.json()
-                articles = []
-                
-                if 'articles' in data:
-                    for item in data['articles']:
-                        title = item.get('title', '')
-                        url = item.get('url', '')
-                        description = item.get('description', '')
+            # Try multiple search strategies
+            search_strategies = [
+                # Strategy 1: Company name in headlines
+                {
+                    'url': 'https://newsapi.org/v2/top-headlines',
+                    'params': {
+                        'q': f'"{company_name}"',
+                        'category': 'business',
+                        'language': 'en',
+                        'pageSize': 10,
+                        'apiKey': NEWSAPI_KEY
+                    }
+                },
+                # Strategy 2: Ticker symbol search
+                {
+                    'url': 'https://newsapi.org/v2/everything',
+                    'params': {
+                        'q': f'{ticker} AND (stock OR shares OR earnings OR financial)',
+                        'language': 'en',
+                        'sortBy': 'publishedAt',
+                        'pageSize': 5,
+                        'apiKey': NEWSAPI_KEY
+                    }
+                },
+                # Strategy 3: General business news if specific searches fail
+                {
+                    'url': 'https://newsapi.org/v2/top-headlines',
+                    'params': {
+                        'category': 'business',
+                        'country': 'us',
+                        'pageSize': 8,
+                        'apiKey': NEWSAPI_KEY
+                    }
+                }
+            ]
+            
+            for strategy_num, strategy in enumerate(search_strategies, 1):
+                try:
+                    response = self.session.get(strategy['url'], params=strategy['params'], timeout=15)
+                    increment_api_usage('newsapi')
+                    
+                    if response.status_code == 200:
+                        data = response.json()
                         
-                        if title and url:
-                            articles.append({
-                                'title': title,
-                                'url': url,
-                                'source': 'Reuters (via NewsAPI)',
-                                'content': description or title,
-                                'date': item.get('publishedAt', datetime.now().isoformat())
-                            })
-                
-                return articles[:5]
+                        if 'articles' in data and data['articles']:
+                            strategy_articles = []
+                            
+                            for item in data['articles']:
+                                title = item.get('title', '')
+                                url = item.get('url', '')
+                                description = item.get('description', '')
+                                source = item.get('source', {}).get('name', 'NewsAPI')
+                                
+                                if title and url and len(title) > 15:
+                                    # For strategy 3 (general business), filter for relevance
+                                    if strategy_num == 3:
+                                        if not any(word in title.lower() for word in [ticker.lower(), company_name.lower().split()[0]]):
+                                            continue
+                                    
+                                    strategy_articles.append({
+                                        'title': title,
+                                        'url': url,
+                                        'source': f'{source} (NewsAPI)',
+                                        'content': description or title,
+                                        'date': item.get('publishedAt', datetime.now().isoformat())
+                                    })
+                            
+                            if strategy_articles:
+                                articles.extend(strategy_articles)
+                                logger.info(f"NewsAPI Strategy {strategy_num}: Found {len(strategy_articles)} articles for {ticker}")
+                                
+                                # If we found articles with first two strategies, stop
+                                if strategy_num <= 2 and len(articles) >= 3:
+                                    break
+                    else:
+                        logger.debug(f"NewsAPI Strategy {strategy_num}: HTTP {response.status_code}")
+                        
+                except Exception as strategy_error:
+                    logger.debug(f"NewsAPI Strategy {strategy_num} error: {strategy_error}")
+                    continue
+            
+            # Remove duplicates based on title
+            seen_titles = set()
+            unique_articles = []
+            for article in articles:
+                title_key = article['title'].lower()[:50]  # First 50 chars for comparison
+                if title_key not in seen_titles:
+                    seen_titles.add(title_key)
+                    unique_articles.append(article)
+            
+            logger.info(f"NewsAPI: Found {len(unique_articles)} unique articles for {ticker}")
+            return unique_articles[:5]  # Return top 5
                 
         except Exception as e:
-            print(f"NewsAPI Reuters error: {e}")
+            logger.debug(f"NewsAPI error: {e}")
         return []
     
     def get_marketwatch_news(self, ticker):
