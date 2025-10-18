@@ -3,7 +3,12 @@ name: Weekly Market Report
 on:
   schedule:
     - cron: '0 9 * * 6'  # Runs every Saturday at 9:00 AM UTC
-  workflow_dispatch:  # Allows manual trigger
+  workflow_dispatch:
+    inputs:
+      test_run:
+        description: 'Test run'
+        required: false
+        default: 'true'
 
 jobs:
   send-weekly-report:
@@ -27,4 +32,6 @@ jobs:
           SENDER_PASSWORD: ${{ secrets.SENDER_PASSWORD }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
-        run: python weekly_market_report.py
+        run: |
+          echo "Running weekly market report..."
+          python weekly_market_report.py
