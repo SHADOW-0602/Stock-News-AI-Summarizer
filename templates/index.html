@@ -40,7 +40,9 @@
                 thousands of news sources, market trends, and financial data to deliver precise trading signals and
                 comprehensive stock summaries.</p>
             <div class="hero-buttons">
-                <button class="btn-primary" onclick="document.getElementById('ticker-input').scrollIntoView({behavior: 'smooth'}); document.getElementById('ticker-input').focus();">Get Started Free</button>
+                <button class="btn-primary"
+                    onclick="document.getElementById('ticker-input').scrollIntoView({behavior: 'smooth'}); document.getElementById('ticker-input').focus();">Get
+                    Started Free</button>
                 <button class="btn-secondary">View Live Demo</button>
             </div>
             <div class="hero-stats">
@@ -68,37 +70,43 @@
         </div>
         <div class="features-grid">
             <div class="feature-card">
-                <div class="feature-icon-large"><img src="" data-pexels="newspaper financial news" alt="News" style="width: 60px; height: 60px; border-radius: 8px;"></div>
+                <div class="feature-icon-large"><img src="" data-pexels="newspaper financial news" alt="News"
+                        style="width: 60px; height: 60px; border-radius: 8px;"></div>
                 <h3>Multi-Source News Analysis</h3>
                 <p>AI processes news from 15+ premium sources including TradingView, Benzinga, Reuters, and more to
                     deliver comprehensive market insights</p>
             </div>
             <div class="feature-card">
-                <div class="feature-icon-large"><img src="" data-pexels="artificial intelligence robot" alt="AI" style="width: 60px; height: 60px; border-radius: 8px;"></div>
+                <div class="feature-icon-large"><img src="" data-pexels="artificial intelligence robot" alt="AI"
+                        style="width: 60px; height: 60px; border-radius: 8px;"></div>
                 <h3>Gemini AI Summaries</h3>
                 <p>Advanced AI curates and summarizes the most relevant news articles, highlighting key market-moving
                     events and trading opportunities</p>
             </div>
             <div class="feature-card">
-                <div class="feature-icon-large"><img src="" data-pexels="stock market chart graph" alt="Charts" style="width: 60px; height: 60px; border-radius: 8px;"></div>
+                <div class="feature-icon-large"><img src="" data-pexels="stock market chart graph" alt="Charts"
+                        style="width: 60px; height: 60px; border-radius: 8px;"></div>
                 <h3>Real-Time Price Charts</h3>
                 <p>Interactive charts with multiple timeframes, technical indicators, and price predictions powered by
                     machine learning algorithms</p>
             </div>
             <div class="feature-card">
-                <div class="feature-icon-large"><img src="" data-pexels="target bullseye accuracy" alt="Target" style="width: 60px; height: 60px; border-radius: 8px;"></div>
+                <div class="feature-icon-large"><img src="" data-pexels="target bullseye accuracy" alt="Target"
+                        style="width: 60px; height: 60px; border-radius: 8px;"></div>
                 <h3>Sentiment Analysis</h3>
                 <p>NLP-powered sentiment scoring from news headlines and content to gauge market mood and predict price
                     movements</p>
             </div>
             <div class="feature-card">
-                <div class="feature-icon-large"><img src="" data-pexels="magnifying glass search" alt="Search" style="width: 60px; height: 60px; border-radius: 8px;"></div>
+                <div class="feature-icon-large"><img src="" data-pexels="magnifying glass search" alt="Search"
+                        style="width: 60px; height: 60px; border-radius: 8px;"></div>
                 <h3>Entity Recognition</h3>
                 <p>Automatically highlights financial metrics, company names, and key terms in summaries for quick
                     scanning and analysis</p>
             </div>
             <div class="feature-card">
-                <div class="feature-icon-large"><img src="" data-pexels="clock time speed" alt="Time" style="width: 60px; height: 60px; border-radius: 8px;"></div>
+                <div class="feature-icon-large"><img src="" data-pexels="clock time speed" alt="Time"
+                        style="width: 60px; height: 60px; border-radius: 8px;"></div>
                 <h3>Smart Caching</h3>
                 <p>8-hour news cache and 6-hour summary cache with 7-day logo storage for lightning-fast portfolio
                     management</p>
@@ -128,7 +136,7 @@
                 <button id="subscribe-btn" onclick="subscribeNewsletter()">Subscribe Free</button>
             </div>
             <div id="newsletter-message" class="message"></div>
-            <p class="newsletter-note">✅ Free forever • 📊 Daily reports • 🔒 No spam</p>
+            <p class="newsletter-note">✅ Free forever • 📊 Weekly reports • 🔒 No spam</p>
         </div>
     </section>
 
@@ -257,10 +265,10 @@
 
             // Add removing animation
             const stockCards = document.querySelectorAll('.stock-card');
-            const targetCard = Array.from(stockCards).find(card => 
+            const targetCard = Array.from(stockCards).find(card =>
                 card.querySelector('h4').textContent === symbol
             );
-            
+
             if (targetCard) {
                 targetCard.classList.add('removing');
             }
@@ -305,7 +313,7 @@
                 const query = img.getAttribute('data-pexels');
                 loadPexelsImage(query, img);
             });
-            
+
 
         }
 
@@ -322,32 +330,32 @@
             document.getElementById('ticker-input').addEventListener('keypress', (e) => {
                 if (e.key === 'Enter') addTicker();
             });
-            
+
             // Newsletter subscription on Enter
             document.getElementById('newsletter-email').addEventListener('keypress', (e) => {
                 if (e.key === 'Enter') subscribeNewsletter();
             });
         });
-        
+
         // Newsletter subscription function
         async function subscribeNewsletter() {
             const emailInput = document.getElementById('newsletter-email');
             const message = document.getElementById('newsletter-message');
             const email = emailInput.value.trim();
-            
+
             if (!email || !email.includes('@')) {
                 message.textContent = 'Please enter a valid email address';
                 message.className = 'message error';
                 return;
             }
-            
+
             try {
                 const response = await fetch('/api/subscribe', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email: email })
                 });
-                
+
                 if (response.ok) {
                     message.textContent = '🎉 Successfully subscribed! Check your inbox for daily reports.';
                     message.className = 'message success';

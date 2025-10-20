@@ -1815,9 +1815,9 @@ Return only numbers separated by commas (e.g., 1,3,5,7,9):
                     
                     if summary_text:
                         # Include both summary and what_changed for better context
-                        entry = f"{date_str}: {summary_text[:150]}..."
+                        entry = f"{date_str}: {summary_text[:200]}..."
                         if what_changed:
-                            entry += f" | Changes: {what_changed[:100]}..."
+                            entry += f" | Changes: {what_changed[:150]}..."
                         history_entries.append(entry)
                 
                 history_text = "\n".join(history_entries) if history_entries else "No detailed historical data available."
@@ -1880,7 +1880,7 @@ Keep under 400 words, focus on actionable insights.
             summary_text = response.text.strip()
             logger.info(f"SUMMARY GENERATION: Generated {len(summary_text)} chars for {ticker}")
             
-            # Extract "What changed today" section
+            # Extract "What changed today" section - show complete content
             what_changed = "No material developments identified."
             
             # Look for the section
@@ -1888,11 +1888,15 @@ Keep under 400 words, focus on actionable insights.
                 parts = summary_text.split("**WHAT CHANGED TODAY**")
                 if len(parts) > 1:
                     what_changed_raw = parts[1].strip()
-                    # Clean up and take first paragraph
+                    # Clean up and take all relevant content (not just first paragraph)
                     lines = what_changed_raw.split('\n')
                     clean_lines = [line.strip() for line in lines if line.strip() and not line.strip().startswith('**')]
                     if clean_lines:
-                        what_changed = clean_lines[0][:200] + ('...' if len(clean_lines[0]) > 200 else '')
+                        # Join all lines to show complete "What changed today" content
+                        what_changed = '\n'.join(clean_lines).strip()
+                        # Only truncate if extremely long (over 800 chars)
+                        if len(what_changed) > 800:
+                            what_changed = what_changed[:800] + '...'
             
             result = {
                 'summary': summary_text,
