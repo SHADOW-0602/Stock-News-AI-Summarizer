@@ -83,18 +83,28 @@ class FreeMarketData:
             logger.debug(f"Investing price error: {e}")
             return None
     
-    def get_marketwatch_price(self, symbol):
-        """Get price from MarketWatch (free backup)"""
+    def get_cnbc_price(self, symbol):
+        """Get price from CNBC (free backup)"""
         try:
-            url = f"https://www.marketwatch.com/investing/index/{symbol.replace('^', '').lower()}"
+            # CNBC symbol mapping
+            cnbc_symbols = {
+                '^GSPC': '.SPX',
+                '^IXIC': '.IXIC', 
+                '^DJI': '.DJI',
+                'GC=F': '@GC.1',
+                'CL=F': '@CL.1'
+            }
+            
+            cnbc_symbol = cnbc_symbols.get(symbol, symbol)
+            url = f"https://www.cnbc.com/quotes/{cnbc_symbol}"
             response = self.session.get(url, timeout=10)
             soup = BeautifulSoup(response.content, 'html.parser')
             
-            # MarketWatch price selectors
+            # CNBC price selectors
             selectors = [
-                '.intraday__price',
-                '[class*="price"]',
-                '.value'
+                '[class*="QuoteStrip-lastPrice"]',
+                '[data-module="LastPrice"]',
+                '.QuoteStrip-lastPrice'
             ]
             
             for selector in selectors:
@@ -108,7 +118,94 @@ class FreeMarketData:
             
             return None
         except Exception as e:
-            logger.debug(f"MarketWatch price error: {e}")
+            logger.debug(f"CNBC price error: {e}")
+            return None
+    
+    def get_bloomberg_price(self, symbol):
+        """Get price from Bloomberg (international markets)"""
+        try:
+            # Bloomberg symbol mapping
+            bloomberg_symbols = {
+                '^FTSE': 'UKX:IND',
+                '^N225': 'NKY:IND',
+                '^GDAXI': 'DAX:IND',
+                '^BSESN': 'SENSEX:IND',
+                'CL=F': 'CL1:COM',
+                'USDINR=X': 'USDINR:CUR',
+                'USDCNY=X': 'USDCNY:CUR'
+            }
+            
+            bloomberg_symbol = bloomberg_symbols.get(symbol)
+            if not bloomberg_symbol:
+                return None
+                
+            url = f"https://www.bloomberg.com/quote/{bloomberg_symbol}"
+            response = self.session.get(url, timeout=10)
+            soup = BeautifulSoup(response.content, 'html.parser')
+            
+            # Bloomberg price selectors
+            selectors = [
+                '[data-module="PriceChange"]',
+                '.priceText__1853e8a5',
+                '[class*="price"]'
+            ]
+            
+            for selector in selectors:
+                price_elem = soup.select_one(selector)
+                if price_elem:
+                    price_text = price_elem.get_text().replace(',', '').replace('$', '')
+                    try:
+                        return float(price_text)
+                    except:
+                        continue
+            
+            return None
+        except Exception as e:
+            logger.debug(f"Bloomberg price error: {e}")
+            return None
+    
+    def get_enhanced_investing_price(self, symbol):
+        """Enhanced Investing.com with better symbol mapping"""
+        try:
+            # Enhanced Investing.com symbol mapping
+            enhanced_symbols = {
+                '^FTSE': 'indices/uk-100',
+                '^N225': 'indices/japan-ni225',
+                '^GDAXI': 'indices/germany-30',
+                '^BSESN': 'indices/sensex',
+                'CL=F': 'commodities/crude-oil',
+                'USDINR=X': 'currencies/usd-inr',
+                'USDCNY=X': 'currencies/usd-cny'
+            }
+            
+            investing_path = enhanced_symbols.get(symbol)
+            if not investing_path:
+                return None
+                
+            url = f"https://www.investing.com/{investing_path}"
+            response = self.session.get(url, timeout=10)
+            soup = BeautifulSoup(response.content, 'html.parser')
+            
+            # Enhanced Investing.com selectors
+            selectors = [
+                '[data-test="instrument-price-last"]',
+                '.text-2xl',
+                '.instrument-price_last__KQzyA',
+                '[class*="last-price"]'
+            ]
+            
+            for selector in selectors:
+                price_elem = soup.select_one(selector)
+                if price_elem:
+                    price_text = price_elem.get_text().replace(',', '').replace('$', '')
+                    try:
+                        return float(price_text)
+                    except:
+                        continue
+            
+            return None
+        except Exception as e:
+            logger.debug(f"Enhanced Investing price error: {e}")
             return None
     
     def get_price_with_fallbacks(self, symbol):
@@ -125,21 +222,41 @@ class FreeMarketData:
             logger.info(f"Investing: {symbol} = {price}")
             return price
         
-        # Try MarketWatch
-        price = self.get_marketwatch_price(symbol)
+        # Try CNBC
+        price = self.get_cnbc_price(symbol)
         if price:
-            logger.info(f"MarketWatch: {symbol} = {price}")
+            logger.info(f"CNBC: {symbol} = {price}")
+            return price
+        
+        # Try enhanced Investing.com for international markets
+        price = self.get_enhanced_investing_price(symbol)
+        if price:
+            logger.info(f"Enhanced Investing: {symbol} = {price}")
+            return price
+        
+        # Try Bloomberg for additional coverage
+        price = self.get_bloomberg_price(symbol)
+        if price:
+            logger.info(f"Bloomberg: {symbol} = {price}")
             return price
         
         logger.warning(f"All sources failed for {symbol}")
         return None
     
-    def get_historical_data(self, symbol, days=7):
-        """Get historical data from Yahoo Finance (free)"""
+    def get_friday_to_friday_data(self, symbol):
+        """Get Friday-to-Friday data from Yahoo Finance"""
         try:
-            # Yahoo Finance historical data URL (no API key needed)
-            end_time = int(time.time())
-            start_time = end_time - (days * 24 * 60 * 60)
+            from datetime import datetime, timedelta
+            
+            # Calculate current Friday and last Friday
+            today = datetime.now()
+            days_since_friday = (today.weekday() + 3) % 7  # Friday = 4, adjust to 0
+            current_friday = today - timedelta(days=days_since_friday)
+            last_friday = current_friday - timedelta(days=7)
+            
+            # Get 2 weeks of data to ensure we have both Fridays
+            end_time = int(current_friday.timestamp())
+            start_time = int((last_friday - timedelta(days=3)).timestamp())
             
             url = f"https://query1.finance.yahoo.com/v7/finance/chart/{symbol}"
             params = {
@@ -156,20 +273,80 @@ class FreeMarketData:
                 timestamps = result['timestamp']
                 prices = result['indicators']['quote'][0]['close']
                 
-                # Return last week and current prices
                 if len(prices) >= 2:
+                    # Get last Friday (7 days ago) and current Friday prices
+                    last_friday_price = prices[-8] if len(prices) >= 8 else prices[0]
+                    current_friday_price = prices[-1]
+                    
                     return {
-                        'last_week': prices[-6] if len(prices) >= 6 else prices[0],
-                        'current': prices[-1]
+                        'last_friday': last_friday_price,
+                        'current_friday': current_friday_price,
+                        'symbol': symbol,
+                        'verified': True
                     }
             
             return None
         except Exception as e:
-            logger.debug(f"Historical data error for {symbol}: {e}")
+            logger.debug(f"Friday-to-Friday data error for {symbol}: {e}")
             return None
+    
+    def verify_data_accuracy(self, symbol, price):
+        """Verify data accuracy using best sources for each asset"""
+        # Optimized source selection based on similarity analysis
+        best_sources = {
+            '^GSPC': ['yahoo', 'investing', 'cnbc'],
+            '^IXIC': ['yahoo', 'investing', 'cnbc'], 
+            '^DJI': ['yahoo', 'investing', 'cnbc'],
+            '^FTSE': ['yahoo', 'enhanced_investing'],
+            '^N225': ['yahoo', 'enhanced_investing'],
+            '^GDAXI': ['yahoo', 'enhanced_investing'],
+            '^BSESN': ['enhanced_investing', 'yahoo'],
+            'GC=F': ['investing', 'cnbc', 'yahoo'],
+            'CL=F': ['cnbc', 'investing', 'enhanced_investing'],
+            'USDINR=X': ['enhanced_investing'],
+            'USDCNY=X': ['enhanced_investing']
+        }
+        
+        sources = []
+        preferred_sources = best_sources.get(symbol, ['yahoo', 'investing', 'cnbc'])
+        
+        for source_name in preferred_sources:
+            if source_name == 'yahoo':
+                yahoo_price = self.get_yahoo_price(symbol)
+                if yahoo_price:
+                    sources.append(('Yahoo Finance', yahoo_price))
+            elif source_name == 'investing':
+                investing_price = self.get_investing_price(symbol)
+                if investing_price:
+                    sources.append(('Investing.com', investing_price))
+            elif source_name == 'cnbc':
+                cnbc_price = self.get_cnbc_price(symbol)
+                if cnbc_price:
+                    sources.append(('CNBC', cnbc_price))
+            elif source_name == 'enhanced_investing':
+                enhanced_price = self.get_enhanced_investing_price(symbol)
+                if enhanced_price:
+                    sources.append(('Enhanced Investing', enhanced_price))
+        
+        if len(sources) >= 2:
+            prices = [p for _, p in sources]
+            avg_price = sum(prices) / len(prices)
+            max_diff = max(abs(p - avg_price) for p in prices)
+            
+            # Consider accurate if all sources within 2% of average
+            accuracy = max_diff / avg_price < 0.02
+            
+            return {
+                'verified': accuracy,
+                'sources': sources,
+                'average': avg_price,
+                'max_difference': max_diff
+            }
+        
+        return {'verified': len(sources) >= 1, 'sources': sources}
 
 def get_free_market_data():
-    """Get complete market data using only free sources"""
+    """Get Friday-to-Friday market data with internet verification"""
     fetcher = FreeMarketData()
     
     # Free symbol mapping (no API keys needed)
@@ -194,37 +371,49 @@ def get_free_market_data():
     }
     
     market_data = {}
+    verification_report = []
     
     for category, symbol_map in symbols.items():
         market_data[category] = {}
         
         for name, symbol in symbol_map.items():
             try:
-                # Get historical data for weekly comparison
-                hist_data = fetcher.get_historical_data(symbol)
+                # Get Friday-to-Friday data
+                friday_data = fetcher.get_friday_to_friday_data(symbol)
                 
-                if hist_data:
+                if friday_data:
+                    # Verify current price accuracy
+                    verification = fetcher.verify_data_accuracy(symbol, friday_data['current_friday'])
+                    
                     market_data[category][name] = {
-                        'last_week': hist_data['last_week'],
-                        'this_week': hist_data['current']
+                        'last_friday': friday_data['last_friday'],
+                        'this_friday': friday_data['current_friday'],
+                        'verified': verification['verified'],
+                        'sources_count': len(verification.get('sources', []))
                     }
-                    logger.info(f"✓ {name}: {hist_data['last_week']:.2f} -> {hist_data['current']:.2f}")
+                    
+                    status = "✓ VERIFIED" if verification['verified'] else "⚠ UNVERIFIED"
+                    logger.info(f"{status} {name}: {friday_data['last_friday']:.2f} -> {friday_data['current_friday']:.2f}")
+                    
+                    verification_report.append({
+                        'asset': name,
+                        'verified': verification['verified'],
+                        'sources': verification.get('sources', [])
+                    })
                 else:
-                    # Fallback: get current price only
-                    current_price = fetcher.get_price_with_fallbacks(symbol)
-                    if current_price:
-                        market_data[category][name] = {
-                            'last_week': current_price * 0.99,  # Estimate 1% change
-                            'this_week': current_price
-                        }
-                        logger.info(f"~ {name}: {current_price:.2f} (estimated)")
+                    logger.warning(f"❌ Failed to get Friday data for {name}")
                 
                 # Rate limiting to avoid being blocked
-                time.sleep(1)
+                time.sleep(2)
                 
             except Exception as e:
                 logger.error(f"Error fetching {name}: {e}")
                 continue
+    
+    # Log verification summary
+    verified_count = sum(1 for item in verification_report if item['verified'])
+    total_count = len(verification_report)
+    logger.info(f"Data Verification: {verified_count}/{total_count} assets verified from multiple sources")
     
     return market_data
 

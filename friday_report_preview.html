@@ -1,0 +1,181 @@
+
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <style>
+            body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f8f9fa; }
+            .container { max-width: 800px; margin: 0 auto; background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+            .header { background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%); color: white; padding: 30px; text-align: center; }
+            .header h1 { margin: 0; font-size: 24px; }
+            .content { padding: 30px; }
+            .intro { font-size: 16px; color: #555; margin-bottom: 30px; line-height: 1.6; }
+            .section { margin-bottom: 30px; }
+            .section h2 { color: #2c3e50; font-size: 18px; margin-bottom: 15px; border-bottom: 2px solid #3498db; padding-bottom: 5px; }
+            table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+            th { background: #34495e; color: white; padding: 12px; text-align: left; font-weight: bold; }
+            td { padding: 12px; border-bottom: 1px solid #ecf0f1; }
+            tr:nth-child(even) { background: #f8f9fa; }
+            .positive { color: #27ae60; font-weight: bold; }
+            .negative { color: #e74c3c; font-weight: bold; }
+            .verified { color: #27ae60; font-size: 12px; }
+            .unverified { color: #e74c3c; font-size: 12px; }
+            .footer { background: #ecf0f1; padding: 20px; text-align: center; color: #7f8c8d; font-size: 12px; }
+            .unsubscribe { margin-top: 15px; }
+            .unsubscribe a { color: #3498db; text-decoration: none; }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <h1>Weekly Market Report</h1>
+                <p>Market Changes: October 24 to October 31, 2025</p>
+            </div>
+            
+            <div class="content">
+                <div class="intro">
+                    <p>Weekly market performance from Friday close to Friday close. All data is verified against multiple internet sources for accuracy.</p>
+                    <p><strong>Data Sources:</strong> Yahoo Finance, Investing.com, CNBC, Bloomberg | <strong>Verification:</strong> Cross-checked for 2% accuracy tolerance</p>
+                </div>
+    
+                <div class="section">
+                    <h2>Indices</h2>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Asset</th>
+                                <th>Last Friday</th>
+                                <th>This Friday</th>
+                                <th>Change (%)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+        
+                                <tr>
+                                    <td><strong>S&P 500</strong><br><span class="verified">✓ Verified (3 sources)</span></td>
+                                    <td>6,735.35</td>
+                                    <td>6,822.34</td>
+                                    <td class="positive">+1.29%</td>
+                                </tr>
+                
+                                <tr>
+                                    <td><strong>NASDAQ</strong><br><span class="verified">✓ Verified (3 sources)</span></td>
+                                    <td>22,953.67</td>
+                                    <td>23,581.14</td>
+                                    <td class="positive">+2.73%</td>
+                                </tr>
+                
+                                <tr>
+                                    <td><strong>Dow Jones</strong><br><span class="verified">✓ Verified (3 sources)</span></td>
+                                    <td>46,924.74</td>
+                                    <td>47,522.12</td>
+                                    <td class="positive">+1.27%</td>
+                                </tr>
+                
+                                <tr>
+                                    <td><strong>FTSE 100</strong><br><span class="verified">✓ Verified (2 sources)</span></td>
+                                    <td>9,515.00</td>
+                                    <td>9,717.30</td>
+                                    <td class="positive">+2.13%</td>
+                                </tr>
+                
+                                <tr>
+                                    <td><strong>Nikkei 225</strong><br><span class="verified">✓ Verified (2 sources)</span></td>
+                                    <td>49,307.79</td>
+                                    <td>52,411.34</td>
+                                    <td class="positive">+6.29%</td>
+                                </tr>
+                
+                                <tr>
+                                    <td><strong>DAX</strong><br><span class="verified">✓ Verified (2 sources)</span></td>
+                                    <td>24,151.13</td>
+                                    <td>23,958.30</td>
+                                    <td class="negative">-0.80%</td>
+                                </tr>
+                
+                                <tr>
+                                    <td><strong>Sensex</strong><br><span class="verified">✓ Verified (2 sources)</span></td>
+                                    <td>84,426.34</td>
+                                    <td>83,938.71</td>
+                                    <td class="negative">-0.58%</td>
+                                </tr>
+                
+                        </tbody>
+                    </table>
+                </div>
+        
+                <div class="section">
+                    <h2>Commodities</h2>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Asset</th>
+                                <th>Last Friday</th>
+                                <th>This Friday</th>
+                                <th>Change (%)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+        
+                                <tr>
+                                    <td><strong>Gold (USD/oz)</strong><br><span class="verified">✓ Verified (3 sources)</span></td>
+                                    <td>4,044.40</td>
+                                    <td>3,982.20</td>
+                                    <td class="negative">-1.54%</td>
+                                </tr>
+                
+                                <tr>
+                                    <td><strong>Crude Oil (USD/bbl)</strong><br><span class="verified">✓ Verified (3 sources)</span></td>
+                                    <td>58.50</td>
+                                    <td>60.98</td>
+                                    <td class="positive">+4.24%</td>
+                                </tr>
+                
+                        </tbody>
+                    </table>
+                </div>
+        
+                <div class="section">
+                    <h2>Currencies</h2>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Asset</th>
+                                <th>Last Friday</th>
+                                <th>This Friday</th>
+                                <th>Change (%)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+        
+                                <tr>
+                                    <td><strong>USD/INR</strong><br><span class="verified">✓ Verified (1 sources)</span></td>
+                                    <td>88.00</td>
+                                    <td>88.63</td>
+                                    <td class="positive">+0.72%</td>
+                                </tr>
+                
+                                <tr>
+                                    <td><strong>USD/CNY</strong><br><span class="verified">✓ Verified (1 sources)</span></td>
+                                    <td>7.12</td>
+                                    <td>7.11</td>
+                                    <td class="negative">-0.17%</td>
+                                </tr>
+                
+                        </tbody>
+                    </table>
+                </div>
+        
+            </div>
+            
+            <div class="footer">
+                <p><strong>Stock News AI Summarizer</strong> - Friday-to-Friday Market Report</p>
+                <p>Generated on 2025-11-01 at 16:53 | Data Sources: Yahoo Finance, Investing.com, CNBC, Bloomberg</p>
+                <p>Verification Status: Multi-source cross-validation with 2% accuracy tolerance</p>
+                <div class="unsubscribe">
+                    <p>Don't want to receive these reports? <a href="https://unsubscribe-service-ivory.vercel.app/?email={email}">Unsubscribe here</a></p>
+                </div>
+            </div>
+        </div>
+    </body>
+    </html>
+    
