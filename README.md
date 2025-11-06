@@ -5,7 +5,7 @@ A professional-grade financial news aggregation and AI analysis platform that de
 ## 🚀 Key Features
 
 - **Multi-Source Intelligence**: Aggregates news from 8+ reliable sources including TradingView (Selenium), Finviz, 99Bitcoins (RSS), MarketWatch, Motley Fool, StockStory, TechCrunch, Invezz, and Seeking Alpha
-- **AI-Powered Analysis**: Uses Gemini 2.5 Pro with real-time market context for institutional-grade summaries
+- **AI-Powered Analysis**: Uses Gemini 2.5 Pro with enhanced quota management for institutional-grade summaries
 - **100% Source Success Rate**: All news sources working reliably with enhanced error handling and fallback mechanisms
 - **ML Price Forecasting**: Multi-model machine learning with cross-validation for price predictions
 - **NLP Sentiment Analysis**: Real-time sentiment scoring from news headlines and content
@@ -15,8 +15,8 @@ A professional-grade financial news aggregation and AI analysis platform that de
 - **Financial Statements**: Yahoo Finance integration with income statements, balance sheets, and cash flow data
 - **Financial Charts**: Chart.js powered revenue, growth, and YoY analysis charts
 - **Optimized Caching**: 8-hour news cache, 6-hour summary cache, 7-day logo cache with complete cleanup on ticker deletion
-- **100 Ticker Support**: Batch processing with smart API allocation for large portfolios
-- **Smart Rate Limiting**: Conservative API quota management with intelligent caching
+- **200 Ticker Daily Capacity**: Optimized batch processing for large portfolios
+- **Smart Rate Limiting**: Intelligent quota management and caching for optimal performance
 - **Trading-Focused Reports**: Risk/reward analysis, sector context, and specific trading catalysts
 - **Cost-Optimized**: Operates on $0/month using free API tiers
 
@@ -63,6 +63,7 @@ pip install -r requirements.txt
 1. Visit [Google AI Studio](https://makersuite.google.com/app/apikey)
 2. Create free account and generate API key
 3. Free tier: 15 requests/minute, 1M tokens/month
+4. Enhanced quota management maximizes daily processing capacity
 
 #### Polygon API (Optional but Recommended)
 1. Sign up at [Polygon.io](https://polygon.io/)
@@ -195,7 +196,7 @@ RUN apt-get update && apt-get install -y \
 - **Financial Statements**: Complete income statements, balance sheets, and cash flow data
 - **Financial Charts**: Chart.js powered revenue, growth, and YoY analysis with conditional colors
 - **Entity Highlighting**: Auto-highlighted financial metrics ($1.2B, 15%, Q3 2024, earnings)
-- **Smart Caching**: 8-hour news, 6-hour summary, 7-day logo cache for 100-ticker optimization
+- **Smart Caching**: 8-hour news, 6-hour summary, 7-day logo cache for 200-ticker daily optimization
 - **Executive Summaries**: Portfolio manager-focused insights with market context
 - **Market Implications**: Trading considerations and risk factors
 - **Quantified Impact**: Revenue, margin, and market share analysis
@@ -203,7 +204,7 @@ RUN apt-get update && apt-get install -y \
 - **What Changed Today**: Fixed AI comparison against 7 days of historical data
 
 ### Best Practices
-- **Add up to 100 tickers** - optimized batch processing supports large portfolios
+- **Add up to 200 tickers daily** - optimized batch processing supports large portfolios
 - **Review summaries daily** - extended 8-hour cache provides instant access
 - **Use manual refresh sparingly** - clears cache and uses fresh API calls
 - **Monitor quota usage** - smart API allocation prevents exhaustion
@@ -212,30 +213,29 @@ RUN apt-get update && apt-get install -y \
 
 ## 💰 Comprehensive Cost Analysis
 
-### Current Monthly Costs (100 Tickers)
+### Current Monthly Costs (200 Tickers Daily)
 | Service | Tier | Cost | Usage | Limits | Cache Impact |
 |---------|------|------|-------|--------|-------------|
 | **Hosting** |
 | Railway | Free | $0 | 500 hours/month | Sufficient | N/A |
 | Render | Free | $0 | 750 hours/month | Alternative | N/A |
 | **APIs** |
-| Gemini 2.5 Pro | Free | $0 | ~600 requests/month | 45,000 available | 60% reduction |
+| Gemini 2.5 Pro | Free | $0 | ~6,000 requests/month | 45,000 available | Enhanced quota management |
 | Polygon API | Free | $0 | ~900 requests/month | Unlimited (5 RPM) | 60% reduction |
 | Alpha Vantage API | Free | $0 | ~750 requests/month | 750 available | Critical caching |
 | Twelve Data API | Free | $0 | ~2,400 requests/month | 24,000 available | 60% reduction |
 | Finnhub API | Free | $0 | ~3,600 requests/month | 2.6M available | Minimal impact |
 | Alpaca Markets | Free | $0 | Unlimited | Real-time data | N/A |
 | API Ninjas | Free | $0 | ~150 requests/month | 150,000 available | 95% reduction |
-| **Total** | | **$0-5** | | **Scalable to 100 tickers** | **Major savings** |
+| **Total** | | **$0-5** | | **200 tickers daily** | **Major savings** |
 
 ### Scaling Cost Projections
 | Tickers | Monthly Requests | Estimated Cost | Optimization |
 |---------|------------------|----------------|-------------|
-| 10 | 1,200 | $0 | Current setup (7min intervals) |
-| 25 | 3,000 | $0 | Stay on free tiers |
-| 50 | 6,000 | $0-2 | Monitor usage |
-| 100 | 12,000 | $5-10 | Upgrade APIs |
-| 500+ | 60,000+ | $20-50 | Enterprise APIs |
+| 50 | 3,000 | $0 | Current setup (7min intervals) |
+| 100 | 6,000 | $0 | Stay on free tiers |
+| 200 | 12,000 | $0-2 | Daily capacity limit |
+| 500+ | 30,000+ | $10-25 | Enterprise APIs |
 
 ### Cost Optimization Strategies
 
@@ -290,7 +290,7 @@ REALTIME_DELAY = 420 # seconds (7 minutes)
 
 ### Graceful Degradation
 - **Gemini Quota Exceeded**: 
-  - Falls back to first 5 articles (no AI selection)
+  - Falls back to first 5 articles if quota exhausted
   - Shows fallback summary with clear messaging
   - Uses cached summaries when available
 - **Polygon Quota Exceeded**: 
@@ -303,8 +303,9 @@ REALTIME_DELAY = 420 # seconds (7 minutes)
 
 ### ROI Analysis
 - **Time Saved**: 2-3 hours daily research → 5 minutes
-- **Coverage**: Multi-source professional analysis
+- **Coverage**: Multi-source professional analysis with enhanced AI capacity
 - **Cost**: $0/month vs $50-200/month for Bloomberg Terminal
+- **Capacity**: Enhanced Gemini quota through intelligent management
 - **Break-even**: Profitable from day 1
 
 ## 🏗️ Technical Architecture
@@ -434,6 +435,11 @@ Phase 4 (Enterprise): Microservices + Auto-scaling
 ```
 
 ## 🔧 Development & Troubleshooting
+
+### Latest Updates & Features
+- **Enhanced Quota Management**: Intelligent API usage prevents rate limiting
+- **Improved Scalability**: Support for 200 tickers daily with high-frequency AI analysis
+- **Performance Optimization**: Advanced caching and batch processing
 
 ### Recent Updates & Fixes
 - **JavaScript Error Fix**: Resolved "Cannot set properties of null" error by removing deprecated dropdown functionality

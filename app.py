@@ -79,8 +79,17 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Configuration
-GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
+# Configuration - Multiple Gemini API Keys from .env
+GEMINI_API_KEYS = [
+    os.getenv('GEMINI_API_KEY'),
+    os.getenv('GEMINI_API_KEY_2'),
+    os.getenv('GEMINI_API_KEY_3'),
+    os.getenv('GEMINI_API_KEY_4'),
+    os.getenv('GEMINI_API_KEY_5')
+]
+# Filter out None/empty keys
+GEMINI_API_KEYS = [key for key in GEMINI_API_KEYS if key and key.strip() and key != 'your-gemini-api-key']
+GEMINI_API_KEY = GEMINI_API_KEYS[0]  # For backward compatibility
 POLYGON_API_KEY = os.getenv('POLYGON_API_KEY')
 ALPHA_VANTAGE_API_KEY = os.getenv('ALPHA_VANTAGE_API_KEY')
 TWELVE_DATA_API_KEY = os.getenv('TWELVE_DATA_API_KEY')
@@ -96,6 +105,14 @@ FMP_API_KEY = os.getenv('FMP_API_KEY')
 PEXELS_API_KEY = os.getenv('PEXELS_API_KEY')
 
 logger.info("Stock News AI Summarizer started")
+
+# Gemini API Key Rotation System
+gemini_rotation = {
+    'current_key_index': 0,
+    'call_count': 0,
+    'calls_per_key': 40,  # Switch after 40 calls
+    'total_calls': 0
+}
 
 # API Usage Tracking
 api_usage = {
@@ -135,16 +152,48 @@ def check_api_quota(service):
     if api_usage[service]['last_reset'] != today:
         api_usage[service]['calls'] = 0
         api_usage[service]['last_reset'] = today
-        logger.info(f"Reset {service} daily counter")
+        gemini_rotation['call_count'] = 0
+        gemini_rotation['total_calls'] = 0
+        gemini_rotation['current_key_index'] = 0
+        logger.info(f"Reset {service} daily counter and rotation system")
     
     limit = DAILY_LIMITS.get(service)
     if limit == 'unlimited':
         return True
     
+    # Special handling for Gemini with rotation system
+    if service == 'gemini':
+        max_daily_calls = len(GEMINI_API_KEYS) * gemini_rotation['calls_per_key']  # 5 keys × 40 calls = 200
+        if gemini_rotation['total_calls'] >= max_daily_calls:
+            logger.error(f"GEMINI ROTATION: All {len(GEMINI_API_KEYS)} keys exhausted! Total calls: {gemini_rotation['total_calls']}/{max_daily_calls}")
+            return False
+    
     if isinstance(limit, int) and api_usage[service]['calls'] >= limit:
         logger.warning(f"{service} daily limit reached ({limit})")
         return False
     return True
+
+def get_current_gemini_key():
+    """Get current Gemini API key based on rotation"""
+    return GEMINI_API_KEYS[gemini_rotation['current_key_index']]
+
+def rotate_gemini_key():
+    """Rotate to next Gemini API key after 40 calls"""
+    gemini_rotation['call_count'] += 1
+    gemini_rotation['total_calls'] += 1
+    
+    if gemini_rotation['call_count'] >= gemini_rotation['calls_per_key']:
+        # Switch to next key
+        gemini_rotation['current_key_index'] = (gemini_rotation['current_key_index'] + 1) % len(GEMINI_API_KEYS)
+        gemini_rotation['call_count'] = 0
+        
+        new_key = get_current_gemini_key()
+        logger.info(f"GEMINI ROTATION: Switched to key {gemini_rotation['current_key_index'] + 1} ({new_key[:15]}...) after {gemini_rotation['total_calls']} total calls")
+        
+        # Reconfigure genai with new key
+        if genai:
+            genai.configure(api_key=new_key)
+            logger.info(f"GEMINI ROTATION: Reconfigured client with new key")
 
 def increment_api_usage(service):
     """Increment API usage counter"""
@@ -153,25 +202,31 @@ def increment_api_usage(service):
         api_usage[service] = {'calls': 0, 'last_reset': datetime.now().date()}
     
     api_usage[service]['calls'] += 1
+    
+    # Handle Gemini key rotation
+    if service == 'gemini':
+        rotate_gemini_key()
 
-# Initialize Gemini client
-logger.info(f"Gemini initialization - Library: {bool(genai)}, Key exists: {bool(GEMINI_API_KEY)}, Key length: {len(GEMINI_API_KEY) if GEMINI_API_KEY else 0}")
-if GEMINI_API_KEY:
-    logger.info(f"Gemini API key preview: {GEMINI_API_KEY[:15]}...{GEMINI_API_KEY[-5:]}")
+# Initialize Gemini client with rotation system
+logger.info(f"Gemini initialization - Library: {bool(genai)}, Keys available: {len(GEMINI_API_KEYS)}")
+for i, key in enumerate(GEMINI_API_KEYS):
+    logger.info(f"Gemini API key {i+1}: {key[:15]}...{key[-5:]}")
 
-if genai and GEMINI_API_KEY and GEMINI_API_KEY.strip() != '' and GEMINI_API_KEY != 'your-gemini-api-key':
+if genai and GEMINI_API_KEYS:
     try:
-        logger.info("Attempting to configure Gemini client...")
-        genai.configure(api_key=GEMINI_API_KEY)
+        logger.info("Attempting to configure Gemini client with rotation system...")
+        current_key = get_current_gemini_key()
+        genai.configure(api_key=current_key)
         client = genai
-        logger.info(f"Gemini client configured successfully with key: {GEMINI_API_KEY[:10]}...{GEMINI_API_KEY[-5:]}")
+        logger.info(f"Gemini client configured successfully with key 1: {current_key[:10]}...{current_key[-5:]}")
+        logger.info(f"GEMINI ROTATION: System initialized with {len(GEMINI_API_KEYS)} keys, switching every {gemini_rotation['calls_per_key']} calls")
     except Exception as e:
         logger.error(f"Failed to configure Gemini client: {e}")
         logger.error(f"Error type: {type(e).__name__}")
         client = None
 else:
     client = None
-    logger.error(f"Gemini not available - library: {bool(genai)}, key present: {bool(GEMINI_API_KEY)}, key valid: {GEMINI_API_KEY != 'your-gemini-api-key' if GEMINI_API_KEY else False}")
+    logger.error(f"Gemini not available - library: {bool(genai)}, keys available: {len([k for k in GEMINI_API_KEYS if k and k != 'your-gemini-api-key'])}")
 
 # Initialize scheduler for cache cleanup
 scheduler = BackgroundScheduler()
@@ -1672,7 +1727,11 @@ class AIProcessor:
     def _call_gemini_with_fallback(self, prompt, fallback_result):
         """Call Gemini API with quota checking and fallback"""
         if not check_api_quota('gemini'):
-            logger.warning("GEMINI API: Quota exhausted, using fallback")
+            max_daily_calls = len(GEMINI_API_KEYS) * gemini_rotation['calls_per_key']
+            if gemini_rotation['total_calls'] >= max_daily_calls:
+                logger.error(f"GEMINI API: All {len(GEMINI_API_KEYS)} keys exhausted for today! Used {gemini_rotation['total_calls']}/{max_daily_calls} calls. Service will resume tomorrow.")
+            else:
+                logger.warning("GEMINI API: Quota exhausted, using fallback")
             return fallback_result
         
         if not self.client:
@@ -1742,8 +1801,9 @@ Return only numbers separated by commas (e.g., 1,3,5,7,9):
             
             logger.info(f"GEMINI ARTICLE SELECTION: Calling API for {ticker}")
             
-            if not self.client or not GEMINI_API_KEY or GEMINI_API_KEY.strip() == '' or GEMINI_API_KEY == 'your-gemini-api-key':
-                logger.warning(f"GEMINI ARTICLE SELECTION: API not configured (key present: {bool(GEMINI_API_KEY)}, client: {bool(self.client)}), using first 5")
+            current_key = get_current_gemini_key()
+            if not self.client or not current_key or current_key.strip() == '' or current_key == 'your-gemini-api-key':
+                logger.warning(f"GEMINI ARTICLE SELECTION: API not configured (key present: {bool(current_key)}, client: {bool(self.client)}), using first 5")
                 return articles[:5]
             
             response = self._call_gemini_with_fallback(prompt, None)
@@ -1786,11 +1846,21 @@ Return only numbers separated by commas (e.g., 1,3,5,7,9):
             market_context = f"\nCurrent Price: ${alpaca_quote['price']:.2f} (Bid: ${alpaca_quote['bid']:.2f}, Ask: ${alpaca_quote['ask']:.2f})\n"
         
         try:
-            if not self.client or not GEMINI_API_KEY or GEMINI_API_KEY.strip() == '' or GEMINI_API_KEY == 'your-gemini-api-key':
-                logger.error(f"SUMMARY GENERATION: Gemini API not configured for {ticker} (key present: {bool(GEMINI_API_KEY)}, client: {bool(self.client)})")
+            current_key = get_current_gemini_key()
+            if not self.client or not current_key or current_key.strip() == '' or current_key == 'your-gemini-api-key':
+                logger.error(f"SUMMARY GENERATION: Gemini API not configured for {ticker} (key present: {bool(current_key)}, client: {bool(self.client)})")
                 return {
                     'summary': f"**{ticker} ANALYSIS** - AI summary unavailable (API not configured). {len(selected_articles)} articles collected from multiple sources. Manual review recommended for trading decisions.",
                     'what_changed': "AI analysis unavailable - check articles manually for developments."
+                }
+            
+            # Check if all keys are exhausted
+            max_daily_calls = len(GEMINI_API_KEYS) * gemini_rotation['calls_per_key']
+            if gemini_rotation['total_calls'] >= max_daily_calls:
+                logger.error(f"SUMMARY GENERATION: All {len(GEMINI_API_KEYS)} Gemini keys exhausted for today ({gemini_rotation['total_calls']}/{max_daily_calls} calls used)")
+                return {
+                    'summary': f"**{ticker} DAILY LIMIT REACHED** - All {len(GEMINI_API_KEYS)} Gemini API keys have been exhausted for today ({gemini_rotation['total_calls']}/{max_daily_calls} calls used). {len(selected_articles)} articles collected from multiple sources. AI analysis will resume tomorrow at midnight. Manual review recommended.",
+                    'what_changed': f"Daily AI quota exhausted ({gemini_rotation['total_calls']}/{max_daily_calls} calls). Service resumes tomorrow."
                 }
             
             articles_text = "\n\n".join([
@@ -2020,19 +2090,15 @@ def debug_apis():
         status = {
             'apis': {
                 'gemini': {
-                    'configured': bool(GEMINI_API_KEY and GEMINI_API_KEY != 'your-gemini-api-key' and GEMINI_API_KEY.strip() != ''),
-                    'key_preview': f"{GEMINI_API_KEY[:10]}...{GEMINI_API_KEY[-5:]}" if GEMINI_API_KEY else 'Not set',
-                    'key_length': len(GEMINI_API_KEY) if GEMINI_API_KEY else 0,
+                    'rotation_system': True,
+                    'total_keys': len(GEMINI_API_KEYS),
+                    'current_key_index': gemini_rotation['current_key_index'] + 1,
+                    'current_key_preview': f"{get_current_gemini_key()[:10]}...{get_current_gemini_key()[-5:]}" if get_current_gemini_key() else 'Not set',
+                    'calls_on_current_key': gemini_rotation['call_count'],
+                    'total_calls': gemini_rotation['total_calls'],
                     'client_initialized': bool(client),
                     'genai_library': bool(genai),
-                    'env_var_exists': 'GEMINI_API_KEY' in os.environ,
-                    'env_var_value': os.environ.get('GEMINI_API_KEY', 'NOT_FOUND')[:15] + '...' if os.environ.get('GEMINI_API_KEY') else 'NOT_FOUND',
-                    'validation_checks': {
-                        'key_exists': bool(GEMINI_API_KEY),
-                        'not_placeholder': GEMINI_API_KEY != 'your-gemini-api-key' if GEMINI_API_KEY else False,
-                        'not_empty': GEMINI_API_KEY.strip() != '' if GEMINI_API_KEY else False,
-                        'proper_format': GEMINI_API_KEY.startswith('AIza') if GEMINI_API_KEY else False
-                    }
+                    'all_keys_configured': len([k for k in GEMINI_API_KEYS if k and k != 'your-gemini-api-key']) == len(GEMINI_API_KEYS)
                 },
                 'polygon': {
                     'configured': bool(POLYGON_API_KEY and POLYGON_API_KEY != 'your-polygon-api-key'),
@@ -2068,6 +2134,11 @@ def debug_apis():
             'quota_status': {
                 service: f"{api_usage.get(service, {}).get('calls', 0)}/{DAILY_LIMITS.get(service, 'N/A')}"
                 for service in DAILY_LIMITS.keys()
+            },
+            'gemini_rotation_details': {
+                'system_active': True,
+                'keys_available': len(GEMINI_API_KEYS),
+                'current_rotation': gemini_rotation
             }
         }
         return jsonify(status)
@@ -2090,18 +2161,20 @@ def cache_status():
 def debug_gemini():
     """Test Gemini API directly"""
     try:
-        if not GEMINI_API_KEY:
+        current_key = get_current_gemini_key()
+        if not current_key:
             return jsonify({
                 'error': 'Gemini API key not found',
-                'env_check': os.environ.get('GEMINI_API_KEY', 'NOT_SET'),
+                'available_keys': len([k for k in GEMINI_API_KEYS if k]),
                 'client_status': bool(client)
             }), 400
         
         if not client:
             return jsonify({
                 'error': 'Gemini client not initialized',
-                'api_key_exists': bool(GEMINI_API_KEY),
-                'api_key_preview': f"{GEMINI_API_KEY[:10]}..." if GEMINI_API_KEY else None
+                'api_key_exists': bool(current_key),
+                'api_key_preview': f"{current_key[:10]}..." if current_key else None,
+                'rotation_status': gemini_rotation
             }), 400
         
         # Test API call
@@ -2111,17 +2184,91 @@ def debug_gemini():
         return jsonify({
             'success': True,
             'response': response.text,
-            'api_key_preview': f"{GEMINI_API_KEY[:10]}...",
-            'client_type': str(type(client))
+            'api_key_preview': f"{current_key[:10]}...",
+            'client_type': str(type(client)),
+            'rotation_status': gemini_rotation,
+            'current_key_index': gemini_rotation['current_key_index'] + 1
         })
         
     except Exception as e:
         return jsonify({
             'error': str(e),
-            'api_key_exists': bool(GEMINI_API_KEY),
+            'api_key_exists': bool(current_key),
             'client_exists': bool(client),
-            'error_type': type(e).__name__
+            'error_type': type(e).__name__,
+            'rotation_status': gemini_rotation
         }), 500
+
+@app.route('/api/gemini-rotation-status')
+def get_gemini_rotation_status():
+    """Get current Gemini API key rotation status"""
+    try:
+        current_key = get_current_gemini_key()
+        max_daily_calls = len(GEMINI_API_KEYS) * gemini_rotation['calls_per_key']
+        calls_remaining = max(0, max_daily_calls - gemini_rotation['total_calls'])
+        all_keys_exhausted = gemini_rotation['total_calls'] >= max_daily_calls
+        
+        return jsonify({
+            'rotation_system': {
+                'total_keys': len(GEMINI_API_KEYS),
+                'current_key_index': gemini_rotation['current_key_index'] + 1,
+                'current_key_preview': f"{current_key[:15]}...{current_key[-5:]}" if current_key else None,
+                'calls_on_current_key': gemini_rotation['call_count'],
+                'calls_per_key_limit': gemini_rotation['calls_per_key'],
+                'calls_until_rotation': gemini_rotation['calls_per_key'] - gemini_rotation['call_count'],
+                'total_calls_made': gemini_rotation['total_calls'],
+                'max_daily_calls': max_daily_calls,
+                'calls_remaining_today': calls_remaining,
+                'all_keys_exhausted': all_keys_exhausted,
+                'status_message': 'All keys exhausted for today. Service resumes tomorrow.' if all_keys_exhausted else f'{calls_remaining} calls remaining today'
+            },
+            'all_keys': [
+                {
+                    'index': i + 1,
+                    'preview': f"{key[:15]}...{key[-5:]}" if key else 'Not set',
+                    'is_current': i == gemini_rotation['current_key_index'],
+                    'estimated_calls_used': min(40, max(0, gemini_rotation['total_calls'] - (i * 40)))
+                }
+                for i, key in enumerate(GEMINI_API_KEYS)
+            ]
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/force-gemini-rotation', methods=['POST'])
+def force_gemini_rotation():
+    """Manually force rotation to next Gemini API key"""
+    try:
+        old_index = gemini_rotation['current_key_index']
+        old_key = get_current_gemini_key()
+        
+        # Force rotation
+        gemini_rotation['current_key_index'] = (gemini_rotation['current_key_index'] + 1) % len(GEMINI_API_KEYS)
+        gemini_rotation['call_count'] = 0
+        
+        new_key = get_current_gemini_key()
+        
+        # Reconfigure genai with new key
+        if genai:
+            genai.configure(api_key=new_key)
+        
+        logger.info(f"MANUAL ROTATION: Forced switch from key {old_index + 1} to key {gemini_rotation['current_key_index'] + 1}")
+        
+        return jsonify({
+            'success': True,
+            'message': 'Gemini API key rotation forced',
+            'old_key': {
+                'index': old_index + 1,
+                'preview': f"{old_key[:15]}...{old_key[-5:]}"
+            },
+            'new_key': {
+                'index': gemini_rotation['current_key_index'] + 1,
+                'preview': f"{new_key[:15]}...{new_key[-5:]}"
+            },
+            'rotation_status': gemini_rotation
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/debug/chart-apis/<ticker>')
 def debug_chart_apis(ticker):
@@ -2465,9 +2612,17 @@ def get_summary(ticker):
                 'sentiment': sentiment_analysis
             },
             'api_status': {
-                'gemini_remaining': max(0, DAILY_LIMITS['gemini'] - api_usage['gemini']['calls']) if isinstance(DAILY_LIMITS['gemini'], int) else 'unlimited',
+                'gemini_remaining': max(0, (len(GEMINI_API_KEYS) * gemini_rotation['calls_per_key']) - gemini_rotation['total_calls']),
                 'polygon_remaining': 'unlimited' if DAILY_LIMITS['polygon'] == 'unlimited' else max(0, DAILY_LIMITS['polygon'] - api_usage['polygon']['calls']),
-                'quota_reset': 'Daily at midnight'
+                'quota_reset': 'Daily at midnight',
+                'gemini_rotation': {
+                    'current_key': gemini_rotation['current_key_index'] + 1,
+                    'total_keys': len(GEMINI_API_KEYS),
+                    'calls_on_key': gemini_rotation['call_count'],
+                    'total_calls': gemini_rotation['total_calls'],
+                    'max_daily_calls': len(GEMINI_API_KEYS) * gemini_rotation['calls_per_key'],
+                    'all_keys_exhausted': gemini_rotation['total_calls'] >= (len(GEMINI_API_KEYS) * gemini_rotation['calls_per_key'])
+                }
             },
             'cache_status': {
                 'cache_type': cache.redis_client and 'Upstash' or 'Memory'
